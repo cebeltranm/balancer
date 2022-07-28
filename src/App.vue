@@ -23,7 +23,6 @@
       </div>
   </div>
 
-
   <!-- <v-app>
   <v-layout>
     <v-app-bar
@@ -31,11 +30,8 @@
         density="compact"
         prominent
       >
-
        <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-
         <v-app-bar-title>Test</v-app-bar-title>
-
         <template v-slot:append>
           <v-btn 
             icon="mdi-arrow-down-bold-circle"
@@ -43,7 +39,6 @@
             @click="updateServiceWorker()"
             v-if='needRefresh'
           ></v-btn>
-
           <v-progress-circular
             :rotate="360"
             :model-value="storagUsed"
@@ -52,8 +47,6 @@
             {{ storagUsed }}
           </v-progress-circular>
         </template>
-
-
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" 
         bottom
@@ -99,6 +92,12 @@
             label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/'
         }]
     },
+    {
+        label: 'Settings',
+        items: [{
+            label: 'General', icon: 'pi pi-fw pi-cog', to: '/'
+        }]
+    },
   ]
 
 
@@ -106,7 +105,6 @@
   const staticMenuInactive = ref(false);
 
   function onMenuToggle() {
-    console.log('onMenuToggle');
     if (isDesktop()) {
         staticMenuInactive.value = !staticMenuInactive.value;
     }
@@ -120,8 +118,9 @@
   }
 
   onMounted(() => {
-    store.dispatch('storage/calculateStorage');
+    store.dispatch('storage/pendingToSync');
     store.dispatch('accounts/loadAccounts');
+    store.dispatch('transactions/getTransactionsForYear', new Date().getFullYear());
   })
 
 </script>

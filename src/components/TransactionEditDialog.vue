@@ -43,9 +43,6 @@
         <small v-if="submitted" v-for="error in v$.values.$each.$response.$errors[index].accountValue" :key="error" class="p-error">{{ error.$message }}</small>
     </div>
   </div>
-    <div class="flex justify-content-center">
-      {{state}}
-    </div>
   </form>
   <template #footer>
     <div class="flex flex-row-reverse">
@@ -71,7 +68,7 @@ import { helpers, required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
 
-const visible = ref(true);
+const visible = ref(false);
 const suggestedAccounts = ref<any[] | undefined>(undefined);
 const submitted = ref(false);
 
@@ -203,6 +200,7 @@ async function handleSubmit() {
     }))
   }
   await store.dispatch('transactions/saveTransaction', trans);
+  store.dispatch('storage/pendingToSync');
   close();
 }
 

@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import format from './format'
 // import {createIntl} from 'vue-intl'
 
 import App from './App.vue'
@@ -17,6 +18,11 @@ import InputText from 'primevue/inputtext';
 import Calendar from 'primevue/calendar';
 import AutoComplete from 'primevue/autocomplete';
 import InputNumber from 'primevue/inputnumber';
+
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';     
+import Row from 'primevue/row';
 
 const app = createApp(App);
 app.use(router)
@@ -40,6 +46,12 @@ app.component('InputText', InputText);
 app.component('Calendar', Calendar);
 app.component('AutoComplete', AutoComplete);
 app.component('InputNumber', InputNumber);
+app.component('DataTable', DataTable);
+app.component('Column', Column);
+app.component('ColumnGroup', ColumnGroup);
+app.component('Row', Row);
 
+
+app.config.globalProperties.$format = format
 
 app.mount('#app')

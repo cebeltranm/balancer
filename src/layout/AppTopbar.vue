@@ -23,9 +23,16 @@
 				</button>
 			</li>
 			<li>
-				<button class="p-link layout-topbar-button">
-					<i class="pi pi-cog"></i>
-					<span>Settings</span>
+				<button class="p-link layout-topbar-button" @click="() => store.dispatch('storage/sync')">
+					<i :class="{
+						pi:true, 
+						'pi-circle-fill': !inSync,
+						'pi-spin': inSync,
+						'pi-spinner': inSync,
+						'text-green-500': !isPendingToSync,
+						'text-red-500': isPendingToSync 
+						}"></i>
+					<span>Sync</span>
 				</button>
 			</li>
 			<!-- <li>
@@ -41,21 +48,28 @@
 </template>
 
 <script lang="ts" setup>
-import {defineEmits, ref} from 'vue';
+import {defineEmits, ref, computed} from 'vue';
 import TransactionEditDialog from '@/components/TransactionEditDialog.vue';
+import { useStore } from 'vuex';
+
+const store = useStore();
 
 const emit = defineEmits(['menu-toggle', 'topbar-menu-toggle']);
 const transactionDialog = ref<InstanceType<typeof TransactionEditDialog> | null>(null);
+
+const isPendingToSync = computed(() => store.getters['storage/isPendingToSync'])
+const inSync = computed(() => store.state.storage.inSync)
 
 function onMenuToggle(event:any) {
 	emit('menu-toggle', event);
 }
 
-function onTopbarMenuToggle(event) {
+function onTopbarMenuToggle(event:any) {
 	emit('topbar-menu-toggle', event);
 }
 
 function onAddTransaction() {
 	transactionDialog.value?.show();
 }
+
 </script>

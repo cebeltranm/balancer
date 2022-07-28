@@ -1,11 +1,11 @@
 <template>
-  <div>
-    DASHBOARD
+  <div class="grid">
+    <div class="col-12 xl:col-6">
+      <LastExpenses />
+    </div>
   </div>
-  <v-container fluid>
-  </v-container>
 </template>
 
 <script lang="ts" setup>
-  
+  import LastExpenses from '../components/LastExpenses.vue';
 </script>
