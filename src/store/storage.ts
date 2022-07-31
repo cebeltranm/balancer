@@ -3,9 +3,16 @@ import bounced from 'lodash-es/debounce';
 import * as sync from '../helpers/sync';
 
 const syncAll = bounced(async (context:any)=> {
-  await sync.syncTransactions();
-  await context.dispatch('pendingToSync');
-  context.commit('inSync', false);
+  try {
+    context.commit('inSync', true);
+    const trans = await sync.syncTransactions();
+    trans?.forEach( t => {
+      context.dispatch('transactions/getTransactionsForMonth', {year: t[0][0], month: t[0][1], reload: true}, { root: true })
+    });
+  } finally {
+    context.commit('inSync', false);
+    await context.dispatch('pendingToSync');
+  }
 }, 5000);
 
 export default {
@@ -15,7 +22,11 @@ export default {
       pendingToSync: {
         transactions: 0
       },
-      inSync: false
+      status: {
+        inSync: false,
+        offline: false,
+        loggedIn: false,
+      },
     },
     mutations: {
       used (state: any, used: number) {
@@ -25,7 +36,11 @@ export default {
         state.pendingToSync = pendingToSync;
       },
       inSync (state: any, inSync: any) {
-        state.inSync = inSync;
+        state.status.inSync = inSync;
+      },
+      status (state: any,  {loggedIn, offline} ) {
+        state.status.loggedIn = loggedIn;
+        state.status.offline = offline;
       }
     },
     getters: {
@@ -45,16 +60,19 @@ export default {
       },
       async pendingToSync(context: any) {
         const transactions = await idb.countTransactions();
+        if (context.state.pendingToSync.transactions !== transactions && transactions) {
+          context.dispatch('sync');
+        }
         context.commit('pendingToSync', {
           transactions
         });
-        if (transactions) {
-          context.dispatch('sync');
-        }
       },
       async sync(context: any) {
         context.commit('inSync', true);
         syncAll(context);
-      }
+      },
+      async setStatus(context: any, {loggedIn, offline}) {
+        context.commit('status', { loggedIn, offline } );
+      },
     }
   };

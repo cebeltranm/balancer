@@ -4,6 +4,7 @@ import accounts from './accounts';
 import budget from './budget';
 import values from './values';
 import transactions from './transactions';
+import balance from './transactions';
 
 export default createStore({
     modules: {
@@ -12,5 +13,6 @@ export default createStore({
         budget,
         values,
         transactions,
+        balance,
     }
 });

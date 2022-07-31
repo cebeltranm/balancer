@@ -22,41 +22,6 @@
         </div>
       </div>
   </div>
-
-  <!-- <v-app>
-  <v-layout>
-    <v-app-bar
-        color="ligth"
-        density="compact"
-        prominent
-      >
-       <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-        <v-app-bar-title>Test</v-app-bar-title>
-        <template v-slot:append>
-          <v-btn 
-            icon="mdi-arrow-down-bold-circle"
-            color="primary"
-            @click="updateServiceWorker()"
-            v-if='needRefresh'
-          ></v-btn>
-          <v-progress-circular
-            :rotate="360"
-            :model-value="storagUsed"
-            :color="offlineReady ? 'green' : 'red'"
-          >
-            {{ storagUsed }}
-          </v-progress-circular>
-        </template>
-    </v-app-bar>
-    <v-navigation-drawer v-model="drawer" 
-        bottom
-        temporary
-    ></v-navigation-drawer>
-    <v-main >
-      <router-view/>
-    </v-main>
-  </v-layout>
-  </v-app> -->
 </template>
 
 <script lang="ts" setup>
@@ -64,6 +29,8 @@
   import { initPWA } from '@/helpers/pwa';
   import { useStore } from 'vuex';
   import { isDesktop } from './helpers/browser';
+  import { checkAuth } from './helpers/auth';
+  // import * as dropbox from './helpers/dropbox';
 
   import AppTopbar from './layout/AppTopbar.vue';
   import AppMenu from './layout/AppMenu.vue';
@@ -71,19 +38,22 @@
   const store = useStore();
 
   // replaced dyanmicaly
-  const reloadSW: any = '__RELOAD_SW__'
+  // const reloadSW: any = '__RELOAD_SW__'
 
   const {
     offlineReady,
     needRefresh,
     updateServiceWorker,
   } = initPWA();
+
+  checkAuth();
   
   // const storagePerc = storagePercentage();
 
   // const drawer = ref(true);
 
   // const storagUsed = computed(() => store.state.storage.used);
+
 
   const menu = [
     {
@@ -119,8 +89,6 @@
 
   onMounted(() => {
     store.dispatch('storage/pendingToSync');
-    store.dispatch('accounts/loadAccounts');
-    store.dispatch('transactions/getTransactionsForYear', new Date().getFullYear());
   })
 
 </script>

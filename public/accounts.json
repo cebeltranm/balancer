@@ -1,0 +1,33 @@
+{
+    "health_insurance":{"type":"Expense","name":"Health Insurance","currency":"cop","category":["Insurance"]},
+    "other_insurance":{"type":"Expense","name":"Other Insurance","currency":"cop","category":["Insurance"]},
+    "retirement_insurance":{"type":"Expense","name":"Retirement Insurance","currency":"cop","category":["Insurance"]},
+    "vehicle_insurance":{"type":"Expense","name":"Vehicle Insurance","currency":"cop","category":["Insurance"]},
+    "cc_interest_usd":{"type":"Expense","name":"USD","currency":"usd","category":["Interest", "Credit Card"]},
+    "fees_auto":{"type":"Expense","name":"Fees","currency":"cop","category":["Living","Auto"]},
+    "gas_auto":{"type":"Expense","name":"Gas","currency":"cop","category":["Living","Auto"]},
+    "parking_auto":{"type":"Expense","name":"Parking","currency":"cop","category":["Living","Auto"]},
+    "repair_auto":{"type":"Expense","name":"Repair/Maintenance","currency":"cop","category":["Living","Auto"]},
+    "clothes":{"type":"Expense","name":"Clothes","currency":"cop","category":["Living"]},
+    "groceries":{"type":"Expense","name":"Groceries","currency":"cop","category":["Living"]},
+    "home_electricity":{"type":"Expense","name":"Electricity","currency":"cop","category":["Living", "Home"]},
+    "home_repair":{"type":"Expense","name":"Repair/Maintenance","currency":"cop","category":["Living", "Home"]},
+    "home_supplies":{"type":"Expense","name":"Supplies","currency":"cop","category":["Living", "Home"]},
+    "medical_expenses":{"type":"Expense","name":"Medical Expenses","currency":"cop","category":["Living"]},
+    "phone":{"type":"Expense","name":"Phone","currency":"cop","category":["Living"]},
+    "public_transport":{"type":"Expense","name":"Public Transportation","currency":"cop","category":["Living"]},
+    "dining":{"type":"Expense","name":"Dining","currency":"cop","category":["Miscellaneous"]},
+    "donation":{"type":"Expense","name":"Donation","currency":"cop","category":["Miscellaneous"]},
+    "entertainment":{"type":"Expense","name":"Entertainment","currency":"cop","category":["Miscellaneous"]},
+    "furniture":{"type":"Expense","name":"Furniture","currency":"cop","category":["Miscellaneous"]},
+    "gifts":{"type":"Expense","name":"Gifts","currency":"cop","category":["Miscellaneous"]},
+    "technology":{"type":"Expense","name":"Technology","currency":"cop","category":["Miscellaneous"]},
+    "travel":{"type":"Expense","name":"Travel","currency":"cop","category":["Miscellaneous"]},
+    "other_taxes":{"type":"Expense","name":"Other","currency":"cop","category":["Taxes"]},
+    "property_taxes":{"type":"Expense","name":"Property","currency":"cop","category":["Taxes"]},
+    
+    "cash_cop":{"type":"cash","name":"Cash","currency":"cop","entity":"Personal"},
+    "amex_usd":{"type":"CreditCard","name":"Amex USD","currency":"usd","entity":"Bank"},
+    "saving_account":{"type":"SavingAccount","name":"Saving Account","currency":"usd","entity":"Bank X"}
+    
+    }   

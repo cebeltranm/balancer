@@ -11,7 +11,7 @@ import replace from '@rollup/plugin-replace';
 const pwaOptions: Partial<VitePWAOptions> = {
   mode: 'development',
   base: '/',
-  includeAssets: ['favicon.svg'],
+  includeAssets: ['favicon.svg','assets/primeicons.*'],
   manifest: {
     name: 'PWA Router',
     short_name: 'PWA Router',
@@ -41,6 +41,14 @@ const pwaOptions: Partial<VitePWAOptions> = {
     type: 'module',
     navigateFallback: 'index.html',
   },
+  workbox: {
+    globPatterns: [
+      "**/*.js",
+      "**/*.css", 
+      "**/*.html",
+      "**/*.woff",
+    ],
+  }
 }
 const replaceOptions = { __DATE__: new Date().toISOString() }
 const claims = false // process.env.CLAIMS === 'true'
@@ -62,11 +70,11 @@ if (reload) {
 
 
 export default defineConfig({
+  define: {
+    'process.env': {}
+  },
   plugins: [
     vue(),
-    // vuetify({ 
-    //   autoImport: true,
-    // }),
     VitePWA(pwaOptions),
     // EnvironmentPlugin({NODE_ENV: 'development'}),
     replace(replaceOptions),

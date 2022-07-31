@@ -16,8 +16,8 @@ var port = 8181;
 app.post(/\/.*\.json$/, function (req, res) {
     fs.writeFile(__dirname + '/../config'+req.path, JSON.stringify(req.body), function (err) {
         if (err) {
-            res.send(500, JSON.stringify(err))
-            return console.log(err);
+            console.log(err);
+            return res.send(500, JSON.stringify(err));
         }
         res.send(200, 'ok')
     });

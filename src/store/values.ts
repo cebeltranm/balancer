@@ -13,15 +13,16 @@ export default {
     getters: {
     },
     actions: {
-      async getValuesForYear(context: any, year: number ) {
-        if (context.state.values[ year ]) {
+      async getValuesForYear(context: any, {year, reload } ) {
+        if (!reload && context.state.values[ year ]) {
             return context.state.values[ year ];
         }
         const values = await readJsonFile(`values_${year}.json`);
         context.commit('values', {year, values:values});
   
-        return context.state.values[ year ];
+        return values;
       },
+
       async getValue (context: any, {date, asset, currency}) {
         const values = await context.dispatch('getValuesForYear', date.getFullYear());
         var month = date.getMonth() + 1;

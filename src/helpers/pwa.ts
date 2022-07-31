@@ -11,12 +11,15 @@ export function initPWA() {
               // eslint-disable-next-line no-console
               console.log('Checking for sw update')
               await r.update()
-            }, 20000 /* 20s for testing purposes */)
+            }, 5000)
           }
           else {
           // eslint-disable-next-line no-console
             console.log(`SW Registered: ${r}`)
           }
         },
+        onOfflineReady() {
+          console.log('onOfflineReady');
+        }
       })
 }
