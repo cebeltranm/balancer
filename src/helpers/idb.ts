@@ -52,3 +52,9 @@ export async function removeFile( fileName: string) {
     const db = await getDb();
     return db.delete(FILES_DB, fileName);
 }
+
+export async function countFilesToSync() {
+    const db = await getDb();
+    const files = (await db.getAll(FILES_DB));
+    return files.reduce( (ant, f) => ant + (f.to_sync ? 1 : 0), 0);
+}

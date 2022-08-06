@@ -11,7 +11,7 @@ export function initPWA() {
               // eslint-disable-next-line no-console
               console.log('Checking for sw update')
               await r.update()
-            }, 5000)
+            }, 120000)
           }
           else {
           // eslint-disable-next-line no-console

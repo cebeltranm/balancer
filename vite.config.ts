@@ -10,11 +10,10 @@ import replace from '@rollup/plugin-replace';
 
 const pwaOptions: Partial<VitePWAOptions> = {
   mode: 'development',
-  base: '/',
   includeAssets: ['favicon.svg','assets/primeicons.*'],
   manifest: {
-    name: 'PWA Router',
-    short_name: 'PWA Router',
+    name: 'Balancer',
+    short_name: 'Balancer',
     theme_color: '#ffffff',
     icons: [
       {

@@ -9,7 +9,8 @@
     "dev": "vite",
     "https-preview": "serve dist",
     "preview": "vite preview --port 4173",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "release": "vite build --base=/balancer/ && gh-pages -d dist"
   },
   "dependencies": {
     "@vuelidate/core": "^2.0.0-alpha.43",
@@ -29,6 +30,7 @@
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {
+    "gh-pages": "^4.0.0",
     "@rollup/plugin-replace": "^4.0.0",
     "@rushstack/eslint-patch": "^1.1.0",
     "@types/node": "^16.11.36",

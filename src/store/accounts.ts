@@ -5,7 +5,7 @@ function getCategoryEntry(group:any, category:string) {
     group[category] = {
       name: category,
       type: 'Category',
-      childs: {}
+      children: {}
     }
   }
   return group[category];
@@ -40,7 +40,7 @@ export default {
           const account = state.accounts[id];
           if (account.category && account.category.length > 0 ) {
             account.category.reduce( (group:any, c:string) => {
-              return getCategoryEntry(group, c).childs;
+              return getCategoryEntry(group, c).children;
             }, ant );
           }
           return ant;
@@ -53,18 +53,18 @@ export default {
             const account = state.accounts[id];
             if (account.category && account.category.length > 0 ) {
               const g = account.category.reduce( (group:any, c:string) => {
-                return getCategoryEntry(group, c).childs;
+                return getCategoryEntry(group, c).children;
               }, ant );
               if (g[account.name]) {
                 g[account.name] = {
-                  childs: g[account.name].childs,
+                  children: g[account.name].children,
                   ...account
                 };
               } else {
                 g[account.name] = {...account};
               }
             } else {
-              getCategoryEntry(ant, 'Others').childs[account.name] = {...account};
+              getCategoryEntry(ant, 'Others').children[account.name] = {...account};
             }
             return ant;
           },{});  
@@ -95,18 +95,23 @@ export default {
       }
     },
     actions: {
-      async loadAccounts (context: any) {
+      async getAccounts (context: any, reload: boolean) {
+        if (!reload && context.state.accounts.length > 0){
+          return context.state.accounts;
+        }
         const accounts = await readJsonFile('accounts.json');
         Object.keys(accounts).forEach( (id: string) => {
           accounts[id].id = id;
         });
-        context.commit('accounts', Object.keys(accounts).filter( id => id != 'default').reduce( (ant:any, id:string) => {
+        const nAccounts = Object.keys(accounts).filter( id => id != 'default').reduce( (ant:any, id:string) => {
           ant[id] = {
             ...accounts[id],
             id
           }
           return ant;
-        }, {} ));
+        }, {} );
+        context.commit('accounts', nAccounts);
+        return nAccounts;
       }
     }
   };

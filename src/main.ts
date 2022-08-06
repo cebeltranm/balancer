@@ -18,11 +18,16 @@ import InputText from 'primevue/inputtext';
 import Calendar from 'primevue/calendar';
 import AutoComplete from 'primevue/autocomplete';
 import InputNumber from 'primevue/inputnumber';
-
+import Card from 'primevue/card';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     
 import Row from 'primevue/row';
+import Divider from 'primevue/divider';
+import Dropdown from 'primevue/dropdown';
+import TreeTable from 'primevue/treetable';
+
+
 
 const app = createApp(App);
 app.use(router)
@@ -50,6 +55,10 @@ app.component('DataTable', DataTable);
 app.component('Column', Column);
 app.component('ColumnGroup', ColumnGroup);
 app.component('Row', Row);
+app.component('Card', Card);
+app.component('Divider', Divider);
+app.component('Dropdown', Dropdown);
+app.component('TreeTable', TreeTable);
 
 
 app.config.globalProperties.$format = format

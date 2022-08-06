@@ -6,9 +6,19 @@ const syncAll = bounced(async (context:any)=> {
   try {
     context.commit('inSync', true);
     const trans = await sync.syncTransactions();
-    trans?.forEach( t => {
-      context.dispatch('transactions/getTransactionsForMonth', {year: t[0][0], month: t[0][1], reload: true}, { root: true })
-    });
+    if (trans) {
+      await Promise.all(trans.map( t => {
+        return context.dispatch('transactions/getTransactionsForMonth', {year: t.year, month: t.month, reload: true}, { root: true })
+      }));
+  
+      const firstMonth = trans.reduce( 
+        (ant: any, t: any) =>  ant.year < t.year || ant.month < t.month ? ant : t , 
+        { year: new Date().getFullYear(), month: new Date().getMonth() + 1});
+      
+      await context.dispatch('balance/recalculateBalance', { year: firstMonth.year, month: firstMonth.month, reload: true }, { root: true })
+    }
+    //  console.log( trans?.reduce(  )  );
+    await sync.syncFiles();
   } finally {
     context.commit('inSync', false);
     await context.dispatch('pendingToSync');
@@ -20,7 +30,8 @@ export default {
     state: {
       used: 0,
       pendingToSync: {
-        transactions: 0
+        transactions: 0,
+        files: 0,
       },
       status: {
         inSync: false,
@@ -45,7 +56,7 @@ export default {
     },
     getters: {
       isPendingToSync(state: any) {
-        return state.pendingToSync.transactions > 0
+        return state.pendingToSync.transactions > 0 || state.pendingToSync.files > 0
       }
     },
     actions: {
@@ -60,11 +71,15 @@ export default {
       },
       async pendingToSync(context: any) {
         const transactions = await idb.countTransactions();
-        if (context.state.pendingToSync.transactions !== transactions && transactions) {
+        const files = await idb.countFilesToSync();
+
+        if ( (context.state.pendingToSync.transactions !== transactions && transactions) || 
+          (context.state.pendingToSync.files !== files && files)) {
           context.dispatch('sync');
         }
         context.commit('pendingToSync', {
-          transactions
+          transactions,
+          files
         });
       },
       async sync(context: any) {

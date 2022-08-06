@@ -1,7 +1,7 @@
 import { Dropbox, DropboxAuth, DropboxResponseError } from 'dropbox';
 
 const CLIENT_ID = 'odmed9kdyvxuszo';
-const REDIRECT_URI = `${window.location.protocol}//${window.location.host}/`;
+const REDIRECT_URI = `${window.location.protocol}//${window.location.host}${window.location.pathname.includes('balancer') ? '/balancer/' : '/'}`;
 const TOKEN_ID = 'dbx_token';
 const REFRESH_TOKEN_ID = 'dbx__refresh_token';
 const CODE_VERIFIER_ID = '__codeVerifier';
@@ -46,13 +46,11 @@ export default class DropboxStore {
             window.sessionStorage.removeItem(CODE_VERIFIER_ID);
             return true;
         } else {
-            console.log('step2');
             var dbxAuth = new DropboxAuth({ 
                 clientId: CLIENT_ID, 
                 refreshToken: window.localStorage.getItem(REFRESH_TOKEN_ID)
             });
             if (window.localStorage.getItem(REFRESH_TOKEN_ID)) {
-                console.log('step3');
                 try {
                     await dbxAuth.refreshAccessToken();
                     window.localStorage.setItem(TOKEN_ID, dbxAuth.getAccessToken());
@@ -61,7 +59,6 @@ export default class DropboxStore {
                     console.log(e);
                 }
             }
-            console.log('step4');
             const authUrl = await dbxAuth.getAuthenticationUrl(REDIRECT_URI, undefined, 'code', 'offline', undefined, undefined, true);
             window.sessionStorage.setItem(CODE_VERIFIER_ID, dbxAuth.codeVerifier);
             window.location.href = authUrl;

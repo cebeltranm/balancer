@@ -17,7 +17,7 @@ export async function syncTransactions() {
             return ant;
         }, {});
 
-        return Promise.all(Object.keys(byMonth).map(async (year) => {
+        const res = await Promise.all(Object.keys(byMonth).map(async (year) => {
             return Promise.all(Object.keys(byMonth[year]).map(async (month) => {
                 const file = await files.readJsonFile(`transactions_${year}_${month}.json`, false);
                 var trans = byMonth[year][month];
@@ -28,9 +28,11 @@ export async function syncTransactions() {
                 if (await files.writeJsonFile(`transactions_${year}_${month}.json`, trans )) {
                     await idb.removeTransactions( byMonth[year][month].map( t => t.id) );
                 }
-                return [year, month];
+                return { year: Number(year), month: Number(month) };
             }));
         }));
+
+        return res.reduce( (ant, r) => [...ant, ...r], [] );
     }   
 }
 
@@ -54,6 +56,18 @@ export async function syncCachedFiles( listener: Function ) {
                 } else {
                     await idb.removeFile(fileName);
                 }
+            }
+        }));
+    }   
+}
+
+export async function syncFiles( ) {
+    const fileKeys = await idb.getAllFilesInCache();
+    if (fileKeys.length > 0 ) {
+        return await Promise.all(fileKeys.map(async (fileName) => {
+            const file = await idb.getJsonFile(fileName);
+            if (file.to_sync) {
+                return await files.writeJsonFile(fileName, file.data);
             }
         }));
     }   

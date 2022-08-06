@@ -4,7 +4,6 @@ import { getStorage } from './storage';
 import { useStore } from 'vuex';
 import * as files from './files';
 import * as sync from './sync';
-import { timeout } from 'workbox-core/_private';
 
 export function checkAuth() {
     const route = useRoute();
@@ -20,10 +19,12 @@ export function checkAuth() {
     }
 
     async function loadBasicFiles() {
-        store.dispatch('accounts/loadAccounts');
+        store.dispatch('accounts/getAccounts');
         const date = new Date();
-        store.dispatch('values/getValuesForYear', {year: date.getFullYear()});
-        store.dispatch('values/getValuesForYear', {year: date.getFullYear() - 1});
+        [date.getFullYear() , date.getFullYear() - 1].forEach( (year) => {
+            store.dispatch('values/getValuesForYear', {year });
+            store.dispatch('balance/getBalanceForYear', {year });
+        })
 
         for(var i = 0; i < 3; i++) {
             store.dispatch('transactions/getTransactionsForMonth', {year: date.getFullYear(), month: date.getMonth() + 1});
@@ -37,7 +38,7 @@ export function checkAuth() {
               const fileNameData = file.split('.')[0].split('_');
               switch(fileNameData[0]) {
                 case 'accounts':
-                    store.dispatch('accounts/loadAccounts')
+                    store.dispatch('accounts/getAccounts', true)
                   break;
                 case 'transactions':
                     store.dispatch('transactions/getTransactionsForMonth', {year: fileNameData[1], month: fileNameData[2], reload: true})

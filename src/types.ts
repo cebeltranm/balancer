@@ -17,3 +17,13 @@ export interface Transaction {
         accountValue?: number;
     }];
 }
+
+export enum Period {
+    Month,
+    Quarter,
+    Year
+}
+
+export enum AccountType {
+    Expenses = "Expenses",
+}

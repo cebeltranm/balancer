@@ -20,18 +20,6 @@ export async function readJsonFile(fileName: any, cache: boolean = true) {
             });
             return data;
         }
-
-        // const res = await fetch(`http://localhost:8181/${fileName}`);
-        // if (res.status === 200) {
-        //     const data = await res.json();
-        //     idb.saveJsonFile({
-        //         id: fileName,
-        //         data,
-        //         date_cached: Date.now(),
-        //         to_sync: false,
-        //     });
-        //     return data;
-        // }
     } catch (e) {
         console.log(e);
     }
@@ -50,23 +38,6 @@ export async function writeJsonFile(fileName: any, data: Object) {
             });
             return true;
         }
-
-        // const res = await fetch(`http://localhost:8181/${fileName}`, {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json'
-        //     },
-        //     body: JSON.stringify(data)
-        // });
-        // if (res.status === 200) {
-        //     idb.saveJsonFile({
-        //         id: fileName,
-        //         data,
-        //         date_cached: Date.now(),
-        //         to_sync: false,
-        //     });
-        //     return true;
-        // }
     } catch (e) {
         console.log(e);
     }

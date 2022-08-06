@@ -89,6 +89,9 @@
 
   onMounted(() => {
     store.dispatch('storage/pendingToSync');
+    setTimeout(async () => {
+      // await store.dispatch('balance/recalculateBalance', { year: 2021, month: 6, save: true });
+    }, 2000)
   })
 
 </script>

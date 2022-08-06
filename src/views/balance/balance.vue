@@ -34,8 +34,4 @@
     const tab = ref('expenses');
     const store = useStore();
 
-    onMounted(()=> {
-      store.dispatch('accounts/loadAccounts');
-    });
-
 </script>
