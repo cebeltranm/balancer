@@ -21,6 +21,8 @@
             <router-view />
         </div>
       </div>
+      <ConfirmPopup></ConfirmPopup>
+      <Toast />
   </div>
 </template>
 
@@ -30,12 +32,15 @@
   import { useStore } from 'vuex';
   import { isDesktop } from './helpers/browser';
   import { checkAuth } from './helpers/auth';
-  // import * as dropbox from './helpers/dropbox';
+  import { useToast } from "primevue/usetoast";
+  import { EVENTS } from '@/helpers/events';
+  
 
   import AppTopbar from './layout/AppTopbar.vue';
   import AppMenu from './layout/AppMenu.vue';
 
   const store = useStore();
+  const toast = useToast();
 
   // replaced dyanmicaly
   // const reloadSW: any = '__RELOAD_SW__'
@@ -47,20 +52,14 @@
   } = initPWA();
 
   checkAuth();
-  
-  // const storagePerc = storagePercentage();
-
-  // const drawer = ref(true);
-
-  // const storagUsed = computed(() => store.state.storage.used);
-
 
   const menu = [
     {
         label: 'Home',
-        items: [{
-            label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/'
-        }]
+        items: [
+          { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
+          { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' }
+        ]
     },
     {
         label: 'Settings',
@@ -74,6 +73,15 @@
   const mobileMenuActive = ref(false);
   const staticMenuInactive = ref(false);
 
+  EVENTS.on('message', (msg:any) => {
+    toast.add({
+      severity: msg.severity || 'info', 
+      summary: msg.summary || '', 
+      detail: msg.message || '', 
+      life: 3000
+    });
+  });
+
   function onMenuToggle() {
     if (isDesktop()) {
         staticMenuInactive.value = !staticMenuInactive.value;
@@ -86,6 +94,7 @@
   function  onWrapperClick() {
     mobileMenuActive.value = false;
   }
+
 
   onMounted(() => {
     store.dispatch('storage/pendingToSync');

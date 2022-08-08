@@ -23,7 +23,7 @@ export async function syncTransactions() {
                 var trans = byMonth[year][month];
                 if (file) {
                     trans = file.filter( (t: any) => !transactions.find( t2 => t2.id === t.id) );
-                    trans.push( ...byMonth[year][month] );
+                    trans.push( ...byMonth[year][month].filter( t => !t.deleted) );
                 }
                 if (await files.writeJsonFile(`transactions_${year}_${month}.json`, trans )) {
                     await idb.removeTransactions( byMonth[year][month].map( t => t.id) );

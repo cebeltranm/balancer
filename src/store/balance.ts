@@ -16,10 +16,7 @@ export default {
         }
     },
     getters: {
-      getBalanceGroupedByPeriods: (state: any, getters: any, rootState: any) => (type: Period, numPeriods: number) => {
-        var year = new Date().getFullYear();
-        var month = new Date().getMonth() + 1;
-        var quarter = month <= 3 ? 1 : month <=6 ? 2 : month <=9 ? 3 : 4;
+      getBalanceGroupedByPeriods: (state: any, getters: any, rootState: any) => (type: Period, numPeriods: number, { year, month, quarter}) => {
 
         const balance:any = Object.keys(rootState.accounts.accounts).reduce( (ant: any, key: any) => {
             ant[key] = [];
@@ -109,11 +106,11 @@ export default {
             balance[accounts[a].id][month] = { value: 0 };
           }
           switch(accounts[a].type) {
-            case 'Expense':
+            case AccountType.Expense:
               balance[accounts[a].id][month].value = res[accounts[a].id] || 0;
               break;
-            case 'Cash':
-            case 'CreditCard':
+            case AccountType.Cash:
+            case AccountType.CreditCard:
               var initValue = accounts[a].initBalance || 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth]) {
                 initValue = prevBalance[accounts[a].id][prevMonth].value;

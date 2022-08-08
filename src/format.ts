@@ -17,6 +17,10 @@ export default {
             date = new Date(value);
         }
         return new Intl.DateTimeFormat('en-US').format(date);
-    }
-
+    },
+    month: (value: number) => {
+        var date = new Date();
+        date.setMonth(value - 1);
+        return date.toLocaleString('default', { month: 'long' });        
+    },
 }

@@ -20,7 +20,7 @@ export default {
     actions: {
       async getTransactionsForMonth(context: any, {year, month, reload} ) {
         if ( !reload && context.state.values[ year ] && context.state.values[ year ][ month] ) {
-            return context.state.values[ year ][ month];
+            return context.state.values[ year ][ month].filter( t => !t.deleted);
         }
         var values = await readJsonFile(`transactions_${year}_${month}.json`);
         const pendingTransactions = await idb.getAllTransactions();
@@ -28,7 +28,7 @@ export default {
           const filtered = pendingTransactions.filter( t => new Date(t.date).getFullYear() === year && new Date(t.date).getMonth() + 1 === month ).map( t => ({...t, 'to_sync': true}));
           if (values) {
             values = values.filter( (t: any) => !pendingTransactions.find( t2 => t2.id === t.id) );
-            values.push( ...filtered )
+            values.push( ...filtered.filter( t  => !t.deleted) )
           } else {
             values = filtered;
           }
@@ -42,7 +42,12 @@ export default {
       },
       async saveTransaction (context:any, transaction: Transaction) {
         await idb.saveTransaction(transaction);
+        context.dispatch('storage/pendingToSync', null, {root: true});
         context.dispatch('getTransactionsForMonth', {year: new Date(transaction.date).getFullYear(), month: new Date(transaction.date).getMonth() + 1, reload: true })
       },
+      async deleteTransaction (context:any, transaction: Transaction) {
+        await idb.saveTransaction({...transaction, deleted: true});
+        context.dispatch('storage/pendingToSync', null, {root: true});
+      }
     }
   };

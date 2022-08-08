@@ -200,7 +200,6 @@ async function handleSubmit() {
     }))
   }
   await store.dispatch('transactions/saveTransaction', trans);
-  store.dispatch('storage/pendingToSync');
   close();
 }
 

@@ -16,6 +16,7 @@ export interface Transaction {
         accountId: string;
         accountValue?: number;
     }];
+    deleted?: boolean
 }
 
 export enum Period {
@@ -25,5 +26,17 @@ export enum Period {
 }
 
 export enum AccountType {
+    Expense = "Expense",
+    Category = "Category",
+    Cash = "Cash",
+    CreditCard = "CreditCard",
+}
+
+export enum AccountGroupType {
     Expenses = "Expenses",
+    Assets = "Assets",
+    Investments = "Investments",
+    Receivables = "Receivables",
+    Liabilities = "Liabilities",
+    Incomes = "Incomes",
 }

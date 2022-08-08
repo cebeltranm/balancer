@@ -7,6 +7,8 @@ import router from './router'
 // import { loadFonts } from './plugins/webfontloader'
 import store from './store';
 import PrimeVue from 'primevue/config';
+import ConfirmationService from 'primevue/confirmationservice';
+import ToastService from 'primevue/toastservice';
 
 import StyleClass from 'primevue/styleclass';
 import Ripple from 'primevue/ripple';
@@ -26,8 +28,12 @@ import Row from 'primevue/row';
 import Divider from 'primevue/divider';
 import Dropdown from 'primevue/dropdown';
 import TreeTable from 'primevue/treetable';
-
-
+import Toolbar from 'primevue/toolbar';
+import SelectButton from 'primevue/selectbutton';
+import Chart from 'primevue/chart';
+import TreeSelect from 'primevue/treeselect';
+import ConfirmPopup from 'primevue/confirmpopup';
+import Toast from 'primevue/toast';
 
 const app = createApp(App);
 app.use(router)
@@ -59,8 +65,16 @@ app.component('Card', Card);
 app.component('Divider', Divider);
 app.component('Dropdown', Dropdown);
 app.component('TreeTable', TreeTable);
+app.component('Toolbar', Toolbar);
+app.component('SelectButton', SelectButton);
+app.component('Chart', Chart);
+app.component('TreeSelect', TreeSelect);
+app.component('ConfirmPopup', ConfirmPopup);
+app.component('Toast', Toast);
 
 
 app.config.globalProperties.$format = format
+app.use(ConfirmationService);
+app.use(ToastService);
 
 app.mount('#app')

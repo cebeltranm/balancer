@@ -15,9 +15,8 @@ const syncAll = bounced(async (context:any)=> {
         (ant: any, t: any) =>  ant.year < t.year || ant.month < t.month ? ant : t , 
         { year: new Date().getFullYear(), month: new Date().getMonth() + 1});
       
-      await context.dispatch('balance/recalculateBalance', { year: firstMonth.year, month: firstMonth.month, reload: true }, { root: true })
+      await context.dispatch('balance/recalculateBalance', { year: firstMonth.year, month: firstMonth.month, save: true }, { root: true })
     }
-    //  console.log( trans?.reduce(  )  );
     await sync.syncFiles();
   } finally {
     context.commit('inSync', false);
