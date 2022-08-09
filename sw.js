@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-1f5f9bb5'], (function (workbox) { 'use strict';
+define(['./workbox-5774ec20'], (function (workbox) { 'use strict';
 
   /**
   * Welcome to your Workbox-powered service worker!
@@ -81,11 +81,8 @@ define(['./workbox-1f5f9bb5'], (function (workbox) { 'use strict';
   * See https://goo.gl/2aRDsh
   */
 
-  self.addEventListener('message', event => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-      self.skipWaiting();
-    }
-  });
+  self.skipWaiting();
+  workbox.clientsClaim();
   /**
    * The precacheAndRoute() method efficiently caches and responds to
    * requests for URLs in the manifest.
@@ -93,23 +90,26 @@ define(['./workbox-1f5f9bb5'], (function (workbox) { 'use strict';
    */
 
   workbox.precacheAndRoute([{
-    "url": "assets/AboutView.7ddfa60a.js",
+    "url": "assets/AboutView.25e46205.js",
     "revision": null
   }, {
     "url": "assets/auto.264f6c8c.js",
     "revision": null
   }, {
-    "url": "assets/index.eec0961d.js",
+    "url": "assets/index.a33e25d2.js",
     "revision": null
+  }, {
+    "url": "registerSW.js",
+    "revision": "2a272aeee910100ba224f9b19acf5d58"
   }, {
     "url": "assets/AboutView.4d995ba2.css",
     "revision": null
   }, {
-    "url": "assets/index.03d4dc35.css",
+    "url": "assets/index.84bb8987.css",
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "e9d3a8f0147605befb699de18cad865a"
+    "revision": "61d1aed34e68a235e534416c3c5d4725"
   }, {
     "url": "assets/primeicons.feb68bf6.woff",
     "revision": null
@@ -126,7 +126,6 @@ define(['./workbox-1f5f9bb5'], (function (workbox) { 'use strict';
     "url": "manifest.webmanifest",
     "revision": "c7b7b811565f33cd8fba6dbd822f06df"
   }], {});
-  workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
 
 }));
