@@ -41,7 +41,7 @@ export async function syncCachedFiles( listener: Function ) {
     const month = new Date().getMonth() + 1;
     const months = [month, month>1 ? month - 1 : 12, month > 2 ? month - 2 : 11];
 
-    const exp = `(accounts|(values_|balance_|budget_)(${year}|${year - 1})|(transactions_(${year}|${year - 1})_(${months[0]}|${months[1]}|${months[2]})))\.json`;
+    const exp = `(accounts|(values_|balance_|budget_)(${year}|${year - 1})|(transactions_${year}_(${months[0]}|${months[1]}|${months[2]})))\.json`;
     const re = new RegExp(exp);
 
     const fileKeys = await idb.getAllFilesInCache();
@@ -50,7 +50,7 @@ export async function syncCachedFiles( listener: Function ) {
             const file = await idb.getJsonFile(fileName);
             if (file && (Date.now() - file.date_cached) > 300000 && !file.to_sync) {
                 if (re.test(fileName)) {
-                    if(await files.readJsonFile(`transactions_${year}_${month}.json`, false)) {
+                    if(await files.readJsonFile(fileName, false)) {
                         listener(fileName);
                     }
                 } else {

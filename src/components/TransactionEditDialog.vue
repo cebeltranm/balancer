@@ -130,17 +130,15 @@ defineExpose({
 
 function searchAccounts(event: any, index: number) {
   setTimeout(() => {
+    console.log();
+
     const newFiltered: any[] = [];
     if (!event.query.trim().length) {
       newFiltered.push(...store.getters['accounts/listAccounts'])
-      if (index>0) {
-        newFiltered.push(...store.getters['accounts/listExpenses'])
-      }
+      newFiltered.push(...store.getters['accounts/listExpenses'])
     } else {
       newFiltered.push(...store.getters['accounts/listAccounts'].filter( (a:any) => a.name.toLowerCase().indexOf(event.query.toLowerCase()) >= 0))
-      if (index>0) {
-        newFiltered.push(...store.getters['accounts/listExpenses'].filter( (a:any) => a.name.toLowerCase().indexOf(event.query.toLowerCase()) >= 0))
-      }
+      newFiltered.push(...store.getters['accounts/listExpenses'].filter( (a:any) => a.name.toLowerCase().indexOf(event.query.toLowerCase()) >= 0))
     }
     suggestedAccounts.value = newFiltered;
   },50);

@@ -28,7 +28,7 @@
 
 <script lang="ts" setup>
   import { computed, ref, onMounted } from 'vue'
-  import { initPWA } from '@/helpers/pwa';
+  // import { initPWA } from '@/helpers/pwa';
   import { useStore } from 'vuex';
   import { isDesktop } from './helpers/browser';
   import { checkAuth } from './helpers/auth';
@@ -45,11 +45,11 @@
   // replaced dyanmicaly
   // const reloadSW: any = '__RELOAD_SW__'
 
-  const {
-    offlineReady,
-    needRefresh,
-    updateServiceWorker,
-  } = initPWA();
+  // const {
+  //   offlineReady,
+  //   needRefresh,
+  //   updateServiceWorker,
+  // } = initPWA();
 
   checkAuth();
 

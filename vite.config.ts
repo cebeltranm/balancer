@@ -11,6 +11,7 @@ import replace from '@rollup/plugin-replace';
 const pwaOptions: Partial<VitePWAOptions> = {
   mode: 'development',
   includeAssets: ['favicon.svg','assets/primeicons.*'],
+  registerType: 'autoUpdate',
   manifest: {
     name: 'Balancer',
     short_name: 'Balancer',
@@ -41,6 +42,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
     navigateFallback: 'index.html',
   },
   workbox: {
+    cleanupOutdatedCaches: false,
     globPatterns: [
       "**/*.js",
       "**/*.css", 
