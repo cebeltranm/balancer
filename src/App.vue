@@ -58,7 +58,8 @@
         label: 'Home',
         items: [
           { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
-          { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' }
+          { label: 'Expenses', icon: 'pi pi-fw pi-bars', to: '/expenses' },
+          { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' },
         ]
     },
     {

@@ -31,11 +31,13 @@
         </template>
     </Column>
   </DataTable>
+  <TransactionEditDialog :transaction="transToEdit" ref="transactionDialog"/>
 </template>
 
 <script lang="ts" setup>
   import AccountsSelector from '@/components/AccountsSelector.vue'
   import PeriodSelector from '@/components/PeriodSelector.vue'
+  import TransactionEditDialog from '@/components/TransactionEditDialog.vue'
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, toRaw } from 'vue'
@@ -53,6 +55,9 @@
 
   const store = useStore();
   const confirm = useConfirm();
+
+  var transToEdit = ref();
+  const transactionDialog = ref<InstanceType<typeof TransactionEditDialog> | null>(null);
   
   const list = computed(() => {
     if (store.state.transactions.values[period.value.value.year] && store.state.transactions.values[period.value.value.year][period.value.value.month]) {
@@ -96,7 +101,8 @@
     });
   }
   function editTrans(id: string) {
-    console.log('editTrans', getTransaction(id));
+    transToEdit.value = getTransaction(id);
+    transactionDialog.value?.show();
   }
   function onChangePeriod() {
     if (!store.state.transactions.values[period.value.value.year] || !store.state.transactions.values[period.value.value.year][period.value.value.month]) {

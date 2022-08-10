@@ -30,6 +30,7 @@ export enum AccountType {
     Category = "Category",
     Cash = "Cash",
     CreditCard = "CreditCard",
+    BankAccount = "BankAccount",
 }
 
 export enum AccountGroupType {

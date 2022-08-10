@@ -15,7 +15,7 @@ function getCategoryEntry(group:any, category:string) {
 }
 
 export const ACCOUNT_GROUP_TYPES = {
-  [AccountGroupType.Assets]: [ AccountType.Cash ],
+  [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
   [AccountGroupType.Investments]: [],
   [AccountGroupType.Receivables]: [],
   [AccountGroupType.Liabilities]: [ AccountType.CreditCard ],
@@ -114,7 +114,7 @@ export default {
           .map ( (id:string) => {
             return {
               id,
-              name: `${state.accounts[id].entity} / ${state.accounts[id].name}`,
+              name: `${state.accounts[id].entity || ''} / ${state.accounts[id].name}`,
               currency: state.accounts[id].currency
             };
           } );

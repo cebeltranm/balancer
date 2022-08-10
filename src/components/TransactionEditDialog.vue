@@ -61,18 +61,23 @@
 </style>
 
 <script lang='ts' setup>
-import { ref, reactive, computed, watch, watchEffect } from 'vue';
+import { ref, reactive, computed, watch, watchEffect, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import type { Transaction } from '@/types';
 import { helpers, required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
+const props = defineProps<{
+    transaction?: Transaction,
+}>()
 
 const visible = ref(false);
 const suggestedAccounts = ref<any[] | undefined>(undefined);
 const submitted = ref(false);
 
 const store = useStore();
+
+const emit = defineEmits(['update:transaction'])
 
 const state = ref({
   date: new Date(),
@@ -130,8 +135,6 @@ defineExpose({
 
 function searchAccounts(event: any, index: number) {
   setTimeout(() => {
-    console.log();
-
     const newFiltered: any[] = [];
     if (!event.query.trim().length) {
       newFiltered.push(...store.getters['accounts/listAccounts'])
@@ -188,7 +191,8 @@ async function handleSubmit() {
   }
 
   const trans = {
-    id: Date.now(),
+    ...props.transaction,
+    id: props.transaction?.id ? props.transaction.id : Date.now(),
     date: state.value.date.toISOString().split('T')[0],
     description: state.value.description,
     values: state.value.values.map( v => ({
@@ -199,6 +203,29 @@ async function handleSubmit() {
   }
   await store.dispatch('transactions/saveTransaction', trans);
   close();
+  emit('update:transaction', trans);
 }
+
+function updatePropTransaction() {
+  if (props.transaction) {
+    state.value.date = new Date(props.transaction.date);
+    state.value.description = props.transaction.description;
+    state.value.values = props.transaction.values.map( v => ({
+      account: store.state.accounts.accounts[v.accountId],
+      value: v.value,
+      accountValue: v.accountValue
+    }))
+  }
+}
+
+  watch(() => props.transaction, () => {
+    updatePropTransaction();
+  }, {deep: true})
+
+onMounted( () => {
+  if (props.transaction) {
+    updatePropTransaction();
+  }
+} )
 
 </script>
