@@ -90,26 +90,20 @@ define(['./workbox-5774ec20'], (function (workbox) { 'use strict';
    */
 
   workbox.precacheAndRoute([{
-    "url": "assets/AboutView.9c9fe8c5.js",
-    "revision": null
-  }, {
     "url": "assets/auto.264f6c8c.js",
     "revision": null
   }, {
-    "url": "assets/index.cfa9645f.js",
+    "url": "assets/index.c14dc88b.js",
     "revision": null
   }, {
     "url": "registerSW.js",
     "revision": "2a272aeee910100ba224f9b19acf5d58"
   }, {
-    "url": "assets/AboutView.4d995ba2.css",
-    "revision": null
-  }, {
-    "url": "assets/index.cb1c7135.css",
+    "url": "assets/index.76f7d8ef.css",
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "e097f60acccfd73d012395618ceec876"
+    "revision": "f116f802793aad882c0ba5fb99848409"
   }, {
     "url": "assets/primeicons.feb68bf6.woff",
     "revision": null
