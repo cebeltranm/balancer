@@ -82,8 +82,10 @@ export default {
         });
       },
       async sync(context: any) {
-        context.commit('inSync', true);
-        syncAll(context);
+        if (!context.state.status.offline) {
+          context.commit('inSync', true);
+          syncAll(context);
+        }
       },
       async setStatus(context: any, {loggedIn, offline}) {
         context.commit('status', { loggedIn, offline } );

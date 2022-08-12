@@ -18,11 +18,14 @@
         </template>
     </Column>
     <Column field="account" header="Account"></Column>
-    <Column field="description" header="Description"></Column>
+    <Column field="description" header="Description">
+      <template #footer>Total</template>
+    </Column>
     <Column header="Value" class="text-right">
         <template #body="slotProps"><div class="text-right">
         {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
         </div></template>
+        <template #footer>{{$format.currency(getTotal(), 'cop')}}</template>
     </Column>
     <Column>
         <template #body="slotProps">
@@ -42,7 +45,7 @@
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, toRaw } from 'vue'
   import { getCurrentPeriod } from '@/helpers/options.js';
-  import { Period } from '@/types';
+  import { Currency, Period } from '@/types';
   import { useConfirm } from "primevue/useconfirm";
   import { EVENTS } from '@/helpers/events';
 
@@ -79,6 +82,15 @@
     return data.to_sync ? 'bg-red-900': null;
   }
 
+  function getTotal() {
+    return store.getters['values/joinValues']( 
+      new Date(period.value.value.year, period.value.value.month - 1, 1),
+      Currency.COP,
+      list.value.map( l => ({value: l.value, asset: l.currency}))
+    );
+  }
+
+
   function getTransaction(id: string){
     if (store.state.transactions.values[period.value.value.year] && store.state.transactions.values[period.value.value.year][period.value.value.month]) {
         return store.state.transactions.values[period.value.value.year][period.value.value.month].find( t => t.id === id)
@@ -109,5 +121,4 @@
         store.dispatch('transactions/getTransactionsForMonth', {year: period.value.value.year, month: period.value.value.month})
     }
   }
-
 </script>

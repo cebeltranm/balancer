@@ -4,7 +4,7 @@
 
 <script lang="ts" setup>
 import { useStore } from 'vuex';
-import { ref, computed, defineEmits, defineProps } from "vue";
+import { ref, computed } from "vue";
 import { AccountType } from '@/types';
 
 const { accounts } = defineProps<{

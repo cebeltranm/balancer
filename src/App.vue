@@ -58,15 +58,17 @@
         label: 'Home',
         items: [
           { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
-          { label: 'Expenses', icon: 'pi pi-fw pi-bars', to: '/expenses' },
+          { label: 'Expenses', icon: 'pi pi-fw pi-shopping-cart', to: '/expenses' },
           { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' },
         ]
     },
     {
         label: 'Settings',
-        items: [{
-            label: 'General', icon: 'pi pi-fw pi-cog', to: '/'
-        }]
+        items: [
+          { label: 'Values', icon: 'pi pi-fw pi-cog', to: '/settings/values' },
+          { label: 'Budget', icon: 'pi pi-fw pi-cog', to: '/settings/budget' },
+          { label: 'General', icon: 'pi pi-fw pi-cog', to: '/' }
+        ]
     },
   ]
 
@@ -100,7 +102,7 @@
   onMounted(() => {
     store.dispatch('storage/pendingToSync');
     setTimeout(async () => {
-      // await store.dispatch('balance/recalculateBalance', { year: 2021, month: 6, save: true });
+      // await store.dispatch('balance/recalculateBalance', { year: 2021, month: 8, save: true });
     }, 2000)
   })
 

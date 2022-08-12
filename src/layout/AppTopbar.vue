@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import {defineEmits, ref, computed} from 'vue';
+import {ref, computed} from 'vue';
 import TransactionEditDialog from '@/components/TransactionEditDialog.vue';
 import { useStore } from 'vuex';
 

@@ -111,6 +111,7 @@ export default {
               break;
             case AccountType.Cash:
             case AccountType.CreditCard:
+            case AccountType.BankAccount:
               var initValue = accounts[a].initBalance || 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth]) {
                 initValue = prevBalance[accounts[a].id][prevMonth].value;

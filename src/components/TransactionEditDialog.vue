@@ -150,11 +150,7 @@ function searchAccounts(event: any, index: number) {
 async function onUpdateAccount (index: number) {
   if ( state.value.values[0].account?.currency !== state.value.values[index].account?.currency 
     && state.value.values[index].value) { 
-    const rate = await store.dispatch('values/getValue', {
-        date: new Date(state.value.date), 
-        asset: state.value.values[index].account?.currency,
-        currency:state.value.values[0].account?.currency
-        });
+    const rate = store.getters['values/getValue']( new Date(state.value.date), state.value.values[index].account?.currency, state.value.values[0].account?.currency );
     state.value.values[index].accountValue = state.value.values[index].value * rate;
   }
 }

@@ -41,3 +41,9 @@ export enum AccountGroupType {
     Liabilities = "Liabilities",
     Incomes = "Incomes",
 }
+
+export enum Currency {
+    COP = "cop",
+    USD = "usd",
+    EUR = "eur",
+}

@@ -1,4 +1,6 @@
 import {readJsonFile} from '@/helpers/files';
+import * as idb from '@/helpers/idb';
+import { toRaw } from 'vue';
 
 export default {
     namespaced: true,    
@@ -11,6 +13,38 @@ export default {
         }
     },
     getters: {
+      getValue: (state: any) => (date: Date, asset: string, currency: string) => {
+        var year = date.getFullYear();
+        const values = state.values[ year ] || [];
+        var month = date.getMonth() + 1;
+        while (month > 0) {
+          if (month in values) {
+            if (asset in values[month] && currency in values[month][asset] ) {
+              return values[month][asset][currency]
+            }
+            if (currency in values[month] && asset in values[month][currency] ) {
+              return 1 / values[month][currency][asset]
+            }
+          }
+          month--;
+          if (month === 0 && year === date.getFullYear() ) {
+            month = 12;
+            year--;
+          }
+        }
+        return 1;
+      },
+      joinValues: (state: any, getters: any) => (date: DataTransfer, currency: string, values: [{value: number, asset: string, entity?:string }]) => {
+        return values.reduce ( (ant: number, v: any) => {
+          if (v.asset !== currency) {
+            console.log(v.asset, currency, getters.getValue(date, currency, v.asset), v.value * getters.getValue(date, currency, v.asset) )
+          }
+
+          return ant + (
+            v.asset === currency ? v.value : v.value * getters.getValue(date, currency, v.asset)
+          );
+        }, 0 )
+      }
     },
     actions: {
       async getValuesForYear(context: any, {year, reload } ) {
@@ -22,22 +56,16 @@ export default {
   
         return values;
       },
-
-      async getValue (context: any, {date, asset, currency}) {
-        const values = await context.dispatch('getValuesForYear', date.getFullYear());
-        var month = date.getMonth() + 1;
-        while (month>0) {
-            if (month in values) {
-                if (asset in values[month] && currency in values[month][asset] ) {
-                    return values[month][asset][currency]
-                }
-                if (currency in values[month] && asset in values[month][currency] ) {
-                    return 1 / values[month][currency][asset]
-                }
-            }
-            month--;
-        }
-        return 1;
+      async setValuesForMonth(context: any, {year, month, values}) {
+        const data = await context.dispatch('getValuesForYear', {year}) || {};
+        data[month] = values;
+        idb.saveJsonFile({
+          id: `values_${year}.json`,
+          data: toRaw(data),
+          date_cached: Date.now(),
+          to_sync: true,
+        });
+        context.commit('values', {year, values:data});
       }
     }
   };

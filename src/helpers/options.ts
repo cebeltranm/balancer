@@ -11,6 +11,10 @@ export function getCurrentPeriod() {
     return {year, month, quarter};
 }
 
+export function rowPendingSyncClass(data:any) {
+    return data.to_sync ? 'bg-red-900': null;
+}
+
 // to check
 export function getOptionPerPeriod(period: string) {
 

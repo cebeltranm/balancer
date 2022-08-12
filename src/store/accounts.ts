@@ -1,7 +1,5 @@
 import {readJsonFile} from '@/helpers/files';
 import {AccountGroupType, AccountType } from "@/types"
-import { findDir } from '@vue/compiler-core';
-import { mapActions } from 'vuex';
 
 function getCategoryEntry(group:any, category:string) {
   if (!group[category]) {
@@ -34,6 +32,12 @@ export default {
       }
     },
     getters: {
+      activeAccounts: ( state: any) => (date: Date) => { 
+        return Object.keys(state.accounts)
+            .filter( (a: string) => (!state.accounts[a].activeFrom || state.accounts[a].activeFrom >= date) && 
+                                (!state.accounts[a].hideSince || state.accounts[a].hideSince > date) )
+            .map( (a: string) => state.accounts[a] );
+      },
       expCategories(state: any) {
         return Object.keys(state.accounts)
         .filter( (id:string) => state.accounts[id].type === 'Expense' )
@@ -47,18 +51,10 @@ export default {
           return ant;
         },{});
       },
-      accountsGroupByCategories: (state: any) => ( groupTypes? : AccountGroupType[] )  => {
-        const items = Object.keys(ACCOUNT_GROUP_TYPES)
-          .filter( k => !groupTypes || groupTypes.includes(k))
-          .reduce( (ant, k) => { 
-            ant[k] = {};
-            return ant;
-           },{});
-
-        return Object.keys(state.accounts)
-           .filter( (id:string) => !groupTypes || groupTypes.includes(Object.keys(ACCOUNT_GROUP_TYPES).find( k => ACCOUNT_GROUP_TYPES[k].includes( state.accounts[id].type )) ))
-           .reduce( (ant:any, id: string) => {
-              const account = state.accounts[id];
+      accountsGroupByCategories: (state: any, getters: any) => ( groupTypes? : AccountGroupType[], date: Date = new Date() )  => {
+        return getters.activeAccounts( date )
+           .filter( (account:any) => !groupTypes || groupTypes.includes(Object.keys(ACCOUNT_GROUP_TYPES).find( k => ACCOUNT_GROUP_TYPES[k].includes( account.type )) ))
+           .reduce( (ant:any, account: any) => {
 
               const type = Object.keys(ACCOUNT_GROUP_TYPES).find( k => ACCOUNT_GROUP_TYPES[k].includes( account.type ));
               if (!ant[type]) {
@@ -145,6 +141,8 @@ export default {
         const nAccounts = Object.keys(accounts).filter( id => id != 'default').reduce( (ant:any, id:string) => {
           ant[id] = {
             ...accounts[id],
+            activeFrom: accounts[id].activeFrom  && new Date(accounts[id].activeFrom),
+            hideSince: accounts[id].hideSince  && new Date(accounts[id].hideSince) ,
             id
           }
           return ant;
