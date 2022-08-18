@@ -4,6 +4,7 @@ import Transactions from '@/views/Transactions.vue'
 import Expenses from '@/views/Expenses.vue'
 import Values from '@/views/Values.vue'
 import Budget from '@/views/Budget.vue'
+import { EVENTS, FORM_WITH_PENDING_EVENTS } from '@/helpers/events'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,15 @@ const router = createRouter({
       component: Budget
     },
   ]
+})
+
+var __pendingChanges = false;
+EVENTS.on(FORM_WITH_PENDING_EVENTS, (pendingChanges: boolean) => {
+  __pendingChanges = pendingChanges;
+})
+
+router.beforeEach((to, from) => {
+  return !__pendingChanges;
 })
 
 export default router

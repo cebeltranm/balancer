@@ -35,6 +35,7 @@
         </div>
         <small v-if="submitted" v-for="error in v$.values.$each.$response.$errors[index].value" :key="error" class="p-error">{{ error.$message }}</small>
     </div>
+
     <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-8 pt-3" v-if="index>0 && item.account && item.account?.currency !== state.values[0].account?.currency">
         <div class="p-float-label">
             <InputNumber v-model="item.accountValue" mode="currency" :currency="item.account?.currency || 'COP'" currencyDisplay="code" locale="en-US" :class="{'p-invalid':v$.values.$each.$response.$data[index].accountValue.$invalid && submitted}"/>
@@ -42,6 +43,15 @@
         </div>
         <small v-if="submitted" v-for="error in v$.values.$each.$response.$errors[index].accountValue" :key="error" class="p-error">{{ error.$message }}</small>
     </div>
+
+    <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-8 pt-3" v-if="isAccountInUnits(item.account?.id)">
+        <div class="p-float-label">
+            <InputNumber v-model="item.units" mode="decimal" :maxFractionDigits="10" locale="en-US" :class="{'p-invalid':v$.values.$each.$response.$data[index].units.$invalid && submitted}"/>
+            <label  :class="{'p-error':v$.values.$each.$response.$data[index].accountValue.$invalid && submitted}">1 unit = {{getRate(item.value, item.units)}} {{item.account?.currency}}</label>
+        </div>
+        <small v-if="submitted" v-for="error in v$.values.$each.$response.$errors[index].units" :key="error" class="p-error">{{ error.$message }}</small>
+    </div>
+
   </div>
   </form>
   <template #footer>
@@ -82,11 +92,18 @@ const emit = defineEmits(['update:transaction'])
 const state = ref({
   date: new Date(),
   description: '',
-  values: [ { value: null, account: null, accountValue: null }, { value: null, account: null, accountValue: null }]
+  values: [ { value: null, account: null, accountValue: null, units: null }, { value: null, account: null, accountValue: null, units: null }]
 });
 
 function accountValueRequired (value:any, parent: any) {
   if (parent?.account?.id && state.value.values[0].account?.id && parent?.account?.currency !== state.value.values[0].account?.currency) {
+    return !!value;
+  }
+  return true;
+}
+
+function unitsValueRequired (value:any, parent: any) {
+  if ( isAccountInUnits(parent.account?.id) ) {
     return !!value;
   }
   return true;
@@ -112,12 +129,19 @@ const rules = {
       accountValue: { 
         accountValueRequired: helpers.withMessage('value is required', accountValueRequired) 
       },
+      units: { 
+        accountValueRequired: helpers.withMessage('units value is required', unitsValueRequired) 
+      },
     })
   }
 };
 const v$ = useVuelidate(rules, state);
 
 const getRate = (value: number, account_value: number) => value && account_value ? value/account_value : '';
+
+function isAccountInUnits(id:string) {
+  return id && store.getters['accounts/isAccountInUnits'](id);
+}
 
 function show() {
   visible.value = true;
@@ -194,6 +218,7 @@ async function handleSubmit() {
     values: state.value.values.map( v => ({
       accountId: v.account.id,
       value: v.value,
+      units: v.units,
       accountValue: v.account.currency !== state.value.values[0].account.currency ? v.accountValue : v.value
     }))
   }
@@ -209,6 +234,7 @@ function updatePropTransaction() {
     state.value.values = props.transaction.values.map( v => ({
       account: store.state.accounts.accounts[v.accountId],
       value: v.value,
+      units: v.units,
       accountValue: v.accountValue
     }))
   }

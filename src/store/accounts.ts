@@ -14,8 +14,8 @@ function getCategoryEntry(group:any, category:string) {
 
 export const ACCOUNT_GROUP_TYPES = {
   [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
-  [AccountGroupType.Investments]: [],
-  [AccountGroupType.Receivables]: [],
+  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF],
+  [AccountGroupType.Receivables]: [AccountType.Receivable],
   [AccountGroupType.Liabilities]: [ AccountType.CreditCard ],
   [AccountGroupType.Incomes]: [],
   [AccountGroupType.Expenses]: [ AccountType.Expense ],
@@ -32,6 +32,12 @@ export default {
       }
     },
     getters: {
+      isAccountInUnits: ( state: any) => (id: string) => { 
+        return [AccountType.ETF].includes( state.accounts[id].type );
+      },
+      getAccountGroupType: ( state: any) => (id: string) => { 
+        return state.accounts[id] && Object.keys(ACCOUNT_GROUP_TYPES).find( (k: string) => ACCOUNT_GROUP_TYPES[k].includes( state.accounts[id].type ))
+      },
       activeAccounts: ( state: any) => (date: Date) => { 
         return Object.keys(state.accounts)
             .filter( (a: string) => (!state.accounts[a].activeFrom || state.accounts[a].activeFrom >= date) && 
@@ -108,10 +114,14 @@ export default {
         return Object.keys(state.accounts)
           .filter( (id:string) => state.accounts[id].type !== AccountType.Expense )
           .map ( (id:string) => {
+            var type = state.accounts[id].entity || '';
+            if (state.accounts[id].type === AccountType.Receivable) {
+              type = 'Receivable';
+            }
             return {
               id,
-              name: `${state.accounts[id].entity || ''} / ${state.accounts[id].name}`,
-              currency: state.accounts[id].currency
+              name: `${type} / ${state.accounts[id].name}`,
+              currency: state.accounts[id].currency,
             };
           } );
       },

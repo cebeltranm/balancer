@@ -14,32 +14,30 @@ export default {
     },
     getters: {
       getValue: (state: any) => (date: Date, asset: string, currency: string) => {
-        var year = date.getFullYear();
-        const values = state.values[ year ] || [];
-        var month = date.getMonth() + 1;
-        while (month > 0) {
-          if (month in values) {
-            if (asset in values[month] && currency in values[month][asset] ) {
-              return values[month][asset][currency]
+        if (asset !== currency) {
+          var year = date.getFullYear();
+          const values = state.values[ year ] || [];
+          var month = date.getMonth() + 1;
+          while (month > 0) {
+            if (month in values) {
+              if (asset in values[month] && currency in values[month][asset] ) {
+                return values[month][asset][currency]
+              }
+              if (currency in values[month] && asset in values[month][currency] ) {
+                return 1 / values[month][currency][asset]
+              }
             }
-            if (currency in values[month] && asset in values[month][currency] ) {
-              return 1 / values[month][currency][asset]
+            month--;
+            if (month === 0 && year === date.getFullYear() ) {
+              month = 12;
+              year--;
             }
-          }
-          month--;
-          if (month === 0 && year === date.getFullYear() ) {
-            month = 12;
-            year--;
           }
         }
         return 1;
       },
       joinValues: (state: any, getters: any) => (date: DataTransfer, currency: string, values: [{value: number, asset: string, entity?:string }]) => {
         return values.reduce ( (ant: number, v: any) => {
-          if (v.asset !== currency) {
-            console.log(v.asset, currency, getters.getValue(date, currency, v.asset), v.value * getters.getValue(date, currency, v.asset) )
-          }
-
           return ant + (
             v.asset === currency ? v.value : v.value * getters.getValue(date, currency, v.asset)
           );
@@ -66,6 +64,7 @@ export default {
           to_sync: true,
         });
         context.commit('values', {year, values:data});
+        context.dispatch('balance/recalculateBalance', {year, month, save: true}, {root: true});
       }
     }
   };

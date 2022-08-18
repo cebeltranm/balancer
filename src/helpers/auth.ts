@@ -24,6 +24,7 @@ export function checkAuth() {
         [date.getFullYear() , date.getFullYear() - 1].forEach( (year) => {
             store.dispatch('values/getValuesForYear', {year });
             store.dispatch('balance/getBalanceForYear', {year });
+            store.dispatch('budget/getBudgetForYear', {year });
         })
 
         for(var i = 0; i < 3; i++) {

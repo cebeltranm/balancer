@@ -36,10 +36,8 @@
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
 import { getCurrentPeriod, rowPendingSyncClass } from '@/helpers/options';
-import storage from '@/store/storage';
-import { AccountType, Currency, Period } from '@/types';
-import { ref } from '@vue/reactivity';
-import { computed, onMounted, watch } from '@vue/runtime-core';
+import { AccountGroupType, AccountType, Currency, Period } from '@/types';
+import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
 
   const period = ref({
@@ -69,12 +67,23 @@ import { useStore } from 'vuex';
         return ant;
     }, []);
 
+    const investments = accounts.filter( a => store.getters['accounts/getAccountGroupType'](a.id) === AccountGroupType.Investments );
+
     values.value = [
         ...currencies.map( (c) => ({
+            id: `${c}_usd`,
             type: 'Currency',
             name: c,
             currency: Currency.USD,
             value: store.getters['values/getValue'](date, c, Currency.USD)
+        })),
+        ...investments.map( (a) => ({
+          entity: a.entity,
+          id: a.id,
+          type:  a.type,
+          name: a.name, 
+          currency: a.currency,
+          value: store.getters['values/getValue'](date, a.id, a.currency)
         }))
     ];
   };
@@ -118,12 +127,20 @@ import { useStore } from 'vuex';
         year: period.value.value.year, 
         month: period.value.value.month,   
         values: values.value.reduce( (ant: any, v:any) => {
-            if (v.type === 'Currency') {
+          switch(v.type) {
+            case 'Currency':
                 ant[v.name] = {
                     'usd': v.value
                 };
-            }
-            return ant;
+              break;
+            case AccountType.Investment:
+            case AccountType.ETF:
+              ant[v.id] = {
+                    [v.currency]: v.value
+                };
+              break;
+          }
+          return ant;
         }, {})
     });
   }

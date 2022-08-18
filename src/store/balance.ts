@@ -1,5 +1,5 @@
 import {readJsonFile} from '@/helpers/files';
-import type { Transaction } from '@/types';
+import { AccountGroupType, type Transaction } from '@/types';
 import * as idb from '../helpers/idb';
 import { toRaw } from 'vue';
 
@@ -36,7 +36,7 @@ export default {
           Object.keys(balance).forEach( (key:string) => {
               balance[key].push( months
                 .map( (m) => (state.balance[year] && state.balance[year][key] && state.balance[year][key][m] && state.balance[year][key][m].value ) ? state.balance[year][key][m].value : undefined )
-                .reduce( (ant, v) => rootState.accounts.accounts[key].type === AccountType.Expenses ? ant + ( v === undefined ? 0 : v) : ( v === undefined ? ant : v), 0 ) );
+                .reduce( (ant, v) => rootState.accounts.accounts[key].type === AccountType.Expense ? ant + ( v === undefined ? 0 : v) : ( v === undefined ? ant : v), 0 ) );
           });
 
           switch(type) {
@@ -55,15 +55,6 @@ export default {
         }
 
         return balance;
-        // return Object.keys(state.accounts)
-        //   .filter( (id:string) => ['cash'].includes( state.accounts[id].type ))
-        //   .reduce( (ant: any, id:string) => {
-        //     if (!ant[ state.accounts[id].type ] ) {
-        //       ant[ state.accounts[id].type ] = [];
-        //     }
-        //     ant[ state.accounts[id].type ].push( state.accounts[id] );
-        //     return ant;
-        //   }, {});
       },
     },
     actions: {
@@ -78,12 +69,13 @@ export default {
         context.commit('balance', {year, balance});
         return balance;
       },
-
       async recalculateBalance ( context: any, {year, month, save}) {
+        await context.dispatch('values/getValuesForYear', { year }, {root: true});
         const accounts = await context.dispatch('accounts/getAccounts', false, {root: true});
         const balance = await context.dispatch('getBalanceForYear', { year });
-        const prevBalance = month === 1 ? balance : await context.dispatch('getBalanceForYear', { year: year - 1 });
+        const prevBalance = month === 1 ? await context.dispatch('getBalanceForYear', { year: year - 1 }) : balance;
         const prevMonth = month === 1 ? 12 : month - 1;
+        const date = new Date(year, month -1, 1);
 
         const transactions = await context.dispatch('transactions/getTransactionsForMonth', {year, month }, {root: true});
         const res = transactions ? transactions.reduce( (prev: any, t: Transaction) => {
@@ -98,6 +90,35 @@ export default {
           }, prev );
         }, {} ) : {};
 
+        const investments = transactions ? transactions
+          .filter( (t:Transaction) => t.values.find( v => context.rootGetters['accounts/getAccountGroupType'](v.accountId) === AccountGroupType.Investments ) )
+          .reduce( (prev: any, t: Transaction) => {
+            const invs = t.values.filter( v => context.rootGetters['accounts/getAccountGroupType'](v.accountId) === AccountGroupType.Investments);
+            return invs.reduce( (ant2, inv, indexInv) => {
+              if (!ant2[inv.accountId]) {
+                ant2[inv.accountId] = {
+                  in: 0, out: 0, in_local: 0, out_local: 0, expenses: 0,
+                };
+              }
+              if (inv.units) {
+                ant2[inv.accountId].units = (ant2[inv.accountId].units || 0) + inv.units;
+              }
+              return t.values.reduce( (ant: any, value) => {
+                if ( context.rootGetters['accounts/getAccountGroupType'](value.accountId) === AccountGroupType.Expenses && indexInv === 0) {
+                  ant[inv.accountId].expenses += value.accountValue;
+                } else if ( value.accountId !== inv.accountId ) {
+                  if ( !accounts[inv.accountId].entity ||  accounts[inv.accountId].entity !== accounts[value.accountId].entity ) {
+                    ant[inv.accountId].in += (inv.accountValue > 0 ? inv.accountValue : 0);
+                    ant[inv.accountId].out -= (inv.accountValue < 0 ? inv.accountValue : 0);
+                  } else {
+                    ant[inv.accountId].in_local += (inv.accountValue > 0 ? inv.accountValue : 0);
+                    ant[inv.accountId].out_local -= (inv.accountValue < 0 ? inv.accountValue : 0);
+                  }
+                }
+                return ant;
+              }, ant2 );
+            }, prev);
+          }, {} ) : {};
         Object.keys(accounts).forEach( (a:any) => {
           if (!balance[accounts[a].id]) {
             balance[accounts[a].id] = {}
@@ -112,13 +133,31 @@ export default {
             case AccountType.Cash:
             case AccountType.CreditCard:
             case AccountType.BankAccount:
+            case AccountType.Receivable:
               var initValue = accounts[a].initBalance || 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth]) {
                 initValue = prevBalance[accounts[a].id][prevMonth].value;
               }
               balance[accounts[a].id][month].value = initValue +  (res[accounts[a].id] || 0);
               break;
-          }
+            case AccountType.Investment:
+              balance[accounts[a].id][month] = {
+                ...( investments[accounts[a].id] || {}),
+                value: context.rootGetters['values/getValue'](date, accounts[a].id, accounts[a].currency ) || 0
+              };
+              break;
+            case AccountType.ETF:
+              var units = ( investments[accounts[a].id] || {}).units || 0;
+              if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth] && prevBalance[accounts[a].id][prevMonth].units) {
+                units += prevBalance[accounts[a].id][prevMonth].units;
+              }
+              balance[accounts[a].id][month] = {
+                ...( investments[accounts[a].id] || {}),
+                units,
+                value: units * context.rootGetters['values/getValue'](date, accounts[a].id, accounts[a].currency ) || 0
+              };
+              break;
+              }
         });
         context.commit('balance', {year, balance});
 

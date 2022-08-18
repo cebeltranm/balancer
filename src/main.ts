@@ -12,6 +12,7 @@ import ToastService from 'primevue/toastservice';
 
 import StyleClass from 'primevue/styleclass';
 import Ripple from 'primevue/ripple';
+import Tooltip from 'primevue/tooltip';
 
 import Badge from 'primevue/badge';
 import Dialog from 'primevue/dialog';
@@ -34,21 +35,16 @@ import Chart from 'primevue/chart';
 import TreeSelect from 'primevue/treeselect';
 import ConfirmPopup from 'primevue/confirmpopup';
 import Toast from 'primevue/toast';
+import ProgressBar from 'primevue/progressbar';
 
 const app = createApp(App);
 app.use(router)
 app.use(store)
 app.use(PrimeVue,  { ripple: true, inputStyle: 'outlined' })
-  // .use(
-  //   createIntl({
-  //     locale: 'en',
-  //     defaultLocale: 'en',
-  //     messages: {},
-  //   })
-  // )
 
 app.directive('styleclass', StyleClass);
 app.directive('ripple', Ripple);
+app.directive('tooltip', Tooltip);
 
 app.component('Badge', Badge);
 app.component('Dialog', Dialog);
@@ -71,6 +67,7 @@ app.component('Chart', Chart);
 app.component('TreeSelect', TreeSelect);
 app.component('ConfirmPopup', ConfirmPopup);
 app.component('Toast', Toast);
+app.component('ProgressBar', ProgressBar);
 
 
 app.config.globalProperties.$format = format

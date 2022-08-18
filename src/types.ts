@@ -15,6 +15,7 @@ export interface Transaction {
         value?: number;
         accountId: string;
         accountValue?: number;
+        units?: number;
     }];
     deleted?: boolean
 }
@@ -31,6 +32,9 @@ export enum AccountType {
     Cash = "Cash",
     CreditCard = "CreditCard",
     BankAccount = "BankAccount",
+    Receivable = "Receivable",
+    Investment = "Investment",
+    ETF = "ETF",
 }
 
 export enum AccountGroupType {

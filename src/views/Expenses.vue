@@ -17,16 +17,48 @@
   
   <TreeTable :value="byCategory" v-if="displayType === 'table'">
     <Column field="name" header="Name" footer="Total" :expander="true"></Column>
+    <Column header="Budget">
+      <template #body="{node}">
+          <ProgressBar 
+            :class="{ error: node.data.values[0] > node.data.budget[0] }"
+            :showValue="true" 
+            :value="100*node.data.values[0]/node.data.budget[0]"
+            v-tooltip.left="$format.currency(node.data.budget[0], node.data.currency || 'cop')"
+            v-if="node.data.budget[0]" />
+      </template>
+      <template #footer>
+        <ProgressBar 
+            :class="{ error: getTotal > getTotalBudget }"
+            :showValue="true" 
+            :value="100*getTotal/getTotalBudget" 
+            v-tooltip.left="$format.currency(getTotalBudget, 'cop')"
+            v-if="getTotalBudget" />
+      </template>
+    </Column>
     <Column header="Value">
       <template #body="{node}"><div class="text-right">
-        {{ $format.currency(node.data.values[0], 'cop') }}
+        {{ $format.currency(node.data.values[0], node.data.currency || 'cop') }}
         </div></template>
       <template #footer><div class="text-right">{{ $format.currency(getTotal, 'cop')}}</div></template>
     </Column>
   </TreeTable>
+  <div style="max-width:600px">
   <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" v-if="displayType === 'pie'" />
+  </div>
   <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" />
+
 </template>
+
+<style lang="scss">
+  .error.p-progressbar {
+    .p-progressbar-value {
+      background-color: var(--red-800);
+    }
+    .p-progressbar-label {
+      color: var(--gray-50);
+    }
+  }
+</style>
 
 <script lang="ts" setup>
   import PeriodSelector from '@/components/PeriodSelector.vue'
@@ -46,24 +78,44 @@
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
   const store = useStore();
 
-  function getTotalByCategory( category: any, balance: any) {
+  function getTotalByCategory( category: any, balance: any, budget?: any) {
       var children = undefined;
       var values = category.type === 'Category' ? [] : balance[category.id];
+      var vBudget = (category.type === 'Category' || !budget) ? [] : budget[category.id];
       if ( category.children ) {
-        children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance));
+        children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget));
         values = children.reduce( (ant, child) => {
             if (!ant) {
               return child.data.values;
             }
-            return ant.map( (v, index) => v + child.data.values[index]  );
+            return ant.map( (v, index) => {
+              if (child.data.currency!=='cop' && child.data.values[index]) {
+                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), 'cop', child.data.currency))  
+              }
+              return v + child.data.values[index] 
+            } );
         }, undefined );
+        vBudget = budget && children.reduce( (ant, child) => {
+            if (!ant) {
+              return child.data.budget;
+            }
+            return ant.map( (v, index) => {
+              if (child.data.currency!=='cop' && child.data.budget[index]) {
+                return v + (child.data.budget[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), 'cop', child.data.currency))  
+              }
+              return v + child.data.budget[index]
+            }  );
+        }, undefined );
+
       }
 
       return { 
         key: category.type === 'Category' ? category.name : category.id,
         data: {
           name: category.name,
-          values: values
+          values: values,
+          budget: vBudget,
+          currency: category.currency
         },
         children
       };
@@ -71,9 +123,10 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 1, period.value.value);
+      const budget = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 1, period.value.value);
       const expences = store.getters['accounts/expensesByCategories'];
 
-      return Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
+      return Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance, budget));
   });
 
   const pieData = computed(() => {
@@ -126,5 +179,6 @@
 
 
   const getTotal = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.values[0] , 0) );
+  const getTotalBudget = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.budget[0] , 0) );
 
 </script>
