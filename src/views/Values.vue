@@ -73,9 +73,9 @@ import { useStore } from 'vuex';
         ...currencies.map( (c) => ({
             id: `${c}_usd`,
             type: 'Currency',
-            name: c,
-            currency: Currency.USD,
-            value: store.getters['values/getValue'](date, c, Currency.USD)
+            name: Currency.USD,
+            currency: c,
+            value: store.getters['values/getValue'](date, Currency.USD, c)
         })),
         ...investments.map( (a) => ({
           entity: a.entity,
@@ -114,8 +114,8 @@ import { useStore } from 'vuex';
     if (res.status === 200) {
         const data = await res.json();
         values.value.forEach( (v:any) => {
-            if (v.type === 'Currency' && data.usd[v.name] && Number(data.usd[v.name]) !== v.value) {
-                v.value =  Number(data.usd[v.name]);
+            if (v.type === 'Currency' && data.usd[v.currency] && Number(data.usd[v.currency]) !== v.value) {
+                v.value =  Number(data.usd[v.currency]);
                 v.to_sync = true
                 pendingToSave.value = true;
             }
@@ -129,9 +129,8 @@ import { useStore } from 'vuex';
         values: values.value.reduce( (ant: any, v:any) => {
           switch(v.type) {
             case 'Currency':
-                ant[v.name] = {
-                    'usd': v.value
-                };
+              ant['usd'] = ant['usd'] || {}
+              ant['usd'][v.currency] = v.value
               break;
             case AccountType.Investment:
             case AccountType.ETF:

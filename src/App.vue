@@ -59,6 +59,7 @@
         items: [
           { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
           { label: 'Expenses', icon: 'pi pi-fw pi-shopping-cart', to: '/expenses' },
+          { label: 'Assets', icon: 'pi pi-fw pi-credit-card', to: '/assets' },
           { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' },
         ]
     },

@@ -179,7 +179,9 @@ export default {
                 date_cached: Date.now(),
                 to_sync: true,
             });
-
+        }
+        if (year === new Date().getFullYear() && month === new Date().getMonth() + 1)  {
+          context.dispatch('storage/pendingToSync','',{root: true});
         }
         return balance;
       }

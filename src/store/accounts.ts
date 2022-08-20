@@ -40,7 +40,7 @@ export default {
       },
       activeAccounts: ( state: any) => (date: Date) => { 
         return Object.keys(state.accounts)
-            .filter( (a: string) => (!state.accounts[a].activeFrom || state.accounts[a].activeFrom >= date) && 
+            .filter( (a: string) => (!state.accounts[a].activeFrom || state.accounts[a].activeFrom <= date) && 
                                 (!state.accounts[a].hideSince || state.accounts[a].hideSince > date) )
             .map( (a: string) => state.accounts[a] );
       },

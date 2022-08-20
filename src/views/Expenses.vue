@@ -22,7 +22,7 @@
           <ProgressBar 
             :class="{ error: node.data.values[0] > node.data.budget[0] }"
             :showValue="true" 
-            :value="100*node.data.values[0]/node.data.budget[0]"
+            :value="Math.trunc(100*node.data.values[0]/node.data.budget[0])"
             v-tooltip.left="$format.currency(node.data.budget[0], node.data.currency || 'cop')"
             v-if="node.data.budget[0]" />
       </template>
@@ -30,7 +30,7 @@
         <ProgressBar 
             :class="{ error: getTotal > getTotalBudget }"
             :showValue="true" 
-            :value="100*getTotal/getTotalBudget" 
+            :value="Math.trunc(100*getTotal/getTotalBudget)" 
             v-tooltip.left="$format.currency(getTotalBudget, 'cop')"
             v-if="getTotalBudget" />
       </template>
@@ -86,7 +86,7 @@
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget));
         values = children.reduce( (ant, child) => {
             if (!ant) {
-              return child.data.values;
+              ant = Array.from(new Array(child.data.values.length), () => 0);
             }
             return ant.map( (v, index) => {
               if (child.data.currency!=='cop' && child.data.values[index]) {
