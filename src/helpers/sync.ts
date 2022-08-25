@@ -5,7 +5,7 @@ export async function syncTransactions() {
     const transactions = await idb.getAllTransactions();
     if (transactions.length > 0 ) {
         const byMonth = transactions.reduce( (ant, v) => {
-            const date = new Date(v.date);
+            const date = new Date(`${v.date}T00:00:00.00`);
             if(!ant[date.getFullYear()]) {
                 ant[date.getFullYear()] = {}
             }

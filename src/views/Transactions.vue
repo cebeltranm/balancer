@@ -1,7 +1,7 @@
 <template>
   <Toolbar>
     <template #start>
-        <AccountsSelector v-model:accounts="accounts"/>
+        <AccountsSelector v-model:accounts="accounts" :date="selectedDate"/>
     </template>
     <template #end>
         <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-period="true" />
@@ -22,7 +22,7 @@
       <template #footer>Total</template>
     </Column>
     <Column header="Value" class="text-right">
-        <template #body="slotProps"><div class="text-right">
+        <template #body="slotProps"><div :class="{ 'text-right': true, 'text-red-400': slotProps.data.value < 0, 'text-green-400': slotProps.data.value > 0}">
         {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
         </div></template>
         <template #footer>{{$format.currency(getTotal(), 'cop')}}</template>
@@ -54,6 +54,8 @@
     value: getCurrentPeriod()
   });
 
+  const selectedDate = ref(new Date(period.value.value.year, period.value.value.month - 1, 1));
+
   const accounts = ref([]);
 
   const store = useStore();
@@ -84,7 +86,7 @@
 
   function getTotal() {
     return store.getters['values/joinValues']( 
-      new Date(period.value.value.year, period.value.value.month - 1, 1),
+      selectedDate.value,
       Currency.COP,
       list.value.map( l => ({value: l.value, asset: l.currency}))
     );
@@ -117,6 +119,7 @@
     transactionDialog.value?.show();
   }
   function onChangePeriod() {
+    selectedDate.value = new Date(period.value.value.year, period.value.value.month - 1, 1);
     if (!store.state.transactions.values[period.value.value.year] || !store.state.transactions.values[period.value.value.year][period.value.value.month]) {
         store.dispatch('transactions/getTransactionsForMonth', {year: period.value.value.year, month: period.value.value.month})
     }

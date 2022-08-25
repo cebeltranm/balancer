@@ -11,8 +11,9 @@
     </div>
     <div class="field col col-12 md:col-8">
         <div class="p-float-label">
-            <InputText id="description" v-model="v$.description.$model" :class="{'p-invalid':v$.description.$invalid && submitted}" :showIcon="true" />
-            <label for="date" :class="{'p-error':v$.description.$invalid && submitted}">Description*</label>
+            <AutoComplete v-if="!transaction?.id" id="description" v-model="v$.description.$model" :suggestions="suggestedTransactions" @item-select="onSelectTransaction" @complete="searchTransaction($event)" field="name" />
+            <InputText v-if="transaction?.id" id="description" v-model="v$.description.$model" :class="{'p-invalid':v$.description.$invalid && submitted}" :showIcon="true" />
+            <label for="description" :class="{'p-error':v$.description.$invalid && submitted}">Description*</label>
         </div>
         <small v-if="(v$.description.$invalid && submitted) || v$.description.$pending.$response" class="p-error">{{v$.description.required.$message}}</small>
     </div>
@@ -73,7 +74,7 @@
 <script lang='ts' setup>
 import { ref, reactive, computed, watch, watchEffect, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import type { Transaction } from '@/types';
+import type { Account, Transaction } from '@/types';
 import { helpers, required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
@@ -83,6 +84,7 @@ const props = defineProps<{
 
 const visible = ref(false);
 const suggestedAccounts = ref<any[] | undefined>(undefined);
+const suggestedTransactions = ref<any[] | undefined>(undefined);
 const submitted = ref(false);
 
 const store = useStore();
@@ -137,7 +139,7 @@ const rules = {
 };
 const v$ = useVuelidate(rules, state);
 
-const getRate = (value: number, account_value: number) => value && account_value ? value/account_value : '';
+const getRate = (value: number, account_value: number) => value && account_value ? account_value/value : '';
 
 function isAccountInUnits(id:string) {
   return id && store.getters['accounts/isAccountInUnits'](id);
@@ -157,24 +159,77 @@ defineExpose({
   show, close
 })
 
+
+function getAccountName(account: Account) {
+  return `${account.entity? account.entity + ': ' : ''}${account.type}: ${account.category ? account.category.join(': ') + ': ' : '' }${account.name}`;
+}
+
+const accountList = computed(() => {
+  return store.getters['accounts/activeAccounts'](state.value.date).map( a => ({
+    id: a.id,
+    name: getAccountName(a),
+    currency: a.currency
+  }));
+})
+
 function searchAccounts(event: any, index: number) {
   setTimeout(() => {
     const newFiltered: any[] = [];
     if (!event.query.trim().length) {
-      newFiltered.push(...store.getters['accounts/listAccounts'])
-      newFiltered.push(...store.getters['accounts/listExpenses'])
+      newFiltered.push(...accountList.value)
     } else {
-      newFiltered.push(...store.getters['accounts/listAccounts'].filter( (a:any) => a.name.toLowerCase().indexOf(event.query.toLowerCase()) >= 0))
-      newFiltered.push(...store.getters['accounts/listExpenses'].filter( (a:any) => a.name.toLowerCase().indexOf(event.query.toLowerCase()) >= 0))
+      newFiltered.push(...accountList.value.filter( (a:any) => a.name.toLowerCase().indexOf(event.query.toLowerCase()) >= 0))
     }
     suggestedAccounts.value = newFiltered;
   },50);
 }
 
+function searchTransaction(event: any) {
+  const newFiltered: any[] = [];
+  var year = new Date().getFullYear();
+  var month = new Date().getMonth() + 1;
+  var steps = 0;
+  const query = event.query.toLowerCase();
+
+  setTimeout(() => {
+    while (newFiltered.length < 5 && steps < 6) {
+      if (store.state.transactions.values[year] && store.state.transactions.values[year][month] ) {
+        newFiltered.push( 
+          ...store.state.transactions.values[year][month]
+            .filter( (t: any) => t.description.toLowerCase().indexOf(query) >= 0 )
+            .map( (t: any) => ({
+              id: t.id, 
+              name: t.description,
+              values: t.values
+            }))
+        );
+      }
+      steps++;
+      month = month === 1 ? 12 : month - 1;
+      year = month === 1 ? year -1 : year;
+    }
+    suggestedTransactions.value = newFiltered;
+  }, 50);
+}
+
+async function onSelectTransaction(event: any) {
+  state.value.values = event.value.values.map( v => ({
+    account: {
+      id: store.state.accounts.accounts[v.accountId].id,
+      currency: store.state.accounts.accounts[v.accountId].currency,
+      name: getAccountName( store.state.accounts.accounts[v.accountId] ),
+    },
+    value: v.value,
+    units: v.units,
+    accountValue: v.accountValue
+  }))  
+  state.value.description = event.value.name;
+}
+
 async function onUpdateAccount (index: number) {
   if ( state.value.values[0].account?.currency !== state.value.values[index].account?.currency 
     && state.value.values[index].value) { 
-    const rate = store.getters['values/getValue']( new Date(state.value.date), state.value.values[index].account?.currency, state.value.values[0].account?.currency );
+    const rate = store.getters['values/getValue']( new Date(state.value.date), state.value.values[0].account?.currency, state.value.values[index].account?.currency );
     state.value.values[index].accountValue = state.value.values[index].value * rate;
   }
 }
@@ -192,7 +247,8 @@ watch(
       if ( t[t.length - 1].account?.id ) {
         state.value.values.push({
           account: null,
-          value: -sum
+          value: -sum,
+          accountValue: null
         });
       } else {
         state.value.values[t.length - 1].value = -sum;
@@ -225,14 +281,20 @@ async function handleSubmit() {
   await store.dispatch('transactions/saveTransaction', trans);
   close();
   emit('update:transaction', trans);
+  state.value.values = [ { value: null, account: null, accountValue: null, units: null }, { value: null, account: null, accountValue: null, units: null }];
+  state.value.description = '';
 }
 
 function updatePropTransaction() {
   if (props.transaction) {
-    state.value.date = new Date(props.transaction.date);
+    state.value.date = new Date(`${props.transaction.date}T00:00:00.00`);
     state.value.description = props.transaction.description;
     state.value.values = props.transaction.values.map( v => ({
-      account: store.state.accounts.accounts[v.accountId],
+      account: {
+        id: store.state.accounts.accounts[v.accountId].id,
+        currency: store.state.accounts.accounts[v.accountId].currency,
+        name: getAccountName( store.state.accounts.accounts[v.accountId] ),
+      },
       value: v.value,
       units: v.units,
       accountValue: v.accountValue
@@ -240,9 +302,9 @@ function updatePropTransaction() {
   }
 }
 
-  watch(() => props.transaction, () => {
-    updatePropTransaction();
-  }, {deep: true})
+watch(() => props.transaction, () => {
+  updatePropTransaction();
+}, {deep: true})
 
 onMounted( () => {
   if (props.transaction) {

@@ -11,10 +11,20 @@ export default {
         });
         return formatter.format(value);
     },
+    percent: (value:any) => {
+        if (typeof value !== "number") {
+            return value;
+        }
+        var formatter = new Intl.NumberFormat('en-US', {
+            style: 'percent',
+            maximumFractionDigits: 2,
+        });
+        return formatter.format(value);
+    }, 
     date: (value: any) => {
         var date = value;
-        if (typeof value !== "number") {
-            date = new Date(value);
+        if (typeof value === "string") {
+            date = new Date(`${value}T00:00:00.00`);
         }
         return new Intl.DateTimeFormat('en-US').format(date);
     },

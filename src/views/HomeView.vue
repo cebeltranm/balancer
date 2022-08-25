@@ -27,6 +27,7 @@
         'Credit Cards': [AccountType.CreditCard],
         'Cash': [AccountType.Cash],
         'Bank Accounts': [AccountType.BankAccount],
+        'Receivables': [AccountType.Receivable],
       }
 
       const total = Object.keys(store.state.accounts.accounts).reduce ( (ant, k) => {

@@ -1,7 +1,7 @@
 <template>
   <Toolbar>
     <template #start>
-      <PeriodSelector v-model:period="period" :only-type="!['table', 'pie'].includes(displayType)" />
+      <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
         <!-- <Button icon="pi pi-caret-left" @click="reducePeriod" :disabled="!canReduce" v-if="['table', 'pie'].includes(displayType)" />
         <Dropdown v-model="typePeriod" :options="periodTypes" optionLabel="name" optionValue="value"  placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" />
         <Button icon="pi pi-caret-right" class="ml-0" @click="increasePeriod" :disabled="!canIncrease"  v-if="['table', 'pie'].includes(displayType)"/> -->
@@ -80,7 +80,7 @@
 
   function getTotalByCategory( category: any, balance: any, budget?: any) {
       var children = undefined;
-      var values = category.type === 'Category' ? [] : balance[category.id];
+      var values = category.type === 'Category' ? [] : balance[category.id].map( v => v.value);
       var vBudget = (category.type === 'Category' || !budget) ? [] : budget[category.id];
       if ( category.children ) {
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget));
@@ -97,7 +97,7 @@
         }, undefined );
         vBudget = budget && children.reduce( (ant, child) => {
             if (!ant) {
-              return child.data.budget;
+              ant = Array.from(new Array(child.data.values.length), () => 0);
             }
             return ant.map( (v, index) => {
               if (child.data.currency!=='cop' && child.data.budget[index]) {
@@ -108,14 +108,13 @@
         }, undefined );
 
       }
-
       return { 
         key: category.type === 'Category' ? category.name : category.id,
         data: {
           name: category.name,
           values: values,
           budget: vBudget,
-          currency: category.currency
+          currency: category.currency || 'cop'
         },
         children
       };
@@ -180,5 +179,10 @@
 
   const getTotal = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.values[0] , 0) );
   const getTotalBudget = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.budget[0] , 0) );
+
+  function onChangePeriod() {
+    store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
+  }
+
 
 </script>

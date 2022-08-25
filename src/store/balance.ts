@@ -35,8 +35,19 @@ export default {
           }
           Object.keys(balance).forEach( (key:string) => {
               balance[key].push( months
-                .map( (m) => (state.balance[year] && state.balance[year][key] && state.balance[year][key][m] && state.balance[year][key][m].value ) ? state.balance[year][key][m].value : undefined )
-                .reduce( (ant, v) => rootState.accounts.accounts[key].type === AccountType.Expense ? ant + ( v === undefined ? 0 : v) : ( v === undefined ? ant : v), 0 ) );
+                .map( (m) => (state.balance[year] && state.balance[year][key] && state.balance[year][key][m] ) ? state.balance[year][key][m] : undefined )
+                .reduce( (ant, v) => {
+                  return {
+                    value: rootState.accounts.accounts[key].type === AccountType.Expense ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
+                    ...( [AccountType.Investment, AccountType.ETF].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
+                      p[k] = ant[k] + ( !v || v[k] === undefined ? 0 : v[k])
+                      return p;
+                    }, {}) : {}),
+                    ...( [ AccountType.ETF].includes(rootState.accounts.accounts[key].type) ? {
+                      units: !v || v.units === undefined ? ant.units : v.units
+                       }: {})
+                  }
+                }, { value: 0, expenses: 0, in: 0, out: 0, in_local: 0, out_local : 0, units: 0 } ) );
           });
 
           switch(type) {
@@ -107,7 +118,7 @@ export default {
                 if ( context.rootGetters['accounts/getAccountGroupType'](value.accountId) === AccountGroupType.Expenses && indexInv === 0) {
                   ant[inv.accountId].expenses += value.accountValue;
                 } else if ( value.accountId !== inv.accountId ) {
-                  if ( !accounts[inv.accountId].entity ||  accounts[inv.accountId].entity !== accounts[value.accountId].entity ) {
+                  if ( !accounts[inv.accountId].entity || !accounts[value.accountId].entity || accounts[inv.accountId].entity !== accounts[value.accountId].entity ) {
                     ant[inv.accountId].in += (inv.accountValue > 0 ? inv.accountValue : 0);
                     ant[inv.accountId].out -= (inv.accountValue < 0 ? inv.accountValue : 0);
                   } else {
@@ -130,11 +141,15 @@ export default {
             case AccountType.Expense:
               balance[accounts[a].id][month].value = res[accounts[a].id] || 0;
               break;
+            case AccountType.Income:
+                balance[accounts[a].id][month].value = -res[accounts[a].id] || 0;
+              break;
             case AccountType.Cash:
             case AccountType.CreditCard:
+            case AccountType.Loan:
             case AccountType.BankAccount:
             case AccountType.Receivable:
-              var initValue = accounts[a].initBalance || 0;
+              var initValue = 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth]) {
                 initValue = prevBalance[accounts[a].id][prevMonth].value;
               }

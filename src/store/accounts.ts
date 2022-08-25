@@ -16,8 +16,8 @@ export const ACCOUNT_GROUP_TYPES = {
   [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
   [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF],
   [AccountGroupType.Receivables]: [AccountType.Receivable],
-  [AccountGroupType.Liabilities]: [ AccountType.CreditCard ],
-  [AccountGroupType.Incomes]: [],
+  [AccountGroupType.Liabilities]: [ AccountType.CreditCard, AccountType.Loan ],
+  [AccountGroupType.Incomes]: [ AccountType.Income ],
   [AccountGroupType.Expenses]: [ AccountType.Expense ],
 };
 

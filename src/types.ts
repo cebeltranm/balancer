@@ -1,12 +1,3 @@
-export interface Account {
-    id: string;
-    name: string;
-    description?: string;
-    value?: number;
-    currency?: string;
-    budget?: number;
-}
-
 export interface Transaction {
     id?: number;
     date: string;
@@ -28,6 +19,7 @@ export enum Period {
 
 export enum AccountType {
     Expense = "Expense",
+    Income = "Income",
     Category = "Category",
     Cash = "Cash",
     CreditCard = "CreditCard",
@@ -35,6 +27,9 @@ export enum AccountType {
     Receivable = "Receivable",
     Investment = "Investment",
     ETF = "ETF",
+    Loan = "Loan",
+    Property = "Property",
+    OpenBalance = "OpenBalance",
 }
 
 export enum AccountGroupType {
@@ -50,4 +45,15 @@ export enum Currency {
     COP = "cop",
     USD = "usd",
     EUR = "eur",
+}
+
+export interface Account {
+    id: string;
+    name: string;
+    type: AccountType;
+    currency: string;
+    category: string[];
+    entity?: string;
+    activeFrom?: string;
+    hideSince?: string;
 }

@@ -1,7 +1,7 @@
 <template>
   <Toolbar>
     <template #start>
-      <PeriodSelector v-model:period="period" :only-type="!['table', 'pie'].includes(displayType)" />
+      <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
     </template>
     <template #end>
         <SelectButton v-model="displayType" :options="displayOptions" optionValue="id">
@@ -60,7 +60,7 @@
 
   function getTotalByCategory( category: any, balance: any) {
       var children = undefined;
-      var values = category.type === AccountType.Category ? [] : balance[category.id];
+      var values = category.type === AccountType.Category ? [] : balance[category.id].map( v => v.value);
       if ( category.children ) {
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance));
         values = children.reduce( (ant, child) => {
@@ -89,7 +89,7 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 1, period.value.value);
-      const assets = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Assets, AccountGroupType.Receivables, AccountGroupType.Liabilities]);
+      const assets = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Assets, AccountGroupType.Receivables, AccountGroupType.Liabilities], new Date(period.value.value.year, period.value.value.month, 1));
       const data =  Object.keys(assets).map( (key) => getTotalByCategory(
         {
           name: key,
@@ -150,5 +150,9 @@
 
 
   const getTotal = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.values[0] , 0) );
+
+  function onChangePeriod() {
+    store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
+  }
 
 </script>

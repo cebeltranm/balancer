@@ -4,11 +4,12 @@
 
 <script lang="ts" setup>
 import { useStore } from 'vuex';
-import { ref, computed } from "vue";
+import { ref, computed, watch, watchEffect } from "vue";
 import { AccountType } from '@/types';
 
-const { accounts } = defineProps<{
+const props = defineProps<{
     accounts: string[],
+    date?: Date,
 }>()
 
 const store = useStore();
@@ -17,7 +18,9 @@ const emit = defineEmits(['update:accounts'])
 
 const selected = ref();
 
-const items = computed(() => {
+const items = ref([]);
+
+watchEffect( () => {
     const accountGroup = (account: any, key: string) => {
         return {
             label: account.name,
@@ -25,14 +28,13 @@ const items = computed(() => {
             children: account.children && Object.keys(account.children).map( (a, index) => accountGroup(account.children[a], `${key}-${index}`) )
         }
     }
-    const accounts = store.getters['accounts/accountsGroupByCategories']();
-    const items = Object.keys(accounts).map( (k, index) => ({
+    const accounts = store.getters['accounts/accountsGroupByCategories'](undefined, props.date);
+    items.value = Object.keys(accounts).map( (k, index) => ({
         label: k,
         key: `${index}`,
         children: Object.keys(accounts[k]).map( (sub, index2) => accountGroup(accounts[k][sub], `${index}-${index2}`))
     }));
-    return items;
-});
+})
 
 function onUpdate() {
     const getIds = (value:any) => {
