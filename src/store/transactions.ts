@@ -16,6 +16,23 @@ export default {
       } 
     },
     getters: {
+      getLastTags(state: any) {
+        const tags: string[] = [];
+        var year = new Date().getFullYear();
+        var month = new Date().getMonth() + 1;
+        var steps = 0;
+        while (steps < 3) {
+          if (state.values && state.values[year] && state.values[year][month]) {
+            state.values[year][month].filter(t => t.tags && t.tags.length > 0).forEach( (t) => {
+              tags.push(...t.tags.filter( s => !tags.includes(s)));              
+            })
+          }
+          steps++;
+          year = month === 1 ? year - 1 : year;
+          month = month === 1 ? 12 : month - 1;
+        }
+        return tags;
+      }
     },
     actions: {
       async getTransactionsForMonth(context: any, {year, month, reload} ) {

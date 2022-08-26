@@ -38,6 +38,10 @@ export default {
       getAccountGroupType: ( state: any) => (id: string) => { 
         return state.accounts[id] && Object.keys(ACCOUNT_GROUP_TYPES).find( (k: string) => ACCOUNT_GROUP_TYPES[k].includes( state.accounts[id].type ))
       },
+      getAccountFullName: ( state: any) => (id: string) => { 
+        const account = state.accounts[id];
+        return account && `${account.entity? account.entity + ': ' : ''}${account.type}: ${account.category ? account.category.join(': ') + ': ' : '' }${account.name}`;
+      },
       activeAccounts: ( state: any) => (date: Date) => { 
         return Object.keys(state.accounts)
             .filter( (a: string) => (!state.accounts[a].activeFrom || state.accounts[a].activeFrom <= date) && 

@@ -36,6 +36,7 @@ import TreeSelect from 'primevue/treeselect';
 import ConfirmPopup from 'primevue/confirmpopup';
 import Toast from 'primevue/toast';
 import ProgressBar from 'primevue/progressbar';
+import Chip from 'primevue/chip';
 
 const app = createApp(App);
 app.use(router)
@@ -68,7 +69,7 @@ app.component('TreeSelect', TreeSelect);
 app.component('ConfirmPopup', ConfirmPopup);
 app.component('Toast', Toast);
 app.component('ProgressBar', ProgressBar);
-
+app.component('Chip', Chip);
 
 app.config.globalProperties.$format = format
 app.use(ConfirmationService);

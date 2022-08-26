@@ -2,6 +2,7 @@ export interface Transaction {
     id?: number;
     date: string;
     description: string;
+    tags?: string[],
     values: [{
         value?: number;
         accountId: string;

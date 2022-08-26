@@ -21,6 +21,11 @@
     <Column field="description" header="Description">
       <template #footer>Total</template>
     </Column>
+    <Column field="tags" header="Tags">
+      <template #body="slotProps">
+        <Chip v-for="tag in slotProps.data.tags" :key="tag" :label="tag" />
+      </template>
+    </Column>
     <Column header="Value" class="text-right">
         <template #body="slotProps"><div :class="{ 'text-right': true, 'text-red-400': slotProps.data.value < 0, 'text-green-400': slotProps.data.value > 0}">
         {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
@@ -69,8 +74,8 @@
         return store.state.transactions.values[period.value.value.year][period.value.value.month].filter( t => !t.deleted).reduce( (ant, t) => {
             return ant.concat(t.values.filter( (v: any) => accounts.value.includes(v.accountId) ).map( (v: any) => ({
                 id: t.id,
-                date: t.date, description: t.description,
-                account: store.state.accounts.accounts[v.accountId].name, 
+                date: t.date, description: t.description, tags: t.tags,
+                account: store.getters['accounts/getAccountFullName'](v.accountId), 
                 value: v.accountValue,
                 currency: store.state.accounts.accounts[v.accountId].currency,
                 to_sync: t.to_sync,

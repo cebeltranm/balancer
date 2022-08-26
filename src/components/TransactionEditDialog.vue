@@ -2,20 +2,27 @@
 <Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '75vw', '640px': '90vw'}" header="Transaction" :modal="true" class="p-fluid">
   <form @submit.prevent.stop="handleSubmit">
   <div class="grid formgrid pt-5">
-    <div class="field col col-12 md:col-4">
+    <div class="field col col-12 md:col-3">
         <div class="p-float-label">
             <Calendar id="date" v-model="v$.date.$model" :class="{'p-invalid':v$.date.$invalid && submitted}" :showIcon="true" />
             <label for="date" :class="{'p-error':v$.date.$invalid && submitted}">Date*</label>
         </div>
         <small v-if="(v$.date.$invalid && submitted) || v$.date.$pending.$response" class="p-error">{{v$.name.required.$message.replace('Value', 'Date')}}</small>
     </div>
-    <div class="field col col-12 md:col-8">
+    <div class="field col col-12 md:col-6">
         <div class="p-float-label">
             <AutoComplete v-if="!transaction?.id" id="description" v-model="v$.description.$model" :suggestions="suggestedTransactions" @item-select="onSelectTransaction" @complete="searchTransaction($event)" field="name" />
             <InputText v-if="transaction?.id" id="description" v-model="v$.description.$model" :class="{'p-invalid':v$.description.$invalid && submitted}" :showIcon="true" />
             <label for="description" :class="{'p-error':v$.description.$invalid && submitted}">Description*</label>
         </div>
         <small v-if="(v$.description.$invalid && submitted) || v$.description.$pending.$response" class="p-error">{{v$.description.required.$message}}</small>
+    </div>
+    <div class="field col col-12 md:col-3">
+        <div class="p-float-label">
+            <AutoComplete id="tags" :multiple="true" v-model="state.tags" :suggestions="suggestedTags" @complete="searchTags($event)" />
+            <label for="tags">Tags</label>
+        </div>
+        <!-- <small v-if="(v$.tags.$invalid && submitted) || v$.tags.$pending.$response" class="p-error">{{v$.tags.required.$message}}</small> -->
     </div>
   </div>
   <div class="grid formgrid" v-for="(item, index) in state.values" :key="index">
@@ -85,6 +92,7 @@ const props = defineProps<{
 const visible = ref(false);
 const suggestedAccounts = ref<any[] | undefined>(undefined);
 const suggestedTransactions = ref<any[] | undefined>(undefined);
+const suggestedTags = ref<string[]>([]);
 const submitted = ref(false);
 
 const store = useStore();
@@ -94,6 +102,7 @@ const emit = defineEmits(['update:transaction'])
 const state = ref({
   date: new Date(),
   description: '',
+  tags: [],
   values: [ { value: null, account: null, accountValue: null, units: null }, { value: null, account: null, accountValue: null, units: null }]
 });
 
@@ -159,15 +168,10 @@ defineExpose({
   show, close
 })
 
-
-function getAccountName(account: Account) {
-  return `${account.entity? account.entity + ': ' : ''}${account.type}: ${account.category ? account.category.join(': ') + ': ' : '' }${account.name}`;
-}
-
 const accountList = computed(() => {
   return store.getters['accounts/activeAccounts'](state.value.date).map( a => ({
     id: a.id,
-    name: getAccountName(a),
+    name: store.getters['accounts/getAccountFullName'](a.id),
     currency: a.currency
   }));
 })
@@ -212,15 +216,25 @@ function searchTransaction(event: any) {
   }, 50);
 }
 
+function searchTags(event: any) {
+  const query = event.query.toLowerCase();
+
+  const tags = [ query ];
+  tags.push(...store.getters['transactions/getLastTags'].filter( t => t.toLowerCase().indexOf(query) >= 0 ))
+  suggestedTags.value = tags;
+}
+
+
 async function onSelectTransaction(event: any) {
   state.value.values = event.value.values.map( v => ({
     account: {
       id: store.state.accounts.accounts[v.accountId].id,
       currency: store.state.accounts.accounts[v.accountId].currency,
-      name: getAccountName( store.state.accounts.accounts[v.accountId] ),
+      name: store.getters['accounts/getAccountFullName'](v.accountId),
     },
     value: v.value,
     units: v.units,
+    tags: v.tags || [],
     accountValue: v.accountValue
   }))  
   state.value.description = event.value.name;
@@ -239,7 +253,7 @@ watch(
     (t, oldT) => {
     const sum = t.reduce( (ant:any, v:any, index:number) => ant + (v.account?.id ? v.value : 0), 0);
     const lastPos = t.length - 1;
-    if (sum == 0) {
+    if (sum === 0 || Math.abs(sum) < 0.00000000001) {
       if (t.length > 2 && (!t[t.length -1].account?.id || !t[t.length -1].value) ) {
         state.value.values.pop();
       }
@@ -271,6 +285,7 @@ async function handleSubmit() {
     id: props.transaction?.id ? props.transaction.id : Date.now(),
     date: state.value.date.toISOString().split('T')[0],
     description: state.value.description,
+    tags: state.value.tags && state.value.tags.length > 0 && [...state.value.tags],
     values: state.value.values.map( v => ({
       accountId: v.account.id,
       value: v.value,
@@ -289,11 +304,12 @@ function updatePropTransaction() {
   if (props.transaction) {
     state.value.date = new Date(`${props.transaction.date}T00:00:00.00`);
     state.value.description = props.transaction.description;
+    state.value.tags = props.transaction.tags || [];
     state.value.values = props.transaction.values.map( v => ({
       account: {
         id: store.state.accounts.accounts[v.accountId].id,
         currency: store.state.accounts.accounts[v.accountId].currency,
-        name: getAccountName( store.state.accounts.accounts[v.accountId] ),
+        name: store.getters['accounts/getAccountFullName'](v.accountId),
       },
       value: v.value,
       units: v.units,
