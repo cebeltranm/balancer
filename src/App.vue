@@ -23,6 +23,7 @@
       </div>
       <ConfirmPopup></ConfirmPopup>
       <Toast />
+      <Auth ref="authDialog"></Auth>
   </div>
 </template>
 
@@ -31,16 +32,18 @@
   // import { initPWA } from '@/helpers/pwa';
   import { useStore } from 'vuex';
   import { isDesktop } from './helpers/browser';
-  import { checkAuth } from './helpers/auth';
   import { useToast } from "primevue/usetoast";
-  import { EVENTS } from '@/helpers/events';
+  import { EVENTS, CHECK_AUTHENTICATE } from '@/helpers/events';
   
 
   import AppTopbar from './layout/AppTopbar.vue';
   import AppMenu from './layout/AppMenu.vue';
+  import Auth from '@/components/Auth.vue';
 
   const store = useStore();
   const toast = useToast();
+
+  const authDialog = ref<InstanceType<typeof Auth> | null>(null);
 
   // replaced dyanmicaly
   // const reloadSW: any = '__RELOAD_SW__'
@@ -50,8 +53,6 @@
   //   needRefresh,
   //   updateServiceWorker,
   // } = initPWA();
-
-  checkAuth();
 
   const menu = [
     {
@@ -85,6 +86,12 @@
       detail: msg.message || '', 
       life: 3000
     });
+  });
+
+  EVENTS.on(CHECK_AUTHENTICATE, (msg:any) => {
+    if (!store.state.storage.status.authenticated) {
+      authDialog.value?.show();
+    }
   });
 
   function onMenuToggle() {

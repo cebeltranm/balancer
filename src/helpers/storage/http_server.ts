@@ -3,13 +3,22 @@ const SERVER_URL = 'http://localhost:8181/';
 
 export default class HttpServerStore {
 
-    async isLoggedIn() {
+    async getInfo() {
+        const info = {
+            type: 'HttpServer',
+            url: SERVER_URL,
+            loggedIn: true,
+            offline: true,
+            user: {}
+        };
         try {
             const res = await fetch(`${SERVER_URL}_ping`);
             if (res.status === 200) {
-                return true;
+                info.offline = false;
             };
         } catch (e) { }
+
+        return info;
     }
 
     async doAuth(code?: string) {

@@ -1,5 +1,5 @@
 <template>
-<Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '75vw', '640px': '90vw'}" header="Transaction" :modal="true" class="p-fluid">
+<Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '80vw', '640px': '100vw'}" header="Transaction" :modal="true" class="p-fluid">
   <form @submit.prevent.stop="handleSubmit">
   <div class="grid formgrid pt-5">
     <div class="field col col-12 md:col-3">

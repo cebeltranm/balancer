@@ -18,21 +18,32 @@ export default class DropboxStore {
         return new Dropbox({ auth: dbxAuth });    
     }
 
-    async isLoggedIn() {
-        if (window.localStorage.getItem(TOKEN_ID)) {
-            const dbx = this.__getDropbox();
-            try {
-                const res = await dbx.checkUser({});
-                if (res.status==200) {
-                    return true;
-                }
-            } catch(e) {
-                if ( !(e instanceof DropboxResponseError) || e.status !== 401) {
-                    return undefined;
+    async getInfo() {
+        const info = {
+            type: 'Dropbox',
+            loggedIn: false,
+            offline: true,
+            user: {}
+        };
+
+        try {
+            if (window.localStorage.getItem(TOKEN_ID)) {
+                info.loggedIn = true;
+                const dbx = this.__getDropbox();
+                try {
+                    const res = await dbx.checkUser({});
+                    if (res.status === 200) {
+                        info.offline = false;
+                    }
+                } catch(e) {
+                    if ( !(e instanceof DropboxResponseError) || e.status !== 401) {
+                        info.offline = true;
+                    }
                 }
             }
-        }
-        return false;
+        } catch (e) { }
+
+        return info;
     }
 
     async doAuth(code?: string) {
@@ -88,15 +99,5 @@ export default class DropboxStore {
             return true;
         }
         return false;
-    }
-
-    async test() {
-        const dbx = this.__getDropbox();
-        const files = await dbx.filesListFolder({path: ''});
-        console.log(files);
-
-        // await dbx.filesUpload({ path: '/test.json', contents: "test" });
-
-        // Apps › Balancer App
     }
 }

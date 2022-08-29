@@ -36,6 +36,7 @@ export default {
         inSync: false,
         offline: false,
         loggedIn: false,
+        authenticated: false,
       },
     },
     mutations: {
@@ -51,6 +52,9 @@ export default {
       status (state: any,  {loggedIn, offline} ) {
         state.status.loggedIn = loggedIn;
         state.status.offline = offline;
+      },
+      authenticated (state: any,  authenticated ) {
+        state.status.authenticated = authenticated;
       }
     },
     getters: {
@@ -89,6 +93,9 @@ export default {
       },
       async setStatus(context: any, {loggedIn, offline}) {
         context.commit('status', { loggedIn, offline } );
+      },
+      async setAuthenticated(context: any, authenticated: Boolean) {
+        context.commit('authenticated', authenticated );
       },
     }
   };

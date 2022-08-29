@@ -6,7 +6,7 @@ import Values from '@/views/Values.vue'
 import Budget from '@/views/Budget.vue'
 import Assets from '@/views/Assets.vue'
 import Investments from '@/views/Investments.vue'
-import { EVENTS, FORM_WITH_PENDING_EVENTS } from '@/helpers/events'
+import { EVENTS, FORM_WITH_PENDING_EVENTS, CHECK_AUTHENTICATE } from '@/helpers/events'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,7 +29,8 @@ const router = createRouter({
     {
       path: '/assets',
       name: 'assets',
-      component: Assets
+      component: Assets,
+      meta: { requiresLogin: true }
     },
     {
       path: '/investments',
@@ -55,6 +56,10 @@ EVENTS.on(FORM_WITH_PENDING_EVENTS, (pendingChanges: boolean) => {
 })
 
 router.beforeEach((to, from) => {
+  if (!['/', '/expenses'].includes(to.path)) {
+    EVENTS.emit(CHECK_AUTHENTICATE)
+  }
+
   return !__pendingChanges;
 })
 

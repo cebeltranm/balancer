@@ -11,22 +11,22 @@
         </SelectButton>
     </template>
   </Toolbar>
-  
-  <TreeTable :value="byCategory" v-if="displayType === 'table'">
-    <Column field="name" header="Name" footer="Total" :expander="true"></Column>
-    <Column header="Balance">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
-        {{ $format.currency(node.data.values[0], node.data.currency || 'cop') }}
-        </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal, 'cop')}}</div></template>
-    </Column>
-  </TreeTable>
-  <!--
-  <div style="max-width:600px">
-   <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" v-if="displayType === 'pie'" />
-  </div>
-  <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" /> -->
-
+  <template v-if="isAuthenticated">
+    <TreeTable :value="byCategory" v-if="displayType === 'table'">
+      <Column field="name" header="Name" footer="Total" :expander="true"></Column>
+      <Column header="Balance">
+        <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
+          {{ $format.currency(node.data.values[0], node.data.currency || 'cop') }}
+          </div></template>
+        <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal, 'cop')}}</div></template>
+      </Column>
+    </TreeTable>
+    <!--
+    <div style="max-width:600px">
+    <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" v-if="displayType === 'pie'" />
+    </div>
+    <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" /> -->
+  </template>
 </template>
 
 <style lang="scss">
@@ -57,6 +57,8 @@
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
   const store = useStore();
+
+  const isAuthenticated = computed(() => store.state.storage.status.authenticated);
 
   function getTotalByCategory( category: any, balance: any) {
       var children = undefined;

@@ -18,16 +18,23 @@
 
   const store = useStore();
 
+
   const values = computed(() => {
     const currentPeriod = getCurrentPeriod();
     const balance =  store.state.balance.balance[currentPeriod.year];
     if (balance) {
-      const types = {
+      var types = {
         'Expenses': [AccountType.Expense],
         'Credit Cards': [AccountType.CreditCard],
-        'Cash': [AccountType.Cash],
-        'Bank Accounts': [AccountType.BankAccount],
-        'Receivables': [AccountType.Receivable],
+      }
+
+      if (store.state.storage.status.authenticated) {
+        types = {
+          ...types,
+          'Cash': [AccountType.Cash],
+          'Bank Accounts': [AccountType.BankAccount],
+          'Receivables': [AccountType.Receivable],
+        }
       }
 
       const total = Object.keys(store.state.accounts.accounts).reduce ( (ant, k) => {
