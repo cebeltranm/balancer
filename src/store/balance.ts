@@ -30,7 +30,7 @@ export default {
               months = [quarter * 3 - 2, quarter * 3 - 1, quarter * 3 ];
               break;
             case Period.Year:
-              months = Array.from(new Array(month), (val, index) => index + 1)
+              months = Array.from(new Array(12), (val, index) => index + 1)
               break;
           }
           Object.keys(balance).forEach( (key:string) => {
@@ -39,7 +39,7 @@ export default {
                 .reduce( (ant, v) => {
                   return {
                     value: rootState.accounts.accounts[key].type === AccountType.Expense ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
-                    ...( [AccountType.Investment, AccountType.ETF].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
+                    ...( [AccountType.Investment, AccountType.CDT, AccountType.ETF].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
                       p[k] = ant[k] + ( !v || v[k] === undefined ? 0 : v[k])
                       return p;
                     }, {}) : {}),
@@ -115,10 +115,11 @@ export default {
                 ant2[inv.accountId].units = (ant2[inv.accountId].units || 0) + inv.units;
               }
               return t.values.reduce( (ant: any, value) => {
-                if ( context.rootGetters['accounts/getAccountGroupType'](value.accountId) === AccountGroupType.Expenses && indexInv === 0) {
+                const groupType = context.rootGetters['accounts/getAccountGroupType'](value.accountId)
+                if ( groupType === AccountGroupType.Expenses && indexInv === 0) {
                   ant[inv.accountId].expenses += value.accountValue;
                 } else if ( value.accountId !== inv.accountId ) {
-                  if ( !accounts[inv.accountId].entity || !accounts[value.accountId].entity || accounts[inv.accountId].entity !== accounts[value.accountId].entity ) {
+                  if ( groupType !== AccountGroupType.Investments || !accounts[inv.accountId].entity || !accounts[value.accountId].entity || accounts[inv.accountId].entity !== accounts[value.accountId].entity ) {
                     ant[inv.accountId].in += (inv.accountValue > 0 ? inv.accountValue : 0);
                     ant[inv.accountId].out -= (inv.accountValue < 0 ? inv.accountValue : 0);
                   } else {
@@ -156,6 +157,7 @@ export default {
               balance[accounts[a].id][month].value = initValue +  (res[accounts[a].id] || 0);
               break;
             case AccountType.Investment:
+            case AccountType.CDT:
               balance[accounts[a].id][month] = {
                 ...( investments[accounts[a].id] || {}),
                 value: context.rootGetters['values/getValue'](date, accounts[a].id, accounts[a].currency ) || 0

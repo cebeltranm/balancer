@@ -14,7 +14,7 @@ function getCategoryEntry(group:any, category:string) {
 
 export const ACCOUNT_GROUP_TYPES = {
   [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
-  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF],
+  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF, AccountType.CDT],
   [AccountGroupType.Receivables]: [AccountType.Receivable],
   [AccountGroupType.Liabilities]: [ AccountType.CreditCard, AccountType.Loan ],
   [AccountGroupType.Incomes]: [ AccountType.Income ],

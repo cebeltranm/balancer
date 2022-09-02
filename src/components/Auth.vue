@@ -17,7 +17,7 @@
       <div>
         <Button  v-if="localCredentials && !isAuthenticated"  label="Authenticate with credentials" @click="authenticate"/>
         <Button v-else-if="!isAuthenticated" :disabled="!storeInfo?.loggedIn" label="Register Credentials" @click="register"/>
-        <spam v-else> Authenticated </spam>
+        <span v-else> Authenticated </span>
       </div>
     </Dialog>
 </template>

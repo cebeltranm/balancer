@@ -99,7 +99,7 @@ import { useStore } from 'vuex';
   function onValueEdit(event: any) {
     let { data, newData } = event;
     const newValue = Number(newData.value);
-    if ( newValue > 0 && newValue !== data.value ) {
+    if ( newValue >= 0 && newValue !== data.value ) {
         data.value = newValue
         data.to_sync = true
         pendingToSave.value = true;
@@ -134,6 +134,7 @@ import { useStore } from 'vuex';
               break;
             case AccountType.Investment:
             case AccountType.ETF:
+            case AccountType.CDT:
               ant[v.id] = {
                     [v.currency]: v.value
                 };

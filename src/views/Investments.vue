@@ -1,7 +1,7 @@
 <template>
   <Toolbar>
     <template #start>
-      <PeriodSelector v-model:period="period" :only-type="!['table', 'pie'].includes(displayType)" />
+      <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
     </template>
     <template #end>
         <SelectButton v-model="displayType" :options="displayOptions" optionValue="id">
@@ -27,16 +27,16 @@
       <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.out, 'cop')}}</div></template>
     </Column>
     <Column header="Expenses">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
+      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].expenses > 0}">
         {{ $format.currency(node.data.values[0].expenses, node.data.currency || 'cop') }}
         </div></template>
       <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.expenses, 'cop')}}</div></template>
     </Column>
     <Column header="G/P">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
+      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
         {{ $format.percent( node.data.values[0].gp )}}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.percent( getTotal.gp ) }}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal.gp < 0, 'text-green-400': getTotal.gp > 0}">{{ $format.percent( getTotal.gp ) }}</div></template>
     </Column>
     <Column header="Balance">
       <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
@@ -112,9 +112,13 @@
         }, undefined );
       }
       for (var i = 0; i < values.length - 1; i++ ) {
-        const div1 = values[i].value + values[i].out + ( values[i].out_local || 0 );
+        // const in_out = (values[i].in || 0 ) + ( values[i].in_local || 0 ) + ( values[i].expenses || 0 ) - (values[i].out || 0) - ( values[i].out_local || 0 );
+        // const div1 = (values[i].value || 0) + ( in_out < 0 ? -in_out : 0);
+        // const div2 = values[i + 1].value + ( in_out > 0 ? in_out : 0);
+
+        const div1 = (values[i].value || 0) + (values[i].out || 0) + ( values[i].out_local || 0 );
         const div2 = values[i + 1].value + values[i].in + ( values[i].in_local || 0 ) + ( values[i].expenses || 0 );
-        values[i].gp = (div2 > 0) ? (div1-div2) / div2 : 0; 
+        values[i].gp = (div2 ) ? (div1-div2) / div2 : 0; 
       }
       return { 
         key: category.type === AccountType.Category ? category.name : category.id,
@@ -129,7 +133,7 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments]);
+      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1));
       const data =  inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance));
       return data || [];
   });
@@ -201,5 +205,10 @@
       gp: (div2 > 0) ? (div1-div2) / div2 : 0
     };
     } );
+
+
+  function onChangePeriod() {
+    store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
+  }
 
 </script>

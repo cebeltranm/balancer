@@ -94,7 +94,6 @@ export default class DropboxStore {
     async writeJsonFile(fileName: string, data: Object) {
         const dbx = this.__getDropbox();
         const res  = await dbx.filesUpload({ path: `/${fileName}`, contents: JSON.stringify(data) , mode: 'overwrite' });
-        console.log('res', res);
         if (res.status === 200) {
             return true;
         }
