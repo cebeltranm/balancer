@@ -18,7 +18,7 @@ export default class DropboxStore {
         return new Dropbox({ auth: dbxAuth });    
     }
 
-    async getInfo() {
+    async getInfo(authLoggin: boolean = true) {
         const info = {
             type: 'Dropbox',
             loggedIn: false,
@@ -35,7 +35,11 @@ export default class DropboxStore {
                     if (res.status === 200) {
                         info.offline = false;
                     }
-                } catch(e) {
+                } catch(e: any) {
+                    if (e.status === 401 && authLoggin) {
+                        await this.doAuth();
+                        return this.getInfo(false);
+                    }
                     if ( !(e instanceof DropboxResponseError) || e.status !== 401) {
                         info.offline = true;
                     }
