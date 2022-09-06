@@ -28,6 +28,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useStore } from "vuex";
 import * as files from '@/helpers/files';
 import * as sync from '@/helpers/sync';
+import { timeout } from "workbox-core/_private";
 
 const visible = ref(false);
 const storeInfo = ref();
@@ -45,6 +46,9 @@ const isAuthenticated = computed(() => store.state.storage.status.authenticated)
 
 function show() {
   visible.value = true;
+  if (storeInfo.value?.loggedIn && localCredentials.value && !isAuthenticated.value) {
+    authenticate();
+  }
 }
 
 defineExpose({
@@ -60,6 +64,9 @@ onMounted(async () => {
   if (storeInfo.value.loggedIn) {
     loadBasicFiles();
   }
+  if (storeInfo.value.loggedIn && !storeInfo.value.offline) {
+    setTimeout( () => syncCachedFiles(), 5000);
+  }
   if (storeInfo.value.type === 'Dropbox' && route.query.code) {
     doLoginStore();
   }
@@ -70,6 +77,10 @@ onMounted(async () => {
 
   if (storeInfo.value.loggedIn && storeInfo.value.type === 'HttpServer') {
     store.dispatch('storage/setAuthenticated', true)
+    visible.value = false;
+  }
+  if (storeInfo.value?.loggedIn && localCredentials.value && !isAuthenticated.value && visible.value) {
+    authenticate();
   }
 
 });
@@ -132,6 +143,7 @@ async function authenticate() {
   const credential = await navigator.credentials.get({ publicKey });
   if (credential) {
     await store.dispatch('storage/setAuthenticated', true)
+    visible.value = false;
   }  
 }
 
@@ -160,6 +172,7 @@ async function syncCachedFiles() {
     try {
         store.commit('storage/inSync', true);
         await sync.syncCachedFiles((file:string) => {
+          console.log(file);
           const fileNameData = file.split('.')[0].split('_');
           switch(fileNameData[0]) {
             case 'accounts':

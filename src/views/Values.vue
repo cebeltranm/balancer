@@ -30,6 +30,20 @@
             <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" currencyDisplay="code" locale="en-US" autofocus/>
         </template>
     </Column>
+    <Column field="m_m" header="M/M">
+      <template #body="slotProps">
+            <div :class="{ 'text-right': true, 'text-red-400': slotProps.data.m_m < 0, 'text-green-400':slotProps.data.m_m > 0}">
+                {{slotProps.data.m_m && $format.percent(slotProps.data.m_m)}}
+            </div>
+        </template>
+    </Column>
+    <Column field="m_m" header="M/Y">
+      <template #body="slotProps">
+            <div :class="{ 'text-right': true, 'text-red-400': slotProps.data.m_y < 0, 'text-green-400':slotProps.data.m_y > 0}">
+                {{slotProps.data.m_y && $format.percent(slotProps.data.m_y)}}
+            </div>
+        </template>
+    </Column>
   </DataTable>
 </template>
 
@@ -54,7 +68,9 @@ import { useStore } from 'vuex';
 
   function recalculateValues() {
     pendingToSave.value = false;
-    const date = new Date( period.value.value.year, period.value.value.month -1, 1 );
+    const date = new Date( period.value.value.year, period.value.value.month - 1, 2 );
+    const prevDate = new Date( period.value.value.year - (period.value.value.month === 1 ? 1 : 0), period.value.value.month - (period.value.value.month === 1 ? 1 : 2), 2 );
+    const prevYear = new Date( period.value.value.year - 1, period.value.value.month - 1, 2 );
     const accounts = store.getters['accounts/activeAccounts'](date);
     const currencies = accounts.reduce( (ant: any[], a:any) => {
         if (
@@ -75,7 +91,9 @@ import { useStore } from 'vuex';
             type: 'Currency',
             name: Currency.USD,
             currency: c,
-            value: store.getters['values/getValue'](date, Currency.USD, c)
+            value: store.getters['values/getValue'](date, Currency.USD, c),
+            m_m: store.getters['values/getValue'](prevDate, Currency.USD, c) ? (-1 + store.getters['values/getValue'](date, Currency.USD, c) / store.getters['values/getValue'](prevDate, Currency.USD, c) ) : undefined,
+            m_y: store.getters['values/getValue'](prevYear, Currency.USD, c) ? (-1 + store.getters['values/getValue'](date, Currency.USD, c) / store.getters['values/getValue'](prevYear, Currency.USD, c) ) : undefined
         })),
         ...investments.map( (a) => ({
           entity: a.entity,
@@ -83,12 +101,15 @@ import { useStore } from 'vuex';
           type:  a.type,
           name: a.name, 
           currency: a.currency,
-          value: store.getters['values/getValue'](date, a.id, a.currency)
+          value: store.getters['values/getValue'](date, a.id, a.currency),
+          m_m: [AccountType.Stock, AccountType.ETF].includes(a.type) && store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
+          m_y: [AccountType.Stock, AccountType.ETF].includes(a.type) && store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
         }))
     ];
   };
 
   function onChangePeriod() {
+    store.dispatch('values/getValuesForYear', {year: period.value.value.year - 1})
     recalculateValues();
   }
 
@@ -135,6 +156,7 @@ import { useStore } from 'vuex';
             case AccountType.Investment:
             case AccountType.ETF:
             case AccountType.CDT:
+            case AccountType.Stock:
               ant[v.id] = {
                     [v.currency]: v.value
                 };

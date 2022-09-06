@@ -12,19 +12,18 @@
     </template>
   </Toolbar>
   <template v-if="isAuthenticated">
-    <TreeTable :value="byCategory" v-if="displayType === 'table'">
+  <TreeTable :value="byCategory" v-if="displayType === 'table'" :showGridlines="true" :resizableColumns="true">
     <Column field="name" header="Name" footer="Total" :expander="true"></Column>
-    <Column header="In">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
-        {{ $format.currency(node.data.values[0].in + (node.data.values[0].in_local || 0), node.data.currency || 'cop') }}
+    <Column header="In/Out">
+      <template #body="{node}"><div 
+        :class="{ 'text-right': true, 'text-red-400': getInOut(node.data.values[0]) < 0, 'text-green-400': getInOut(node.data.values[0]) > 0}" 
+        v-tooltip.bottom="'IN: '+ $format.currency(node.data.values[0].in, node.data.currency || 'cop')+
+            '\nOUT: '+$format.currency(node.data.values[0].out, node.data.currency || 'cop') +
+            '\nLOCAL IN: '+$format.currency(node.data.values[0].in_local, node.data.currency || 'cop') +
+            '\nLOCAL OUT: '+$format.currency(node.data.values[0].out_local, node.data.currency || 'cop')">
+        {{ $format.currency(getInOut(node.data.values[0]), node.data.currency || 'cop') }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.in, 'cop')}}</div></template>
-    </Column>
-    <Column header="Out">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
-        {{ $format.currency(node.data.values[0].out + (node.data.values[0].out_local || 0), node.data.currency || 'cop') }}
-        </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.out, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getInOut(getTotal) < 0, 'text-green-400': getInOut(getTotal) > 0}">{{ $format.currency(getInOut(getTotal), 'cop')}}</div></template>
     </Column>
     <Column header="Expenses">
       <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].expenses > 0}">
@@ -133,10 +132,14 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1));
+      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
       const data =  inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance));
       return data || [];
   });
+
+  function getInOut(val: any){
+    return val.in + (val.in_local || 0) - val.out -  (val.out_local || 0)
+  }
 
   // const pieData = computed(() => {
   //   return {labels: byCategory.value.map( c => c.data.name),

@@ -28,6 +28,7 @@ export enum AccountType {
     Receivable = "Receivable",
     Investment = "Investment",
     ETF = "ETF",
+    Stock = "Stock",
     CDT = "CDT",
     Loan = "Loan",
     Property = "Property",

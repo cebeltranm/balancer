@@ -1,5 +1,5 @@
 import {readJsonFile} from '@/helpers/files';
-import {AccountGroupType, AccountType } from "@/types"
+import {AccountGroupType, AccountType, Period } from "@/types"
 
 function getCategoryEntry(group:any, category:string) {
   if (!group[category]) {
@@ -14,7 +14,7 @@ function getCategoryEntry(group:any, category:string) {
 
 export const ACCOUNT_GROUP_TYPES = {
   [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
-  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF, AccountType.CDT],
+  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF, AccountType.CDT, AccountType.Stock],
   [AccountGroupType.Receivables]: [AccountType.Receivable],
   [AccountGroupType.Liabilities]: [ AccountType.CreditCard, AccountType.Loan ],
   [AccountGroupType.Incomes]: [ AccountType.Income ],
@@ -33,7 +33,7 @@ export default {
     },
     getters: {
       isAccountInUnits: ( state: any) => (id: string) => { 
-        return [AccountType.ETF].includes( state.accounts[id].type );
+        return [AccountType.ETF, AccountType.Stock].includes( state.accounts[id].type );
       },
       getAccountGroupType: ( state: any) => (id: string) => { 
         return state.accounts[id] && Object.keys(ACCOUNT_GROUP_TYPES).find( (k: string) => ACCOUNT_GROUP_TYPES[k].includes( state.accounts[id].type ))
@@ -42,10 +42,18 @@ export default {
         const account = state.accounts[id];
         return account && `${account.entity? account.entity + ': ' : ''}${account.type}: ${account.category ? account.category.join(': ') + ': ' : '' }${account.name}`;
       },
-      activeAccounts: ( state: any) => (date: Date) => { 
+      activeAccounts: ( state: any) => (date: Date, period: Period = Period.Month) => { 
         return Object.keys(state.accounts)
-            .filter( (a: string) => (!state.accounts[a].activeFrom || state.accounts[a].activeFrom <= date) && 
-                                (!state.accounts[a].hideSince || state.accounts[a].hideSince > date) )
+            .filter( (a: string) => {
+              const fromYear = state.accounts[a].activeFrom && state.accounts[a].activeFrom.getFullYear();
+              const fromMonth = state.accounts[a].activeFrom && (period === Period.Month ? state.accounts[a].activeFrom.getMonth() : 0);
+
+              const toYear = state.accounts[a].hideSince && state.accounts[a].hideSince.getFullYear();
+              const toMonth = state.accounts[a].hideSince && (period === Period.Month ? state.accounts[a].hideSince.getMonth() : 12);
+
+              return (!fromYear || fromYear < date.getFullYear() || ( fromYear === date.getFullYear() && fromMonth <= date.getMonth() )) && 
+                    (!toYear || toYear > date.getFullYear() || ( toYear === date.getFullYear() && toMonth > date.getMonth() ))
+            })
             .map( (a: string) => state.accounts[a] );
       },
       expCategories(state: any) {
@@ -61,8 +69,8 @@ export default {
           return ant;
         },{});
       },
-      accountsGroupByCategories: (state: any, getters: any) => ( groupTypes? : AccountGroupType[], date: Date = new Date() )  => {
-        return getters.activeAccounts( date )
+      accountsGroupByCategories: (state: any, getters: any) => ( groupTypes? : AccountGroupType[], date: Date = new Date(), period: Period = Period.Month )  => {
+        return getters.activeAccounts( date, period )
            .filter( (account:any) => !groupTypes || groupTypes.includes(Object.keys(ACCOUNT_GROUP_TYPES).find( k => ACCOUNT_GROUP_TYPES[k].includes( account.type )) ))
            .reduce( (ant:any, account: any) => {
 

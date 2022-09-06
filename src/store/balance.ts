@@ -39,11 +39,11 @@ export default {
                 .reduce( (ant, v) => {
                   return {
                     value: rootState.accounts.accounts[key].type === AccountType.Expense ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
-                    ...( [AccountType.Investment, AccountType.CDT, AccountType.ETF].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
+                    ...( [AccountType.Investment, AccountType.CDT, AccountType.ETF, AccountType.Stock].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
                       p[k] = ant[k] + ( !v || v[k] === undefined ? 0 : v[k])
                       return p;
                     }, {}) : {}),
-                    ...( [ AccountType.ETF].includes(rootState.accounts.accounts[key].type) ? {
+                    ...( [ AccountType.ETF, AccountType.Stock].includes(rootState.accounts.accounts[key].type) ? {
                       units: !v || v.units === undefined ? ant.units : v.units
                        }: {})
                   }
@@ -116,8 +116,10 @@ export default {
               }
               return t.values.reduce( (ant: any, value) => {
                 const groupType = context.rootGetters['accounts/getAccountGroupType'](value.accountId)
-                if ( groupType === AccountGroupType.Expenses && indexInv === 0) {
-                  ant[inv.accountId].expenses += value.accountValue;
+                if ( groupType === AccountGroupType.Expenses) {
+                  if (indexInv === 0) {
+                    ant[inv.accountId].expenses += value.accountValue;
+                  }
                 } else if ( value.accountId !== inv.accountId ) {
                   if ( groupType !== AccountGroupType.Investments || !accounts[inv.accountId].entity || !accounts[value.accountId].entity || accounts[inv.accountId].entity !== accounts[value.accountId].entity ) {
                     ant[inv.accountId].in += (inv.accountValue > 0 ? inv.accountValue : 0);
@@ -164,6 +166,7 @@ export default {
               };
               break;
             case AccountType.ETF:
+            case AccountType.Stock:
               var units = ( investments[accounts[a].id] || {}).units || 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth] && prevBalance[accounts[a].id][prevMonth].units) {
                 units += prevBalance[accounts[a].id][prevMonth].units;
