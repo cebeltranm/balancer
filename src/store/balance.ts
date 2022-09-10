@@ -39,11 +39,11 @@ export default {
                 .reduce( (ant, v) => {
                   return {
                     value: rootState.accounts.accounts[key].type === AccountType.Expense ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
-                    ...( [AccountType.Investment, AccountType.CDT, AccountType.ETF, AccountType.Stock].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
+                    ...( [AccountType.Investment, AccountType.CDT, AccountType.ETF, AccountType.Stock, AccountType.Crypto].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
                       p[k] = ant[k] + ( !v || v[k] === undefined ? 0 : v[k])
                       return p;
                     }, {}) : {}),
-                    ...( [ AccountType.ETF, AccountType.Stock].includes(rootState.accounts.accounts[key].type) ? {
+                    ...( [ AccountType.ETF, AccountType.Stock, AccountType.Crypto].includes(rootState.accounts.accounts[key].type) ? {
                       units: !v || v.units === undefined ? ant.units : v.units
                        }: {})
                   }
@@ -167,6 +167,7 @@ export default {
               break;
             case AccountType.ETF:
             case AccountType.Stock:
+            case AccountType.Crypto:
               var units = ( investments[accounts[a].id] || {}).units || 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth] && prevBalance[accounts[a].id][prevMonth].units) {
                 units += prevBalance[accounts[a].id][prevMonth].units;

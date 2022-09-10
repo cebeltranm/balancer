@@ -30,6 +30,7 @@ export enum AccountType {
     ETF = "ETF",
     Stock = "Stock",
     CDT = "CDT",
+    Crypto = "Crypto",
     Loan = "Loan",
     Property = "Property",
     OpenBalance = "OpenBalance",
@@ -48,6 +49,7 @@ export enum Currency {
     COP = "cop",
     USD = "usd",
     EUR = "eur",
+    BTC = "btc",
 }
 
 export interface Account {

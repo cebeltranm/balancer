@@ -14,7 +14,7 @@ function getCategoryEntry(group:any, category:string) {
 
 export const ACCOUNT_GROUP_TYPES = {
   [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
-  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF, AccountType.CDT, AccountType.Stock],
+  [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF, AccountType.CDT, AccountType.Stock, , AccountType.Crypto],
   [AccountGroupType.Receivables]: [AccountType.Receivable],
   [AccountGroupType.Liabilities]: [ AccountType.CreditCard, AccountType.Loan ],
   [AccountGroupType.Incomes]: [ AccountType.Income ],
@@ -33,7 +33,7 @@ export default {
     },
     getters: {
       isAccountInUnits: ( state: any) => (id: string) => { 
-        return [AccountType.ETF, AccountType.Stock].includes( state.accounts[id].type );
+        return [AccountType.ETF, AccountType.Stock, AccountType.Crypto].includes( state.accounts[id].type );
       },
       getAccountGroupType: ( state: any) => (id: string) => { 
         return state.accounts[id] && Object.keys(ACCOUNT_GROUP_TYPES).find( (k: string) => ACCOUNT_GROUP_TYPES[k].includes( state.accounts[id].type ))

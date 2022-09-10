@@ -38,9 +38,12 @@
       <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal.gp < 0, 'text-green-400': getTotal.gp > 0}">{{ $format.percent( getTotal.gp ) }}</div></template>
     </Column>
     <Column header="Balance">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
+      <template #body="{node}">
+        <div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
         {{ $format.currency(node.data.values[0].value, node.data.currency || 'cop') }}
-        </div></template>
+        </div>
+        <div v-if="node.data.values[0].units" class="text-sm text-right">({{$format.number(node.data.values[0].units)}} und)</div>
+      </template>
       <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.value, 'cop')}}</div></template>
     </Column>
   </TreeTable>

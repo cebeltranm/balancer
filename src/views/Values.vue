@@ -27,7 +27,7 @@
             </div>
         </template>
         <template #editor="{ data }">
-            <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" currencyDisplay="code" locale="en-US" autofocus/>
+            <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" :maxFractionDigits="data.currency === Currency.BTC ? 10: 0" currencyDisplay="code" locale="en-US" autofocus/>
         </template>
     </Column>
     <Column field="m_m" header="M/M">
@@ -74,7 +74,7 @@ import { useStore } from 'vuex';
     const accounts = store.getters['accounts/activeAccounts'](date);
     const currencies = accounts.reduce( (ant: any[], a:any) => {
         if (
-            [AccountType.Expense, AccountType.BankAccount, AccountType.CreditCard].includes(a.type) &&
+            // [AccountType.Expense, AccountType.BankAccount, AccountType.CreditCard].includes(a.type) &&
             a.currency !== Currency.USD && 
             !ant.includes(a.currency)
         ) {
@@ -102,8 +102,8 @@ import { useStore } from 'vuex';
           name: a.name, 
           currency: a.currency,
           value: store.getters['values/getValue'](date, a.id, a.currency),
-          m_m: [AccountType.Stock, AccountType.ETF].includes(a.type) && store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
-          m_y: [AccountType.Stock, AccountType.ETF].includes(a.type) && store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
+          m_m: [AccountType.Stock, AccountType.ETF, AccountType.Crypto].includes(a.type) && store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
+          m_y: [AccountType.Stock, AccountType.ETF, AccountType.Crypto].includes(a.type) && store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
         }))
     ];
   };
@@ -157,6 +157,7 @@ import { useStore } from 'vuex';
             case AccountType.ETF:
             case AccountType.CDT:
             case AccountType.Stock:
+            case AccountType.Crypto:
               ant[v.id] = {
                     [v.currency]: v.value
                 };

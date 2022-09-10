@@ -1,13 +1,24 @@
+import { Currency } from "./types";
 
 
 export default {
+    number: (value:any, decimals:number = 10) => {
+        if (typeof value !== "number") {
+            return value;
+        }
+        var formatter = new Intl.NumberFormat('en-US', {
+            maximumSignificantDigits: decimals,
+        });
+        return formatter.format(value);
+    },
     currency: (value:any, currency:any) => {
         if (typeof value !== "number") {
             return value;
         }
         var formatter = new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: currency
+            currency: currency,
+            maximumSignificantDigits: currency === Currency.BTC ? 10 : undefined,
         });
         return formatter.format(value);
     },
