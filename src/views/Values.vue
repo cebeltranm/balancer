@@ -53,6 +53,7 @@ import { getCurrentPeriod, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
+import { getBinanceValues } from '@/helpers/binance';
 
   const period = ref({
     type: Period.Month,

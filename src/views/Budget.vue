@@ -17,7 +17,6 @@
     scrollDirection="both"
     scrollHeight="flex"
     >
-    
     <Column header="Expense" style="width:200px" footer="Total" frozen>
          <template #body="{ data }">
           {{ data.type !== AccountType.Category ? "&nbsp;>&nbsp;&nbsp;" : "" }} {{ data.name }}
@@ -79,7 +78,7 @@ import format from '@/format';
     pendingToSave.value = false;
     EVENTS.emit(FORM_WITH_PENDING_EVENTS, false);
 
-    const date = new Date( period.value.value.year, period.value.value.month -1, 1 );
+    const date = new Date( period.value.value.year, period.value.value.month -1, 2 );
     const budget = await store.dispatch('budget/getBudgetForYear', {year: period.value.value.year})
     
     const getByCategory = (category: string, sub: string, accounts: any) => {

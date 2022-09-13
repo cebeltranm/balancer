@@ -63,6 +63,7 @@
           { label: 'Assets', icon: 'pi pi-fw pi-credit-card', to: '/assets' },
           { label: 'Investments', icon: 'pi pi-fw pi-bars', to: '/investments' },
           { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' },
+          { label: 'Balance', icon: 'pi pi-fw pi-bars', to: '/balance' },
         ]
     },
     {
@@ -111,7 +112,7 @@
   onMounted(() => {
     store.dispatch('storage/pendingToSync');
     setTimeout(async () => {
-      // await store.dispatch('balance/recalculateBalance', { year: 2022, month: 1, save: true });
+      // await store.dispatch('balance/recalculateBalance', { year: 2018, month: 1, save: true });
     }, 2000)
   })
 

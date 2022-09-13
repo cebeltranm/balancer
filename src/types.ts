@@ -39,6 +39,7 @@ export enum AccountType {
 export enum AccountGroupType {
     Expenses = "Expenses",
     Assets = "Assets",
+    FixedAssets = "FixedAssets",
     Investments = "Investments",
     Receivables = "Receivables",
     Liabilities = "Liabilities",

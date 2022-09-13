@@ -7,7 +7,7 @@
         <Button icon="pi pi-caret-right" class="ml-0" @click="increasePeriod" :disabled="!canIncrease"  v-if="['table', 'pie'].includes(displayType)"/> -->
     </template>
     <template #end>
-        <SelectButton v-model="displayType" :options="displayOptions" optionValue="id">
+        <SelectButton v-model="displayType" :options="displayOptions" optionValue="id" @update:modelValue="onChangeDisplayType" >
 	        <template #option="{option}">
               <i :class="option.icon"></i>
           </template>
@@ -141,7 +141,7 @@
 
   const barData = computed(() => {
     const currentPeriod = getCurrentPeriod();
-    const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 5;
+    const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 10;
     const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
     const expences = store.getters['accounts/expensesByCategories'];
 
@@ -183,6 +183,20 @@
   function onChangePeriod() {
     store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
   }
-
+  function onChangeDisplayType() {
+    if(displayType.value === 'bar') {
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 2})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 3})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 4})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 5})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 6})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 7})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 8})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 9})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 10})
+    }
+  }
 
 </script>
