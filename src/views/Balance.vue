@@ -14,8 +14,9 @@
   <template v-if="isAuthenticated">
     <div class="balance">
     <DataTable :value="values" 
-    showGridlines
+    :resizableColumns="true" columnResizeMode="fit" showGridlines
     :rowClass="getRowClass"
+    responsiveLayout="scroll" 
     :scrollable="true"
     scrollDirection="both"
     scrollHeight="flex"
@@ -35,10 +36,10 @@
         <Column header="%" style="width:80px" v-if="index > 0">
             <template #body="{ data }">
                 <div class="text-right"  style="width: 100%">
-                {{data.values[index - 1] && Math.abs( data.values[index]/data.values[index - 1]) < 100 ? format.percent(1 - data.values[index]/data.values[index - 1]) : ''}}
+                {{data.values[0] && Math.abs( data.values[index]/data.values[0]) < 100 ? format.percent(1 - data.values[index]/data.values[0]) : ''}}
                 </div>
             </template>
-            <template #footer><div class="text-right" style="width: 100%">{{ $format.percent(1 - total[index] / total[index - 1])}}</div></template>
+            <template #footer><div class="text-right" style="width: 100%">{{ $format.percent(1 - total[index] / total[0])}}</div></template>
         </Column>
     </template>
     </DataTable>
@@ -92,30 +93,32 @@ async function onChangePeriod() {
 async function recalculateValues() {
     const date = new Date( period.value.value.year, period.value.value.month -1, 2 );
     var per: any[]  = [{ period: period.value.value }];
-    var totPer = 3;
-    switch(period.value.type) {
-        case Period.Month:
-            if (period.value.value.month === 1) {
-                per.push( { period: { year: period.value.value.year -1, month: 12 } } );
-            } else {
-                per.push( { period: { year: period.value.value.year, month: period.value.value.month - 1 } } );
-            }
-            per.push( { period: {year: period.value.value.year - 1, month: period.value.value.month}, position: 12 }  );
-            totPer = 13;
-            break;
-        case Period.Quarter:
-            if (period.value.value.quarter === 1) {
-                per.push( { period: { year: period.value.value.year - 1, quarter: 4 } } );
-            } else {
-                per.push( { period: {year: period.value.value.year, quarter: period.value.value.quarter - 1} } );
-            }
-            per.push( { period: {year: period.value.value.year - 1, quarter: period.value.value.quarter}, position: 4 } );
-            totPer = 5;
-            break;
-        case Period.Year:
-            per.push( { period: {year: period.value.value.year - 1} } );
-            per.push( { period: {year: period.value.value.year - 2} } );
+    var totPer = period.value.type === Period.Month ? 13 : 5;
+    var totConsPer = period.value.type === Period.Month ? 3 : 5;
+    for(var i = 0; i < totConsPer - 1; i++) {
+        switch(period.value.type) {
+            case Period.Month:
+                if (per[i].period.month === 1) {
+                    per.push( { period: { year: per[i].period.year -1, month: 12 } } );
+                } else {
+                    per.push( { period: { year: per[i].period.year, month: per[i].period.month - 1 } } );
+                }
+                break;
+            case Period.Quarter:
+                if (per[i].period.quarter === 1) {
+                    per.push( { period: { year: per[i].period.year - 1, quarter: 4 } } );
+                } else {
+                    per.push( { period: {year: per[i].period.year, quarter: per[i].period.quarter - 1} } );
+                }
+                break;
+            case Period.Year:
+                per.push( { period: {year: per[i].period.year - 1} } );
+        }
     }
+    if (period.value.type === Period.Month) {
+        per.push( { period: {year: period.value.value.year - 1, month: period.value.value.month}, position: 12 }  );
+    }
+
     var per = per.map( (p, index) => {
         return {
             ...p,
@@ -127,6 +130,8 @@ async function recalculateValues() {
                 2 )
         }
     });
+
+
 
     periodTitles.value = per.map( (p) => {
         return `${p.period.year}` + (

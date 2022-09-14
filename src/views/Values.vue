@@ -8,21 +8,25 @@
         <Button icon="pi pi-sync" @click="syncValues"  class="ml-1"/>
     </template>
   </Toolbar>
+<div class="values">
 <DataTable :value="values" 
     @cell-edit-complete="onValueEdit"
     responsiveLayout="scroll" 
     :resizableColumns="true" columnResizeMode="fit" showGridlines
     class="p-datatable-sm"
     editMode="cell"
+    :scrollable="true"
     :rowClass="rowPendingSyncClass"
+    scrollHeight="flex"
+    scrollDirection="both"
     >
-    <Column field="entity" header="Entity"></Column>
-    <Column field="type" header="Type"></Column>
-    <Column field="name" header="Name"></Column>
-    <Column field="currency" header="Currency"></Column>
-    <Column header="value" class="text-right">
+    <Column field="entity" header="Entity" style="width:100px"></Column>
+    <Column field="type" header="Type" style="width:120px"></Column>
+    <Column field="name" header="Name" style="width:150px" fixed></Column>
+    <Column field="currency" header="Currency" style="width:80px"></Column>
+    <Column header="value" style="width:200px">
         <template #body="slotProps">
-            <div class="text-right">
+            <div class="text-right" style="width:100%">
                 {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
             </div>
         </template>
@@ -30,14 +34,14 @@
             <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" :maxFractionDigits="data.currency === Currency.BTC ? 10: 0" currencyDisplay="code" locale="en-US" autofocus/>
         </template>
     </Column>
-    <Column field="m_m" header="M/M">
+    <Column field="m_m" header="M/M" style="width:80px">
       <template #body="slotProps">
             <div :class="{ 'text-right': true, 'text-red-400': slotProps.data.m_m < 0, 'text-green-400':slotProps.data.m_m > 0}">
                 {{slotProps.data.m_m && $format.percent(slotProps.data.m_m)}}
             </div>
         </template>
     </Column>
-    <Column field="m_m" header="M/Y">
+    <Column field="m_m" header="Y/Y" style="width:80px">
       <template #body="slotProps">
             <div :class="{ 'text-right': true, 'text-red-400': slotProps.data.m_y < 0, 'text-green-400':slotProps.data.m_y > 0}">
                 {{slotProps.data.m_y && $format.percent(slotProps.data.m_y)}}
@@ -45,7 +49,14 @@
         </template>
     </Column>
   </DataTable>
+  </div>
 </template>
+
+<style scoped>
+  .values {
+      height: 70vh;
+  }
+</style>
 
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
@@ -84,7 +95,7 @@ import { getBinanceValues } from '@/helpers/binance';
         return ant;
     }, []);
 
-    const investments = accounts.filter( a => store.getters['accounts/getAccountGroupType'](a.id) === AccountGroupType.Investments );
+    const investments = accounts.filter( a => [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(store.getters['accounts/getAccountGroupType'](a.id)) );
 
     values.value = [
         ...currencies.map( (c) => ({
@@ -103,8 +114,8 @@ import { getBinanceValues } from '@/helpers/binance';
           name: a.name, 
           currency: a.currency,
           value: store.getters['values/getValue'](date, a.id, a.currency),
-          m_m: [AccountType.Stock, AccountType.ETF, AccountType.Crypto].includes(a.type) && store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
-          m_y: [AccountType.Stock, AccountType.ETF, AccountType.Crypto].includes(a.type) && store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
+          m_m: [AccountType.Stock, AccountType.ETF, AccountType.Crypto, AccountType.Property].includes(a.type) && store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
+          m_y: [AccountType.Stock, AccountType.ETF, AccountType.Crypto, AccountType.Property].includes(a.type) && store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
         }))
     ];
   };
@@ -159,6 +170,7 @@ import { getBinanceValues } from '@/helpers/binance';
             case AccountType.CDT:
             case AccountType.Stock:
             case AccountType.Crypto:
+            case AccountType.Property:
               ant[v.id] = {
                     [v.currency]: v.value
                 };

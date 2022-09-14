@@ -47,10 +47,12 @@
       <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.value, 'cop')}}</div></template>
     </Column>
   </TreeTable>
+  <div class="flex"  v-if="displayType === 'pie'" >
+    <Chart type="pie" :data="pieDataByEntity" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+    <Chart type="pie" :data="pieDataByType" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+    <Chart type="pie" :data="pieDataByRisk" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+  </div>
     <!--
-    <div style="max-width:600px">
-    <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" v-if="displayType === 'pie'" />
-    </div>
     <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" /> -->
   </template>
 </template>
@@ -140,58 +142,33 @@
       return data || [];
   });
 
+  const byType = computed(() => {
+      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
+      const inv = store.getters['accounts/accountsGroupByType']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
+        {
+          type: AccountType.Category,
+          name: key,
+          children: inv[key]
+        }, balance));
+      return data || [];
+  });
+
+  const byRisk = computed(() => {
+      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
+      const inv = store.getters['accounts/investmentsGroupByRisk'](new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
+        {
+          type: AccountType.Category,
+          name: key,
+          children: inv[key]
+        }, balance));
+      return data || [];
+  });
+
   function getInOut(val: any){
     return val.in + (val.in_local || 0) - val.out -  (val.out_local || 0)
   }
-
-  // const pieData = computed(() => {
-  //   return {labels: byCategory.value.map( c => c.data.name),
-  //       datasets: [
-  //           {
-  //               data: byCategory.value.map( c => c.data.values[0]),
-  //               backgroundColor: BACKGROUNDS_COLOR_GRAPH,
-  //               // hoverBackgroundColor: ["#64B5F6","#81C784","#FFB74D"]
-  //           }
-  //       ]};
-  // });
-
-  // const barData = computed(() => {
-  //   const currentPeriod = getCurrentPeriod();
-  //   const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 5;
-  //   const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
-  //   const expences = store.getters['accounts/expensesByCategories'];
-
-  //   const grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
-    
-  //   const labels = [];
-  //   for (var i = 1 ; i < numPeriods + 1; i++) {
-  //     labels.push(`${currentPeriod.year}${period.value.type === Period.Month ? '/'+currentPeriod.month: ''}${period.value.type === Period.Quarter ? '/'+currentPeriod.quarter: ''}`);
-  //     switch(period.value.type){
-  //     case Period.Quarter:
-  //       currentPeriod.year = currentPeriod.quarter === 1 ? currentPeriod.year - 1 : currentPeriod.year;
-  //       currentPeriod.quarter = currentPeriod.quarter === 1 ? 4 : currentPeriod.quarter - 1;
-  //       break;
-  //     case Period.Year:
-  //       currentPeriod.year = currentPeriod.year - 1;
-  //       break;
-  //     default:
-  //       currentPeriod.year = currentPeriod.month === 1 ? currentPeriod.year - 1 : currentPeriod.year;
-  //       currentPeriod.month = currentPeriod.month === 1 ? 12 : currentPeriod.month - 1;
-  //     }
-  //   }
-
-  //   return {labels: labels.reverse(),
-  //       datasets: grouped.map( (c: any, index) => {
-  //         return {
-  //           type: 'bar',
-  //           label: c.data.name,
-  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
-  //           data: c.data.values.reverse()
-  //         };
-  //       })
-  //       };
-  // });
-
 
   const getTotal = computed(() => {
     const val1 = byCategory.value.reduce( (ant, v) => ({
@@ -212,7 +189,35 @@
     };
     } );
 
+  const pieDataByEntity = computed(() => {
+    return {labels: byCategory.value.map( c => c.data.name),
+        datasets: [
+            {
+                data: byCategory.value.map( c => c.data.values[0].value),
+                backgroundColor: BACKGROUNDS_COLOR_GRAPH,
+            }
+        ]};
+  });
 
+  const pieDataByType = computed(() => {
+    return {labels: byType.value.map( c => c.data.name),
+        datasets: [
+            {
+                data: byType.value.map( c => c.data.values[0].value),
+                backgroundColor: BACKGROUNDS_COLOR_GRAPH,
+            }
+        ]};
+  });
+
+  const pieDataByRisk = computed(() => {
+    return {labels: byRisk.value.map( c => c.data.name),
+        datasets: [
+            {
+                data: byRisk.value.map( c => c.data.values[0].value),
+                backgroundColor: BACKGROUNDS_COLOR_GRAPH,
+            }
+        ]};
+  });
   function onChangePeriod() {
     store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
   }

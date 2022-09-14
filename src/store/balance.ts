@@ -160,6 +160,7 @@ export default {
               break;
             case AccountType.Investment:
             case AccountType.CDT:
+            case AccountType.Property:
               balance[accounts[a].id][month] = {
                 ...( investments[accounts[a].id] || {}),
                 value: context.rootGetters['values/getValue'](date, accounts[a].id, accounts[a].currency ) || 0

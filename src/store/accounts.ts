@@ -100,6 +100,29 @@ export default {
               return ant;
            }, {} );
       },
+      accountsGroupByType: (state: any, getters: any) => ( groupTypes? : AccountGroupType[], date: Date = new Date(), period: Period = Period.Month )  => {
+        return getters.activeAccounts( date, period )
+           .filter( (account:any) => !groupTypes || groupTypes.includes(Object.keys(ACCOUNT_GROUP_TYPES).find( k => ACCOUNT_GROUP_TYPES[k].includes( account.type )) ))
+           .reduce( (ant:any, account: any) => {
+
+              if (!ant[account.type]) {
+                ant[account.type] = {}
+              }
+              ant[account.type][account.id] = {...account};
+              return ant;
+           }, {} );
+      },
+      investmentsGroupByRisk: (state: any, getters: any) => ( date: Date = new Date(), period: Period = Period.Month )  => {
+        return getters.activeAccounts( date, period )
+           .filter( (account:any) => ACCOUNT_GROUP_TYPES[AccountGroupType.Investments].includes( account.type ))
+           .reduce( (ant:any, account: any) => {
+              if (!ant[account.risk || 3]) {
+                ant[account.risk || 3] = {}
+              }
+              ant[account.risk || 3][account.id] = {...account};
+              return ant;
+           }, {} );
+      },
       expensesByCategories(state: any) {
         return Object.keys(state.accounts)
           .filter( (id:string) => state.accounts[id].type === 'Expense' )
