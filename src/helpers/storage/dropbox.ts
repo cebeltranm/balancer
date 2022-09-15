@@ -103,4 +103,20 @@ export default class DropboxStore {
         }
         return false;
     }
+
+    async getLastModification(fileName: string) {
+        const dbx = this.__getDropbox();
+        try {
+            const res = await dbx.filesGetMetadata({ path: `/${fileName}`});
+            if (res.status === 200) {
+                const data = new Date(res.result.client_modified);
+                return data;
+                // return JSON.parse(data);
+            }
+        } catch(e) {
+            if (!(e instanceof DropboxResponseError) || e.status < 404 || e.status > 410) {
+                throw e;
+            }
+        }
+    }
 }

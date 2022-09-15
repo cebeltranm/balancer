@@ -44,4 +44,7 @@ export default class HttpServerStore {
             return true;
         }
     }
+    async getLastModification(fileName: string) {
+        return new Date();
+    }
 }

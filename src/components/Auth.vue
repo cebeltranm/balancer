@@ -65,7 +65,7 @@ onMounted(async () => {
     loadBasicFiles();
   }
   if (storeInfo.value.loggedIn && !storeInfo.value.offline) {
-    setTimeout( () => syncCachedFiles(), 5000);
+    setTimeout( () => syncCachedFiles(), 1000);
   }
   if (storeInfo.value.type === 'Dropbox' && route.query.code) {
     doLoginStore();
@@ -172,7 +172,6 @@ async function syncCachedFiles() {
     try {
         store.commit('storage/inSync', true);
         await sync.syncCachedFiles((file:string) => {
-          console.log(file);
           const fileNameData = file.split('.')[0].split('_');
           switch(fileNameData[0]) {
             case 'accounts':

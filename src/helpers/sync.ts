@@ -39,22 +39,24 @@ export async function syncTransactions() {
 export async function syncCachedFiles( listener: Function ) {
     const year = new Date().getFullYear();
     const month = new Date().getMonth() + 1;
-    const months = [month, month>1 ? month - 1 : 12, month > 2 ? month - 2 : 11];
-
-    const exp = `(accounts|(values_|balance_|budget_)(${year}|${year - 1})|(transactions_${year}_(${months[0]}|${months[1]}|${months[2]})))\.json`;
-    const re = new RegExp(exp);
 
     const fileKeys = await idb.getAllFilesInCache();
     if (fileKeys.length > 0 ) {
-        await Promise.all(fileKeys.map(async (fileName) => {
+        await Promise.all(fileKeys.map(async (fileName: any) => {
             const file = await idb.getJsonFile(fileName);
             if (file && (Date.now() - file.date_cached) > 300000 && !file.to_sync) {
-                if (re.test(fileName)) {
-                    if(await files.readJsonFile(fileName, false)) {
-                        listener(fileName);
+                if (`${fileName}`.startsWith('transactions_')) {
+                    const parts = `${fileName}`.split('_');
+                    let months = (parseInt(parts[1]) - year) * 12;
+                    months -= parseInt(parts[2]);
+                    months += month;
+                    if (months > 5) {
+                        await idb.removeFile(fileName);
+                        return;
                     }
-                } else {
-                    await idb.removeFile(fileName);
+                } 
+                if(await files.readJsonFile(fileName, false)) {
+                    listener(fileName);
                 }
             }
         }));

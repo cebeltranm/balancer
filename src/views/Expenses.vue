@@ -15,33 +15,56 @@
     </template>
   </Toolbar>
   
-  <TreeTable :value="byCategory" v-if="displayType === 'table'">
-    <Column field="name" header="Name" footer="Total" :expander="true"></Column>
-    <Column header="Budget">
-      <template #body="{node}">
-          <ProgressBar 
-            :class="{ error: node.data.values[0] > node.data.budget[0] }"
-            :showValue="true" 
-            :value="Math.trunc(100*node.data.values[0]/node.data.budget[0])"
-            v-tooltip.left="$format.currency(node.data.budget[0], node.data.currency || 'cop')"
-            v-if="node.data.budget[0]" />
-      </template>
-      <template #footer>
-        <ProgressBar 
-            :class="{ error: getTotal > getTotalBudget }"
-            :showValue="true" 
-            :value="Math.trunc(100*getTotal/getTotalBudget)" 
-            v-tooltip.left="$format.currency(getTotalBudget, 'cop')"
-            v-if="getTotalBudget" />
-      </template>
-    </Column>
-    <Column header="Value">
-      <template #body="{node}"><div class="text-right">
-        {{ $format.currency(node.data.values[0], node.data.currency || 'cop') }}
-        </div></template>
-      <template #footer><div class="text-right">{{ $format.currency(getTotal, 'cop')}}</div></template>
-    </Column>
-  </TreeTable>
+  <TreeTable 
+    :value="byCategory" 
+    v-if="displayType === 'table'"
+    responsiveLayout="scroll"
+    scrollDirection="both"
+    :resizableColumns="true" columnResizeMode="fit" showGridlines
+    :scrollable="true"
+    >
+    <Column field="name" header="Name" footer="Total" :expander="true" style="width:200px" frozen></Column>
+    <template v-for="(title, index) in periodTitles" :key="`${title}-${index}`">
+      <Column header="Value"  style="width:200px">
+        <template #body="{node}">
+          <div class="grid" style="width: 100%">
+            <div class="text-right" style="width: 100%">
+            {{ $format.currency(node.data.values[index], node.data.currency || 'cop') }}
+            </div>
+            <div class="text-right" style="width: 100%">
+              <ProgressBar 
+                :class="{ error: node.data.values[index] > node.data.budget[0], 'mt-1':true, 'text-xs': true, 'h-1rem': true }"
+                :showValue="true" 
+                :value="Math.trunc(100*node.data.values[index]/node.data.budget[0])"
+                v-tooltip.left="$format.currency(node.data.budget[index], node.data.currency || 'cop')"
+                v-if="node.data.budget[index]" />
+            </div>
+          </div>
+        </template>
+        <template #footer>
+          <div class="grid" style="width: 100%">
+            <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), 'cop')}}</div>
+            <div class="text-right" style="width: 100%">
+              <ProgressBar 
+                :class="{ error: getTotal(index) > getTotalBudget(index), 'mt-2':true, }"
+                :showValue="true" 
+                :value="Math.trunc(100*getTotal(index)/getTotalBudget(index))" 
+                v-tooltip.left="$format.currency(getTotalBudget(index), 'cop')"
+                v-if="getTotalBudget(index)" />
+            </div>
+          </div>
+        </template>
+      </Column>
+    </template>
+      <!-- <Column header="%" style="width:80px" v-if="index > 0">
+          <template #body="{ node }">
+              <div class="text-right"  style="width: 100%">
+              {{node.data.values[0] && Math.abs( node.data.values[index]/node.data.values[0]) < 100 ? format.percent(1 - node.data.values[index]/node.data.values[0]) : ''}}
+              </div>
+          </template>
+          <template #footer><div class="text-right" style="width: 100%">{{ $format.percent(1 - getTotal(index) / getTotal(0))}}</div></template>
+      </Column> -->
+    </TreeTable>
   <div style="max-width:600px">
   <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" v-if="displayType === 'pie'" />
   </div>
@@ -73,6 +96,8 @@
     type: Period.Month,
     value: getCurrentPeriod()
   });
+
+  const periodTitles = ref(['Period1', 'Period2', 'Period3', 'Period4'])
 
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
@@ -121,8 +146,8 @@
   }
 
   const byCategory = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 1, period.value.value);
-      const budget = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 1, period.value.value);
+      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 5, period.value.value);
+      const budget = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 5, period.value.value);
       const expences = store.getters['accounts/expensesByCategories'];
 
       return Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance, budget));
@@ -177,8 +202,8 @@
   });
 
 
-  const getTotal = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.values[0] , 0) );
-  const getTotalBudget = computed(() => byCategory.value.reduce( (ant, v) => ant + v.data.budget[0] , 0) );
+  const getTotal = (index: number) => byCategory.value.reduce( (ant, v) => ant + v.data.values[index] , 0);
+  const getTotalBudget = (index: number) => byCategory.value.reduce( (ant, v) => ant + v.data.budget[index] , 0);
 
   function onChangePeriod() {
     store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
