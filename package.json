@@ -26,6 +26,7 @@
     "sass": "^1.53.0",
     "tiny-emitter": "^2.1.0",
     "vue": "^3.2.36",
+    "vue-google-charts": "^1.1.0",
     "vue-intl": "^6.2.7",
     "vue-router": "^4.0.15",
     "vuex": "^4.0.2",

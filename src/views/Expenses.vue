@@ -65,9 +65,17 @@
           <template #footer><div class="text-right" style="width: 100%">{{ $format.percent(1 - getTotal(index) / getTotal(0))}}</div></template>
       </Column> -->
     </TreeTable>
-  <div style="max-width:600px">
-  <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" v-if="displayType === 'pie'" />
-  </div>
+  <!-- <div style="max-width:600px">
+  <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" " />
+  </div> -->
+
+  <GChart
+    v-if="displayType === 'pie'"
+    :settings="{ packages: ['corechart','treemap'] }"
+    type="TreeMap"
+    :data="treeMap.data"
+    :options="treeMap.options"
+  />
   <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" />
 
 </template>
@@ -153,15 +161,42 @@
       return Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance, budget));
   });
 
-  const pieData = computed(() => {
-    return {labels: byCategory.value.map( c => c.data.name),
-        datasets: [
-            {
-                data: byCategory.value.map( c => c.data.values[0]),
-                backgroundColor: BACKGROUNDS_COLOR_GRAPH,
-                // hoverBackgroundColor: ["#64B5F6","#81C784","#FFB74D"]
-            }
-        ]};
+  const treeMap = computed(() => {
+    const groupElements = (group: any, parent: string) => group.reduce( (arr: any[], g: any) => {
+        const n = parent !== 'Total' ? `${parent}::${g.data.name}` : g.data.name;
+        arr.push([n, parent, g.data.values[0], 
+        g.data.values[0] - g.data.values[1] ]);
+        if (g.children) {
+          arr.push(...groupElements(g.children, n));
+        }
+        return arr;
+      }, []);
+
+    // console.log(byCategory.value);
+    const data = [['Expense', 'Parent', 'Value', 'Diff'], ['Total', null, 0, 0], ...groupElements(byCategory.value, 'Total') ];
+
+    // console.log(data);
+    return {
+      data,
+      options: {
+        nableHighlight: true,
+        maxDepth: 1,
+        maxPostDepth: 2,
+        minHighlightColor: '#8c6bb1',
+        midHighlightColor: '#9ebcda',
+        maxHighlightColor: '#edf8fb',
+        minColor: '#009688',
+        midColor: '#f7f7f7',
+        maxColor: '#ee8100',
+        headerHeight: 15,
+        showScale: true,
+        generateTooltip: (row, value, size, e) => {
+            return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
+            '<span>' + format.currency(value, 'cop') + '</span><br />' +
+           '</div>'
+        }
+      }
+    }
   });
 
   const barData = computed(() => {

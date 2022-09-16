@@ -38,6 +38,8 @@ import Toast from 'primevue/toast';
 import ProgressBar from 'primevue/progressbar';
 import Chip from 'primevue/chip';
 
+import { GChart } from 'vue-google-charts'
+
 const app = createApp(App);
 app.use(router)
 app.use(store)
@@ -70,6 +72,7 @@ app.component('ConfirmPopup', ConfirmPopup);
 app.component('Toast', Toast);
 app.component('ProgressBar', ProgressBar);
 app.component('Chip', Chip);
+app.component('GChart', GChart);
 
 app.config.globalProperties.$format = format
 app.use(ConfirmationService);
