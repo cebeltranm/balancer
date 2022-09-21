@@ -1,5 +1,6 @@
 import { useIntl } from 'vue-intl';
-import { AccountType } from '@/types';
+import { AccountType, Period } from '@/types';
+import format from '@/format';
 
 
 export const BACKGROUNDS_COLOR_GRAPH = ["#75bef8", "#90cd93", "#fbc02d", "#61d5e4", "#f1749e", "8893d1", "#61beb5", "#f57c00", "#9caeb7", "#c279ce", "#E0E0E0", "#ff8980"];
@@ -30,4 +31,47 @@ export function getOptionPerPeriod(period: string) {
         const year = (new Date()).getYear() + 1900 - m;
         return { name: year, value: { year } };
     });
+}
+
+export function increasePeriod(type: Period, period: any, value: number) {
+    if (value === 0) {
+        return period;
+    }
+    let diff, year, month;
+    switch(type) {
+        case Period.Month:
+            diff = parseInt(`${value/12}`);
+            year = period.year + diff;
+            month = period.month + (value % 12);
+            if (month <= 0) {
+                month = 12 + month;
+                year = year - 1;
+            }
+            if (month > 12) {
+                month = month - 12;
+                year = year + 1;
+            }
+            return {year, month, quarter: 4};
+        case Period.Quarter:
+            diff = parseInt(`${value/4}`);
+            year = period.year + diff;
+            let quarter = period.quarter + (value % 4);
+            if (quarter <= 0) {
+                quarter = 4 + quarter;
+                year = year - 1;
+            }
+            if (quarter > 4) {
+                quarter = quarter - 4;
+                year = year + 1;
+            }
+            return {year, quarter, month: 12};
+        case Period.Year:
+            return { year: period.year + value, quarter: 4, month: 12 };
+    }
+}
+
+export function periodLabel(type: Period, period: any) {
+    return `${period.year}` + (
+        type === Period.Month ? ` / ${format.month(period.month)}` : 
+        type === Period.Quarter ? ` / Q${period.quarter}` : '');
 }

@@ -56,7 +56,7 @@
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
 import format from '@/format';
-import { getCurrentPeriod, rowPendingSyncClass } from '@/helpers/options';
+import { getCurrentPeriod, periodLabel, increasePeriod, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Period } from '@/types';
 import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
@@ -92,29 +92,10 @@ async function onChangePeriod() {
 
 async function recalculateValues() {
     const date = new Date( period.value.value.year, period.value.value.month -1, 2 );
-    var per: any[]  = [{ period: period.value.value }];
     var totPer = period.value.type === Period.Month ? 13 : 5;
     var totConsPer = period.value.type === Period.Month ? 3 : 5;
-    for(var i = 0; i < totConsPer - 1; i++) {
-        switch(period.value.type) {
-            case Period.Month:
-                if (per[i].period.month === 1) {
-                    per.push( { period: { year: per[i].period.year -1, month: 12 } } );
-                } else {
-                    per.push( { period: { year: per[i].period.year, month: per[i].period.month - 1 } } );
-                }
-                break;
-            case Period.Quarter:
-                if (per[i].period.quarter === 1) {
-                    per.push( { period: { year: per[i].period.year - 1, quarter: 4 } } );
-                } else {
-                    per.push( { period: {year: per[i].period.year, quarter: per[i].period.quarter - 1} } );
-                }
-                break;
-            case Period.Year:
-                per.push( { period: {year: per[i].period.year - 1} } );
-        }
-    }
+    var per: any[]  =  Array.from(new Array(totConsPer), (val, index) => ({period: increasePeriod(period.value.type, period.value.value, -index)}));
+
     if (period.value.type === Period.Month) {
         per.push( { period: {year: period.value.value.year - 1, month: period.value.value.month}, position: 12 }  );
     }
@@ -133,11 +114,7 @@ async function recalculateValues() {
 
 
 
-    periodTitles.value = per.map( (p) => {
-        return `${p.period.year}` + (
-            period.value.type === Period.Month ? ` / ${format.month(p.period.month)}` : 
-            period.value.type === Period.Quarter ? ` / Q${p.period.quarter}` : '')
-    } );
+    periodTitles.value = per.map( (p) => periodLabel(period.value.type, p.period));
 
     const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, totPer, period.value.value);
     values.value = [{

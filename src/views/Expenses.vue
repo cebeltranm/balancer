@@ -23,14 +23,15 @@
     :resizableColumns="true" columnResizeMode="fit" showGridlines
     :scrollable="true"
     >
-    <Column field="name" header="Name" footer="Total" :expander="true" style="width:200px" frozen></Column>
-    <template v-for="(title, index) in periodTitles" :key="`${title}-${index}`">
-      <Column header="Value"  style="width:200px">
+    <Column field="name" header="Name" footer="Total" :expander="true" style="width:200px; z-index: 1;" frozen></Column>
+    <template v-for="(title, index) in [0,1,2,3,4]" :key="`${title}-${index}`">
+      <Column :header="periodLabel(period.type, increasePeriod(period.type, period.value, -index) )"  style="width:200px">
         <template #body="{node}">
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">
-            {{ $format.currency(node.data.values[index], node.data.currency || 'cop') }}
+                {{ $format.currency(node.data.values[index], node.data.currency || 'cop') }}
             </div>
+            <div class="text-right" style="width: 100%" v-if="index>0 && node.data.values[index] > 0">({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})</div>
             <div class="text-right" style="width: 100%">
               <ProgressBar 
                 :class="{ error: node.data.values[index] > node.data.budget[0], 'mt-1':true, 'text-xs': true, 'h-1rem': true }"
@@ -44,6 +45,7 @@
         <template #footer>
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), 'cop')}}</div>
+            <div class="text-right" style="width: 100%" v-if="index>0 && getTotal(index) > 0">({{ format.percent( (getTotal(0) - getTotal(index))/getTotal(index) ) }})</div>
             <div class="text-right" style="width: 100%">
               <ProgressBar 
                 :class="{ error: getTotal(index) > getTotalBudget(index), 'mt-2':true, }"
@@ -56,14 +58,6 @@
         </template>
       </Column>
     </template>
-      <!-- <Column header="%" style="width:80px" v-if="index > 0">
-          <template #body="{ node }">
-              <div class="text-right"  style="width: 100%">
-              {{node.data.values[0] && Math.abs( node.data.values[index]/node.data.values[0]) < 100 ? format.percent(1 - node.data.values[index]/node.data.values[0]) : ''}}
-              </div>
-          </template>
-          <template #footer><div class="text-right" style="width: 100%">{{ $format.percent(1 - getTotal(index) / getTotal(0))}}</div></template>
-      </Column> -->
     </TreeTable>
   <!-- <div style="max-width:600px">
   <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" " />
@@ -97,15 +91,13 @@
   import { useStore } from 'vuex';
   import { computed, ref, onMounted } from 'vue'
   import { Period } from '@/types';
-  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
+  import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
   import format from '@/format';
 
   const period = ref({
     type: Period.Month,
     value: getCurrentPeriod()
   });
-
-  const periodTitles = ref(['Period1', 'Period2', 'Period3', 'Period4'])
 
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
@@ -190,9 +182,9 @@
         maxColor: '#ee8100',
         headerHeight: 15,
         showScale: true,
-        generateTooltip: (row, value, size, e) => {
+        generateTooltip: (row, value, size) => {
             return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
-            '<span>' + format.currency(value, 'cop') + '</span><br />' +
+              '<span>' + format.currency(value, 'cop') + '</span><br />' +
            '</div>'
         }
       }

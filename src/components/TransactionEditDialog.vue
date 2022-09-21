@@ -1,7 +1,7 @@
 <template>
-<Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '80vw', '640px': '100vw'}" header="Transaction" :modal="true" class="p-fluid">
+<Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '80vw', '640px': '100vw'}" header="Transaction" :modal="true" class="p-fluid trans-edit-dialog">
   <form @submit.prevent.stop="handleSubmit">
-  <div class="grid formgrid pt-5">
+  <div class="grid formgrid sm:pt-2 pt-5">
     <div class="field col col-12 md:col-3">
         <div class="p-float-label">
             <Calendar id="date" v-model="v$.date.$model" :class="{'p-invalid':v$.date.$invalid && submitted}" :showIcon="true" />
@@ -37,7 +37,7 @@
     </div>
     <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-0 pt-3">
         <div class="p-float-label">
-            <InputNumber v-model="item.value" mode="currency" :currency="state.values[0].account?.currency || 'COP'" :maxFractionDigits="item.account?.currency === Currency.BTC ? 10: 0" currencyDisplay="code" locale="en-US" :class="{'p-invalid':v$.values.$each.$response.$data[index].value.$invalid && submitted}"/>
+            <InputNumber v-model="item.value" mode="currency" :currency="state.values[0].account?.currency || 'COP'" :maxFractionDigits="item.account?.currency === Currency.BTC ? 10: 2" currencyDisplay="code" locale="en-US" :class="{'p-invalid':v$.values.$each.$response.$data[index].value.$invalid && submitted}"/>
             <label  v-if="index>0 && item.account && item.account?.currency !== state.values[0].account?.currency" :class="{'p-error':v$.values.$each.$response.$data[index].accountValue.$invalid && submitted}">1 {{state.values[0].account?.currency}} = {{getRate(item.value, item.accountValue)}} {{item.account?.currency}}</label>
             <label v-else :class="{'p-error':v$.values.$each.$response.$data[index].value.$invalid && submitted}">Value*</label>
         </div>
@@ -46,7 +46,7 @@
 
     <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-8 pt-3" v-if="index>0 && item.account && item.account?.currency !== state.values[0].account?.currency">
         <div class="p-float-label">
-            <InputNumber v-model="item.accountValue" mode="currency" :currency="item.account?.currency || 'COP'" :maxFractionDigits="item.account?.currency === Currency.BTC ? 10: 0" currencyDisplay="code" locale="en-US" :class="{'p-invalid':v$.values.$each.$response.$data[index].accountValue.$invalid && submitted}"/>
+            <InputNumber v-model="item.accountValue" mode="currency" :currency="item.account?.currency || 'COP'" :maxFractionDigits="item.account?.currency === Currency.BTC ? 10: 2" currencyDisplay="code" locale="en-US" :class="{'p-invalid':v$.values.$each.$response.$data[index].accountValue.$invalid && submitted}"/>
             <label :class="{'p-error':v$.values.$each.$response.$data[index].accountValue.$invalid && submitted}">1 {{item.account?.currency}} = {{getRate(item.accountValue, item.value)}} {{state.values[0].account?.currency}}</label>
         </div>
         <small v-if="submitted" v-for="error in v$.values.$each.$response.$errors[index].accountValue" :key="error" class="p-error">{{ error.$message }}</small>
@@ -71,10 +71,15 @@
 </Dialog>
 </template>
 
-<style scoped>
-.transaction > div {
-  padding-top: 0px;
-  padding-bottom: 0px;
+<style lang="scss">
+.trans-edit-dialog {
+  @media (max-width: 640px) {
+    height: 100%;
+    .p-dialog-header, .p-dialog-content, .p-dialog-footer {
+      padding: 5px;
+    }
+  
+  }
 }
 </style>
 

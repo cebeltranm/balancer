@@ -1,6 +1,6 @@
 <template>
     <Button icon="pi pi-caret-left" @click="reducePeriod" v-if="!props.onlyType" />
-    <Dropdown v-model="typePeriod" :options="periodTypes" optionLabel="name" optionValue="value"  placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" v-if="!props.onlyPeriod" @update:model-value="onChange" />
+    <Dropdown v-model="typePeriod" :options="periodTypes" optionLabel="name" optionValue="value"  placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="!props.onlyPeriod" @update:model-value="onChange" />
     <div  class="p-2 w-12rem text-center text-xl font-bold" v-if="props.onlyPeriod">
         {{selectedPeriod.year}}{{typePeriod != Period.Year ? ' / ' : ''}}{{typePeriod === Period.Month ? format.month(selectedPeriod.month) : ''}}
     </div>
