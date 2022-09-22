@@ -32,13 +32,15 @@
                 {{ $format.currency(node.data.values[index], node.data.currency || 'cop') }}
             </div>
             <div class="text-right" style="width: 100%" v-if="index>0 && node.data.values[index] > 0">({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})</div>
+            <div class="text-right" style="width: 100%" v-else>&nbsp;</div>
             <div class="text-right" style="width: 100%">
               <ProgressBar 
                 :class="{ error: node.data.values[index] > node.data.budget[0], 'mt-1':true, 'text-xs': true, 'h-1rem': true }"
                 :showValue="true" 
-                :value="Math.trunc(100*node.data.values[index]/node.data.budget[0])"
-                v-tooltip.left="$format.currency(node.data.budget[index], node.data.currency || 'cop')"
-                v-if="node.data.budget[index]" />
+                :value="Math.trunc(100*node.data.values[index]/node.data.budget[index])"
+                v-tooltip.top="$format.currency(node.data.budget[index], node.data.currency || 'cop')"
+                v-if="node.data.budget[index]"
+                />
             </div>
           </div>
         </template>
@@ -46,12 +48,13 @@
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), 'cop')}}</div>
             <div class="text-right" style="width: 100%" v-if="index>0 && getTotal(index) > 0">({{ format.percent( (getTotal(0) - getTotal(index))/getTotal(index) ) }})</div>
+            <div class="text-right" style="width: 100%" v-else>&nbsp;</div>
             <div class="text-right" style="width: 100%">
               <ProgressBar 
                 :class="{ error: getTotal(index) > getTotalBudget(index), 'mt-2':true, }"
                 :showValue="true" 
                 :value="Math.trunc(100*getTotal(index)/getTotalBudget(index))" 
-                v-tooltip.left="$format.currency(getTotalBudget(index), 'cop')"
+                v-tooltip.right="getTotalBudget(index)"
                 v-if="getTotalBudget(index)" />
             </div>
           </div>
@@ -70,7 +73,12 @@
     :data="treeMap.data"
     :options="treeMap.options"
   />
-  <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" />
+  <template v-for="data in barData" :key="data.title">
+    <div>
+      <h1>{{data.title}}</h1>
+      <Chart type="bar" :data="data" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" />
+    </div>
+  </template>
 
 </template>
 
@@ -93,6 +101,7 @@
   import { Period } from '@/types';
   import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
   import format from '@/format';
+import { anyTypeAnnotation } from '@babel/types';
 
   const period = ref({
     type: Period.Month,
@@ -164,10 +173,8 @@
         return arr;
       }, []);
 
-    // console.log(byCategory.value);
     const data = [['Expense', 'Parent', 'Value', 'Diff'], ['Total', null, 0, 0], ...groupElements(byCategory.value, 'Total') ];
 
-    // console.log(data);
     return {
       data,
       options: {
@@ -192,31 +199,21 @@
   });
 
   const barData = computed(() => {
-    const currentPeriod = getCurrentPeriod();
+    var currentPeriod = getCurrentPeriod();
     const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 10;
     const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
     const expences = store.getters['accounts/expensesByCategories'];
 
     const grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
-    
     const labels = [];
     for (var i = 1 ; i < numPeriods + 1; i++) {
       labels.push(`${currentPeriod.year}${period.value.type === Period.Month ? '/'+currentPeriod.month: ''}${period.value.type === Period.Quarter ? '/'+currentPeriod.quarter: ''}`);
-      switch(period.value.type){
-      case Period.Quarter:
-        currentPeriod.year = currentPeriod.quarter === 1 ? currentPeriod.year - 1 : currentPeriod.year;
-        currentPeriod.quarter = currentPeriod.quarter === 1 ? 4 : currentPeriod.quarter - 1;
-        break;
-      case Period.Year:
-        currentPeriod.year = currentPeriod.year - 1;
-        break;
-      default:
-        currentPeriod.year = currentPeriod.month === 1 ? currentPeriod.year - 1 : currentPeriod.year;
-        currentPeriod.month = currentPeriod.month === 1 ? 12 : currentPeriod.month - 1;
-      }
+      currentPeriod = increasePeriod(period.value.type, currentPeriod, -1);
     }
 
-    return {labels: labels.reverse(),
+    const pieData = [{
+        title: 'TOTAL',
+        labels: labels.reverse(),
         datasets: grouped.map( (c: any, index) => {
           return {
             type: 'bar',
@@ -225,7 +222,22 @@
             data: c.data.values.reverse()
           };
         })
-        };
+    },
+    ...grouped.filter(g => g.children && g.children.length).map( (g: any) => {
+      return  {
+        title: g.data.name,
+        labels: labels.reverse(),
+        datasets: g.children.map( (c: any, index) => {
+          return {
+            type: 'bar',
+            label: c.data.name,
+            backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
+            data: c.data.values.reverse()
+          };
+        })
+      }
+    }) ]
+    return pieData;
   });
 
 

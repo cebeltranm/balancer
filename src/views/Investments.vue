@@ -47,10 +47,30 @@
       <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.value, 'cop')}}</div></template>
     </Column>
   </TreeTable>
-  <div class="flex"  v-if="displayType === 'pie'" >
-    <Chart type="pie" :data="pieDataByEntity" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
-    <Chart type="pie" :data="pieDataByType" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
-    <Chart type="pie" :data="pieDataByRisk" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+  <GChart
+    v-if="displayType === 'pie'"
+    :settings="{ packages: ['corechart','treemap'] }"
+    type="TreeMap"
+    :data="treeMap.data"
+    :options="treeMap.options"
+  />
+  <div class="flex flex-wrap"  v-if="displayType === 'pie'" >
+    <div>
+      <h3>By Category</h3>
+      <Chart type="pie" :data="pieDataByEntity" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+    </div> <div>
+      <h3>By Type</h3>
+      <Chart type="pie" :data="pieDataByType" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+    </div> <div>
+      <h3>By Risk</h3>
+      <Chart type="pie" :data="pieDataByRisk" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+    </div>
+    <template v-for="item in ['Crypto', 'Stock']" :key="item">
+      <div v-if="pieDataByTypeData(item)">
+        <h3>By {{item}}</h3>
+        <Chart type="pie" :data="pieDataByTypeData(item)" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}"/>
+      </div>
+    </template>
   </div>
     <!--
     <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" /> -->
@@ -218,6 +238,63 @@
             }
         ]};
   });
+
+  const pieDataByTypeData = (type: string) => {
+    const typeData = byType.value.find( d => d.key === type);
+    if (!typeData) {
+      return undefined;
+    }
+    return {labels: typeData.children.map( c => c.data.name),
+        datasets: [
+            {
+                data: typeData.children.map( c => {
+                  return c.data.currency === 'cop' ? c.data.values[0].value : c.data.values[0].value * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), c.data.currency, 'cop')
+                })
+                  ,
+                backgroundColor: BACKGROUNDS_COLOR_GRAPH,
+            }
+        ]};
+  };
+
+
+  const treeMap = computed(() => {
+    const groupElements = (group: any, parent: string) => group.filter(g => g.data.values[0].value).reduce( (arr: any[], g: any) => {
+        const n = parent !== 'Total' ? `${parent}::${g.data.name}` : g.data.name;
+        const val = g.data.currency === 'cop' ? g.data.values[0].value :  g.data.values[0].value * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), g.data.currency, 'cop')
+        arr.push([n, parent, val, - val*g.data.values[0].gp
+          // g.data.values[0] - g.data.values[1] 
+        ]);
+        if (g.children) {
+          arr.push(...groupElements(g.children, n));
+        }
+        return arr;
+      }, []);
+
+    const data = [['Invest', 'Parent', 'Value', 'Diff'], ['Total', null, 0, 0], ...groupElements(byCategory.value, 'Total') ];
+
+    return {
+      data,
+      options: {
+        nableHighlight: true,
+        maxDepth: 1,
+        maxPostDepth: 2,
+        minHighlightColor: '#8c6bb1',
+        midHighlightColor: '#9ebcda',
+        maxHighlightColor: '#edf8fb',
+        minColor: '#009688',
+        midColor: '#f7f7f7',
+        maxColor: '#ee8100',
+        headerHeight: 15,
+        showScale: true,
+        generateTooltip: (row, value, size) => {
+            return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
+              '<span>' + format.currency(value, 'cop') + '</span><br />' +
+           '</div>'
+        }
+      }
+    }
+  });
+
   function onChangePeriod() {
     store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
   }
