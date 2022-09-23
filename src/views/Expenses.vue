@@ -31,7 +31,11 @@
             <div class="text-right" style="width: 100%">
                 {{ $format.currency(node.data.values[index], node.data.currency || 'cop') }}
             </div>
-            <div class="text-right" style="width: 100%" v-if="index>0 && node.data.values[index] > 0">({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})</div>
+            <div style="width: 100%"
+              :class="{ 'text-right': true, 'text-red-400': node.data.values[0]- node.data.values[index] > 0, 'text-green-400': node.data.values[0]- node.data.values[index] < 0}"
+              v-if="index>0 && node.data.values[index] > 0">
+              ({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})
+            </div>
             <div class="text-right" style="width: 100%" v-else>&nbsp;</div>
             <div class="text-right" style="width: 100%">
               <ProgressBar 
@@ -47,7 +51,11 @@
         <template #footer>
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), 'cop')}}</div>
-            <div class="text-right" style="width: 100%" v-if="index>0 && getTotal(index) > 0">({{ format.percent( (getTotal(0) - getTotal(index))/getTotal(index) ) }})</div>
+            <div style="width: 100%" 
+              :class="{ 'text-right': true, 'text-red-400': getTotal(0) - getTotal(index) > 0, 'text-green-400': getTotal(0) - getTotal(index) < 0}"
+              v-if="index>0 && getTotal(index) > 0">
+                ({{ format.percent( (getTotal(0) - getTotal(index))/getTotal(index) ) }})
+            </div>
             <div class="text-right" style="width: 100%" v-else>&nbsp;</div>
             <div class="text-right" style="width: 100%">
               <ProgressBar 
@@ -73,10 +81,10 @@
     :data="treeMap.data"
     :options="treeMap.options"
   />
-  <template v-for="data in barData" :key="data.title">
+  <template v-for="data in barData" :key="data.title"  v-if="displayType === 'bar'">
     <div>
       <h1>{{data.title}}</h1>
-      <Chart type="bar" :data="data" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" />
+      <Chart type="bar" :data="data" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}" />
     </div>
   </template>
 

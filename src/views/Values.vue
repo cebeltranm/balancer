@@ -24,14 +24,15 @@
     <Column field="type" header="Type" style="width:120px"></Column>
     <Column field="name" header="Name" style="width:150px" fixed></Column>
     <Column field="currency" header="Currency" style="width:80px"></Column>
-    <Column header="value" style="width:200px">
+    <Column header="value" style="width:200px" v-tooltip.top="'teest'">
         <template #body="slotProps">
-            <div class="text-right" style="width:100%">
+            <div class="text-right" style="width:100%" 
+              >
                 {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
             </div>
         </template>
         <template #editor="{ data }">
-            <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" :maxFractionDigits="data.currency === Currency.BTC ? 10: 0" currencyDisplay="code" locale="en-US" autofocus/>
+            <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" :maxFractionDigits="data.currency === Currency.BTC ? 10: 2" currencyDisplay="code" locale="en-US" autofocus/>
         </template>
     </Column>
     <Column field="m_m" header="M/M" style="width:80px">
@@ -60,7 +61,7 @@
 
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
-import { getCurrentPeriod, rowPendingSyncClass } from '@/helpers/options';
+import { getCurrentPeriod, getPeriodDate, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
@@ -140,6 +141,34 @@ import { getBinanceValues } from '@/helpers/binance';
   }
 
   async function syncValues() {
+    // syncCurrencies();
+    syncCruptoInBTC();
+    // syncFromYahoo();
+  }
+
+  async function syncCruptoInBTC() {
+    const current = getCurrentPeriod();
+    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDay() : 31;
+    const date = new Date( period.value.value.year, period.value.value.month -1, day ).toISOString().split('T')[0];
+    const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/btc.json`);
+    if (res.status === 200) {
+        const data = await res.json();
+        values.value.forEach( (v:any) => {
+            if (v.type === 'Crypto' && v.currency === 'btc' && data.btc[v.name.toLowerCase()] && (1 / Number(data.btc[v.name.toLowerCase()])) !== v.value) {
+              v.value =  (1 / Number(data.btc[v.name.toLowerCase()]));
+              v.to_sync = true
+              pendingToSave.value = true;
+            }
+            if (v.type === 'Crypto' && v.currency === 'usd' && v.name.toLowerCase() === 'btc' && data.btc['usd'] && data.btc['usd'] !== v.value) {
+              v.value =  data.btc['usd'];
+              v.to_sync = true
+              pendingToSave.value = true;
+            }
+        });
+    }
+  }
+
+  async function syncCurrencies() {
     const current = getCurrentPeriod();
     const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDay() : 31;
     const date = new Date( period.value.value.year, period.value.value.month -1, day ).toISOString().split('T')[0];
@@ -155,6 +184,41 @@ import { getBinanceValues } from '@/helpers/binance';
         });
     }
   }
+
+  // YAHOO Stock values
+  async function syncFromYahoo() {      
+    const current = getCurrentPeriod();
+    if (period.value.value.month === current.month && period.value.value.year === current.year) {
+      const accounts = store.getters['accounts/activeAccounts'](getPeriodDate(period.value.type, period.value.value));
+      const yahoo_symbols = accounts
+        .filter( a => [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(store.getters['accounts/getAccountGroupType'](a.id)) )
+        .filter( a => a.yahoo_symbol);
+      if (yahoo_symbols.length > 0 ){
+        const url = `https://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map(a => a.yahoo_symbol).join(',')}`;
+        var proxyUrl = 'https://fast-dawn-89938.herokuapp.com/';
+        // var proxyUrl = 'https://proxy.cors.sh/';
+        const res = await fetch(proxyUrl + url)
+        console.log(res)
+        if (res.status === 200) {
+          const data = await res.json();
+          data.quoteResponse.result.forEach( s => {
+            const a = yahoo_symbols.find( y => y.yahoo_symbol === s.symbol);
+            console.log(a);
+            if (a) {
+              const v = values.value.find( v => v.id === a.id);
+              console.log(v);
+              if (v) {
+                v.value = s.regularMarketPrice;
+                v.to_sync = true
+                pendingToSave.value = true;
+              }
+            }
+          })
+        }
+      }
+    }
+  }
+
   async function save() {
     await store.dispatch('values/setValuesForMonth',  { 
         year: period.value.value.year, 

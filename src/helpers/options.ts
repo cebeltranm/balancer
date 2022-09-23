@@ -75,3 +75,32 @@ export function periodLabel(type: Period, period: any) {
         type === Period.Month ? ` / ${format.month(period.month)}` : 
         type === Period.Quarter ? ` / Q${period.quarter}` : '');
 }
+
+export function getPeriodDate(type: Period, period: any) {
+    const current = getCurrentPeriod();
+    var day = new Date().getDay();
+    var month = period.month;
+    var year = period.year;
+    switch(type) {
+        case Period.Year:
+            if (year < current.year) {
+                month = 12;
+                day = 31;
+            }
+            break;
+        case Period.Month:
+            if (year < current.year || month < current.month) {
+                day = 30;
+            }
+            break;
+        case Period.Quarter:
+            if (year < current.year || period.quarter < current.quarter) {
+                month = period.quarter*3;
+                day = 30;
+            }
+            break;
+    }    
+
+    return new Date( year, month -1, day );
+
+}
