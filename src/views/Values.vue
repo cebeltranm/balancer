@@ -141,9 +141,9 @@ import { getBinanceValues } from '@/helpers/binance';
   }
 
   async function syncValues() {
-    // syncCurrencies();
+    syncCurrencies();
     syncCruptoInBTC();
-    // syncFromYahoo();
+    syncFromYahoo();
   }
 
   async function syncCruptoInBTC() {
@@ -195,18 +195,15 @@ import { getBinanceValues } from '@/helpers/binance';
         .filter( a => a.yahoo_symbol);
       if (yahoo_symbols.length > 0 ){
         const url = `https://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map(a => a.yahoo_symbol).join(',')}`;
-        var proxyUrl = 'https://fast-dawn-89938.herokuapp.com/';
-        // var proxyUrl = 'https://proxy.cors.sh/';
+        // var proxyUrl = 'https://fast-dawn-89938.herokuapp.com/';
+        var proxyUrl = 'https://thingproxy.freeboard.io/fetch/'
         const res = await fetch(proxyUrl + url)
-        console.log(res)
         if (res.status === 200) {
           const data = await res.json();
           data.quoteResponse.result.forEach( s => {
             const a = yahoo_symbols.find( y => y.yahoo_symbol === s.symbol);
-            console.log(a);
             if (a) {
               const v = values.value.find( v => v.id === a.id);
-              console.log(v);
               if (v) {
                 v.value = s.regularMarketPrice;
                 v.to_sync = true
