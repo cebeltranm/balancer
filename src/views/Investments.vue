@@ -5,7 +5,7 @@
       <Dropdown v-model="typeInvestment" :options="['ByCategory', 'ByType', 'ByRisk']" placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'pie'"/>
     </template>
     <template #end>
-        <SelectButton v-model="displayType" :options="displayOptions" optionValue="id">
+        <SelectButton v-model="displayType" :options="displayOptions" optionValue="id" @update:modelValue="onChangeDisplayType" >
 	        <template #option="{option}">
               <i :class="option.icon"></i>
           </template>
@@ -24,19 +24,19 @@
             '\nLOCAL OUT: '+$format.currency(node.data.values[0].out_local, node.data.currency || 'cop')">
         {{ $format.currency(getInOut(node.data.values[0]), node.data.currency || 'cop') }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getInOut(getTotal) < 0, 'text-green-400': getInOut(getTotal) > 0}">{{ $format.currency(getInOut(getTotal), 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getInOut(getTotal[0]) < 0, 'text-green-400': getInOut(getTotal[0]) > 0}">{{ $format.currency(getInOut(getTotal[0]), 'cop')}}</div></template>
     </Column>
     <Column header="Expenses">
       <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].expenses > 0}">
         {{ $format.currency(node.data.values[0].expenses, node.data.currency || 'cop') }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.expenses, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}">{{ $format.currency(getTotal[0].expenses, 'cop')}}</div></template>
     </Column>
     <Column header="G/P">
       <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
         {{ $format.percent( node.data.values[0].gp )}}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal.gp < 0, 'text-green-400': getTotal.gp > 0}">{{ $format.percent( getTotal.gp ) }}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}">{{ $format.percent( getTotal[0].gp ) }}</div></template>
     </Column>
     <Column header="Balance">
       <template #body="{node}">
@@ -45,7 +45,7 @@
         </div>
         <div v-if="node.data.values[0].units" class="text-sm text-right">({{$format.number(node.data.values[0].units)}} und)</div>
       </template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal.value, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true}">{{ $format.currency(getTotal[0].value, 'cop')}}</div></template>
     </Column>
   </TreeTable>
   <GChart
@@ -54,9 +54,11 @@
     type="TreeMap"
     :data="treeMap.data"
     :options="treeMap.options"
-  />
-    <!--
-    <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}"  v-if="displayType === 'bar'" /> -->
+    @ready="() => onChartReady = true"
+  />  
+    
+    <Chart type="line" :data="barData[0]" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: false}, y: {position: 'left'}, y1: {position: 'right'} }}"  v-if="displayType === 'bar'" /> 
+    
   </template>
 </template>
 
@@ -77,7 +79,7 @@
   import { useStore } from 'vuex';
   import { computed, ref, onMounted } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
-  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
+  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod } from '@/helpers/options.js';
   import format from '@/format';
 
   const period = ref({
@@ -92,6 +94,11 @@
   const store = useStore();
 
   const isAuthenticated = computed(() => store.state.storage.status.authenticated);
+  const onChartReady = ref(false);
+  // const googleLoaded = computed(() => {
+  //   console.log('check google', window.google);
+  //   return (window.google && window.google.visualization);
+  // });
 
   function getTotalByCategory( category: any, balance: any) {
       var children = undefined;
@@ -141,7 +148,12 @@
   }
 
   const byCategory = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
+      var numPer = 2;
+      if (displayType.value === 'bar') {
+        numPer = period.value.type === Period.Year ? 10 : period.value.type === Period.Month ? 24 : 16;
+      }
+
+      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPer, period.value.value);
       const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
       const data =  inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance));
       return data || [];
@@ -176,33 +188,45 @@
   }
 
   const getTotal = computed(() => {
-    const val1 = byCategory.value.reduce( (ant, v) => ({
-      value: ant.value + v.data.values[0].value,
-      in: ant.in + v.data.values[0].in,
-      out: ant.out + v.data.values[0].out,
-      expenses: ant.expenses + v.data.values[0].expenses,
-      }), { value: 0, in: 0, out: 0, expenses: 0})
+    // const val1 = byCategory.value.reduce( (ant, v) => ({
+    //   value: ant.value + v.data.values[0].value,
+    //   in: ant.in + v.data.values[0].in,
+    //   out: ant.out + v.data.values[0].out,
+    //   expenses: ant.expenses + v.data.values[0].expenses,
+    //   }), { value: 0, in: 0, out: 0, expenses: 0})
 
-    const val2 = byCategory.value.reduce( (ant, v) => ant + v.data.values[1].value, 0)
+    const val1 = byCategory.value.reduce( (ant, child) => {
+      if (!ant) {
+        ant = Array.from(new Array(child.data.values.length), () => ({ value: 0, in: 0, out: 0, expenses: 0}));
+      }
+      return ant.map( (v,index) => ({
+        value: v.value + child.data.values[index].value,
+        in: v.in + child.data.values[index].in,
+        out: v.out + child.data.values[index].out,
+        expenses: v.expenses + child.data.values[index].expenses,
+      }) )
+    }, undefined)
 
-    const div1 = val1.value + val1.out;
-    const div2 = val2 + val1.in + ( val1.expenses || 0 );
+    return val1.map( (v, index) => {
+      const val2 = index < val1.length - 1 ?  val1[index + 1].value : v.value;
+      const div1 = v.value + v.out;
+      const div2 = val2 + v.in + ( v.expenses || 0 );
+      return {
+        ...v,
+        gp: (div2 > 0) ? (div1-div2) / div2 : 0
+      }
+    })
 
-    return {
-      ...val1,
-      gp: (div2 > 0) ? (div1-div2) / div2 : 0
-    };
+    // const val2 = byCategory.value.reduce( (ant, v) => ant + v.data.values[1].value, 0)
+
+    // const div1 = val1.value + val1.out;
+    // const div2 = val2 + val1.in + ( val1.expenses || 0 );
+
+    // return {
+    //   ...val1,
+    //   gp: (div2 > 0) ? (div1-div2) / div2 : 0
+    // };
     } );
-
-  const pieDataByEntity = computed(() => {
-    return {labels: byCategory.value.map( c => c.data.name),
-        datasets: [
-            {
-                data: byCategory.value.map( c => c.data.values[0].value),
-                backgroundColor: BACKGROUNDS_COLOR_GRAPH,
-            }
-        ]};
-  });
 
   const treeMap = computed(() => {
     const groupElements = (group: any, parent: string) => {
@@ -213,8 +237,9 @@
 
       const res = group.filter(g => g.data.values[0].value).reduce( (arr: any[], g: any, index: number) => {
         // const n = parent !== 'Total' ? `${parent}::${g.data.name}` : g.data.name;
-        arr.push([g.data.name, parent, values[index], - values[index]*g.data.values[0].gp,
-          values[index] / total 
+        arr.push([g.data.name, parent, values[index], -100*  g.data.values[0].gp,
+          values[index] / total,
+          g.data.values[0].gp
           // g.data.values[0] - g.data.values[1] 
         ]);
         if (g.children) {
@@ -222,11 +247,11 @@
         }
         return arr;
       }, [])
-      return [ ['Total', null, total, 0, 1], ...res];
+      return [ ['Total', null, total, 0, 1, 0], ...res];
     };
 
-    var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%'], ['Total', null, 0, 0, 1]];
-    if (window.google && window.google.visualization) {
+    var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ['Total', null, 0, 0, 1, 0]];
+    if (onChartReady.value && window.google && window.google.visualization) {
       var byValue = byCategory.value;
       if (typeInvestment.value === 'ByRisk') {
         byValue = byRisk.value;
@@ -236,7 +261,7 @@
       }
 
       gdata = window.google.visualization.arrayToDataTable(
-        [['Invest', 'Parent', 'Value', 'Diff', '%'], ...groupElements(byValue, 'Total') ]
+        [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ...groupElements(byValue, 'Total') ]
       );
     }
 
@@ -252,22 +277,80 @@
         minColor: '#009688',
         midColor: '#f7f7f7',
         maxColor: '#ee8100',
-        headerHeight: 15,
+        headerHeight: 20,
         showScale: true,
-        height:300,
+        height: 500,
+        useWeightedAverageForAggregation: true,
         generateTooltip: (row, value, size) => {
             return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
               '<span>' + (gdata.getValue && gdata.getValue(row, 0)) + '</span><br />' +
               '<span>' + (gdata.getValue && format.currency(gdata.getValue(row, 2), 'cop')) + '</span><br />' +
               '<span>' + (gdata.getValue && format.percent(gdata.getValue(row, 4))) + '</span><br />' +
+              '<span>gp ' + (gdata.getValue && format.percent(gdata.getValue(row, 5))) + '</span><br />' +
            '</div>'
         }
       }
     }
   });
 
+  const barData = computed(() => {
+    const data = getTotal.value;
+    var currentPeriod = getCurrentPeriod();
+    const labels = [];
+    for (var i = 1 ; i < data.length + 1; i++) {
+      labels.push(`${currentPeriod.year}${period.value.type === Period.Month ? '/'+currentPeriod.month: ''}${period.value.type === Period.Quarter ? '/'+currentPeriod.quarter: ''}`);
+      currentPeriod = increasePeriod(period.value.type, currentPeriod, -1);
+    }
+    return [{
+        title: 'TOTAL',
+        labels: labels.reverse(),
+        datasets: [{
+            type: 'line',
+            label: 'Value',
+            yAxisID: 'y',
+            backgroundColor: BACKGROUNDS_COLOR_GRAPH[0],
+            borderColor: BACKGROUNDS_COLOR_GRAPH[0],
+            data: data.map( d => d.value).reverse()
+        }, {
+            type: 'line',
+            label: 'Invested',
+            yAxisID: 'y',
+            backgroundColor: BACKGROUNDS_COLOR_GRAPH[1],
+            borderColor: BACKGROUNDS_COLOR_GRAPH[1],
+            data: [...data].reverse().reduce( (ant, v) => {
+                if (!ant) {
+                  return [v.value]
+                }
+                ant.push( ant[ant.length -1 ] + v.in - v.out );
+                return ant;
+              } , undefined)
+        }, {
+            type: 'bar',
+            label: 'G/P',
+            yAxisID: 'y1',
+            backgroundColor: BACKGROUNDS_COLOR_GRAPH[4],
+            data: data.map( d => 100*d.gp).reverse()
+        }]
+    }];
+  });
+
   function onChangePeriod() {
     store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
   }
 
+  function onChangeDisplayType() {
+    if(displayType.value === 'bar') {
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 2})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 3})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 4})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 5})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 6})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 7})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 8})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 9})
+      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 10})
+    }
+  }
 </script>
