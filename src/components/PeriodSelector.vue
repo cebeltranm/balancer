@@ -1,16 +1,16 @@
 <template>
-    <Button icon="pi pi-caret-left" @click="reducePeriod" v-if="!props.onlyType" />
+    <Button icon="pi pi-caret-left" @click="changePeriod(-1)" v-if="!props.onlyType" />
     <Dropdown v-model="typePeriod" :options="periodTypes" optionLabel="name" optionValue="value"  placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="!props.onlyPeriod" @update:model-value="onChange" />
     <div  class="p-2 w-12rem text-center text-xl font-bold" v-if="props.onlyPeriod">
-        {{selectedPeriod.year}}{{typePeriod != Period.Year ? ' / ' : ''}}{{typePeriod === Period.Month ? format.month(selectedPeriod.month) : ''}}
+        {{ periodLabel(typePeriod, selectedPeriod)}}
     </div>
-    <Button icon="pi pi-caret-right" class="ml-0" @click="increasePeriod" :disabled="!canIncrease" v-if="!props.onlyType" />
+    <Button icon="pi pi-caret-right" class="ml-0" @click="changePeriod(1)" :disabled="!canIncrease" v-if="!props.onlyType" />
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, onMounted, watch } from 'vue'
   import { Period } from '@/types';
-  import { getCurrentPeriod } from '@/helpers/options.js';
+  import { getCurrentPeriod, increasePeriod, periodLabel } from '@/helpers/options.js';
   import format from '@/format';
 
   const props = defineProps<{
@@ -51,34 +51,8 @@
     ));
   })
 
-  function reducePeriod() {
-    switch(typePeriod.value){
-      case Period.Quarter:
-        selectedPeriod.value.year = selectedPeriod.value.quarter === 1 ? selectedPeriod.value.year - 1 : selectedPeriod.value.year;
-        selectedPeriod.value.quarter = selectedPeriod.value.quarter === 1 ? 4 : selectedPeriod.value.quarter - 1;
-        break;
-      case Period.Year:
-        selectedPeriod.value.year = selectedPeriod.value.year - 1;
-        break;
-      default:
-        selectedPeriod.value.year = selectedPeriod.value.month === 1 ? selectedPeriod.value.year - 1 : selectedPeriod.value.year;
-        selectedPeriod.value.month = selectedPeriod.value.month === 1 ? 12 : selectedPeriod.value.month - 1;
-    }
-    onChange();
-  }
-  function increasePeriod(){
-    switch(typePeriod.value){
-      case Period.Quarter:
-        selectedPeriod.value.year = selectedPeriod.value.quarter === 4 ? selectedPeriod.value.year + 1 : selectedPeriod.value.year;
-        selectedPeriod.value.quarter = selectedPeriod.value.quarter === 4 ? 1 : selectedPeriod.value.quarter + 1;
-        break;
-      case Period.Year:
-        selectedPeriod.value.year = selectedPeriod.value.year + 1;
-        break;
-      default:
-        selectedPeriod.value.year = selectedPeriod.value.month === 12 ? selectedPeriod.value.year + 1 : selectedPeriod.value.year;
-        selectedPeriod.value.month = selectedPeriod.value.month === 12 ? 1 : selectedPeriod.value.month + 1;
-    }
+  function changePeriod(periods: number) {
+    selectedPeriod.value = increasePeriod(typePeriod.value, selectedPeriod.value, periods);
     onChange();
   }
 

@@ -3,6 +3,7 @@
     <template #start>
       <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
       <Dropdown v-model="typeInvestment" :options="['ByCategory', 'ByType', 'ByRisk']" placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'pie'"/>
+      <AccountsSelector v-model:accounts="accounts" :groups="[AccountGroupType.Investments]" :date="getPeriodDate(period.type, period.value)"  v-if="displayType === 'bar'"/>
     </template>
     <template #end>
         <SelectButton v-model="displayType" :options="displayOptions" optionValue="id" @update:modelValue="onChangeDisplayType" >
@@ -74,12 +75,13 @@
 </style>
 
 <script lang="ts" setup>
+  import AccountsSelector from '@/components/AccountsSelector.vue'
   import PeriodSelector from '@/components/PeriodSelector.vue'
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
-  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod } from '@/helpers/options.js';
+  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
 
   const period = ref({
@@ -92,6 +94,7 @@
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
   const store = useStore();
+  const accounts = ref([]);
 
   const isAuthenticated = computed(() => store.state.storage.status.authenticated);
   const onChartReady = ref(false);
@@ -107,21 +110,27 @@
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance));
         values = children.reduce( (ant, child) => {
             if (!ant) {
-              ant = Array.from(new Array(child.data.values.length), () => ({ value: 0, in: 0, out: 0, expenses: 0 }));
+              ant = Array.from(new Array(child.data.values.length), () => ({ value: 0, in: 0, out: 0, expenses: 0, in_local: 0, out_local: 0 }));
             }
             return ant.map( (v, index) => {
               if (child.data.currency!=='cop' && child.data.values[index]) {
+                const conv = store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop');
+
                 return {
-                  value: v.value + (child.data.values[index].value * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop')),
-                  in: v.in + (child.data.values[index].in * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop')),
-                  out: v.out + (child.data.values[index].out * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop')),
-                  expenses: v.expenses + (child.data.values[index].expenses * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop')),
+                  value: v.value + (child.data.values[index].value * conv),
+                  in: v.in + (child.data.values[index].in * conv),
+                  in_local: v.in_local + ((child.data.values[index].in_local || 0 ) * conv),
+                  out: v.out + (child.data.values[index].out * conv),
+                  out_local: v.out_local + ((child.data.values[index].out_local || 0 ) * conv),
+                  expenses: v.expenses + (child.data.values[index].expenses * conv),
                 }
               }
               return {
                 value: v.value + child.data.values[index].value,
                 in: v.in + child.data.values[index].in,
+                in_local: v.in_local + (child.data.values[index].in_local || 0),
                 out: v.out + child.data.values[index].out,
+                out_local: v.out_local + (child.data.values[index].out_local || 0),
                 expenses: v.expenses + child.data.values[index].expenses,
               }
             } );
@@ -148,12 +157,7 @@
   }
 
   const byCategory = computed(() => {
-      var numPer = 2;
-      if (displayType.value === 'bar') {
-        numPer = period.value.type === Period.Year ? 10 : period.value.type === Period.Month ? 24 : 16;
-      }
-
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPer, period.value.value);
+      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
       const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
       const data =  inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance));
       return data || [];
@@ -188,13 +192,6 @@
   }
 
   const getTotal = computed(() => {
-    // const val1 = byCategory.value.reduce( (ant, v) => ({
-    //   value: ant.value + v.data.values[0].value,
-    //   in: ant.in + v.data.values[0].in,
-    //   out: ant.out + v.data.values[0].out,
-    //   expenses: ant.expenses + v.data.values[0].expenses,
-    //   }), { value: 0, in: 0, out: 0, expenses: 0})
-
     const val1 = byCategory.value.reduce( (ant, child) => {
       if (!ant) {
         ant = Array.from(new Array(child.data.values.length), () => ({ value: 0, in: 0, out: 0, expenses: 0}));
@@ -216,16 +213,6 @@
         gp: (div2 > 0) ? (div1-div2) / div2 : 0
       }
     })
-
-    // const val2 = byCategory.value.reduce( (ant, v) => ant + v.data.values[1].value, 0)
-
-    // const div1 = val1.value + val1.out;
-    // const div2 = val2 + val1.in + ( val1.expenses || 0 );
-
-    // return {
-    //   ...val1,
-    //   gp: (div2 > 0) ? (div1-div2) / div2 : 0
-    // };
     } );
 
   const treeMap = computed(() => {
@@ -294,7 +281,18 @@
   });
 
   const barData = computed(() => {
-    const data = getTotal.value;
+    const numPer = period.value.type === Period.Year ? 10 : period.value.type === Period.Month ? 24 : 16;
+    const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPer, getCurrentPeriod());
+    const ac = store.getters['accounts/activeAccounts'](getPeriodDate(period.value.type, getCurrentPeriod()), period.value.type);
+    const acFiltered = accounts.value && accounts.value.length > 0 
+      ? ac.filter( a => accounts.value.includes(a.id) )
+      : ac.filter( a => AccountGroupType.Investments === store.getters['accounts/getAccountGroupType'](a.id) );
+
+    const data =  getTotalByCategory( {
+      name: 'Investments',
+      children: acFiltered,
+      type: AccountType.Category,
+    }, balance).data.values;
     var currentPeriod = getCurrentPeriod();
     const labels = [];
     for (var i = 1 ; i < data.length + 1; i++) {
@@ -321,7 +319,7 @@
                 if (!ant) {
                   return [v.value]
                 }
-                ant.push( ant[ant.length -1 ] + v.in - v.out );
+                ant.push( ant[ant.length -1 ] + v.in + (v.in_local || 0) + v.expenses - v.out - (v.out_local || 0));
                 return ant;
               } , undefined)
         }, {

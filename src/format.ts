@@ -41,6 +41,7 @@ export default {
     },
     month: (value: number) => {
         var date = new Date();
+        date.setDate(1);
         date.setMonth(value - 1);
         return date.toLocaleString('default', { month: 'long' });        
     },

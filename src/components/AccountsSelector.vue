@@ -1,5 +1,5 @@
 <template>
-    <TreeSelect v-model="selected" :options="items" @update:model-value="onUpdate" placeholder="Select Account" />
+    <TreeSelect v-model="selected" :options="items" @update:model-value="onUpdate" placeholder="Select Account" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" />
 </template>
 
 <script lang="ts" setup>
@@ -9,6 +9,7 @@ import { AccountType } from '@/types';
 
 const props = defineProps<{
     accounts: string[],
+    groups?: string[],
     date?: Date,
 }>()
 
@@ -28,7 +29,7 @@ watchEffect( () => {
             children: account.children && Object.keys(account.children).map( (a, index) => accountGroup(account.children[a], `${key}-${index}`) )
         }
     }
-    const accounts = store.getters['accounts/accountsGroupByCategories'](undefined, props.date);
+    const accounts = store.getters['accounts/accountsGroupByCategories'](props.groups, props.date);
     items.value = Object.keys(accounts).map( (k, index) => ({
         label: k,
         key: `${index}`,

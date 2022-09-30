@@ -49,7 +49,7 @@
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, toRaw } from 'vue'
-  import { getCurrentPeriod } from '@/helpers/options.js';
+  import { getCurrentPeriod, getPeriodDate } from '@/helpers/options.js';
   import { Currency, Period } from '@/types';
   import { useConfirm } from "primevue/useconfirm";
   import { EVENTS } from '@/helpers/events';
@@ -124,7 +124,7 @@
     transactionDialog.value?.show();
   }
   function onChangePeriod() {
-    selectedDate.value = new Date(period.value.value.year, period.value.value.month - 1, 1);
+    selectedDate.value = getPeriodDate(period.value.type, period.value.value);
     if (!store.state.transactions.values[period.value.value.year] || !store.state.transactions.values[period.value.value.year][period.value.value.month]) {
         store.dispatch('transactions/getTransactionsForMonth', {year: period.value.value.year, month: period.value.value.month})
     }
