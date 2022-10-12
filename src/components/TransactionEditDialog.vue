@@ -120,7 +120,7 @@ function accountValueRequired (value:any, parent: any) {
 
 function unitsValueRequired (value:any, parent: any) {
   if ( isAccountInUnits(parent.account?.id) ) {
-    return !!value;
+    return value === 0 || !!value;
   }
   return true;
 }
