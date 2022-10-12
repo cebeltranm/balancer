@@ -93,7 +93,7 @@ define(['./workbox-5774ec20'], (function (workbox) { 'use strict';
     "url": "assets/auto.264f6c8c.js",
     "revision": null
   }, {
-    "url": "assets/index.c1a05e5c.js",
+    "url": "assets/index.0594c5b3.js",
     "revision": null
   }, {
     "url": "registerSW.js",
@@ -103,7 +103,7 @@ define(['./workbox-5774ec20'], (function (workbox) { 'use strict';
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "adf8728a1f20f6e005beed058b42c42e"
+    "revision": "8840d59a42d476f4b15e77e30c72d16c"
   }, {
     "url": "assets/primeicons.feb68bf6.woff",
     "revision": null
