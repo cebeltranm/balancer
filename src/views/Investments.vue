@@ -319,7 +319,7 @@
                 if (!ant) {
                   return [v.value]
                 }
-                ant.push( ant[ant.length -1 ] + v.in + (v.in_local || 0) + v.expenses - v.out - (v.out_local || 0));
+                ant.push( Math.max(ant[ant.length -1 ] + v.in + (v.in_local || 0) + v.expenses - v.out - (v.out_local || 0), 0));
                 return ant;
               } , undefined)
         }, {

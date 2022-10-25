@@ -49,8 +49,14 @@
 
 <style scoped>
     .balance {
-        height: 70vh;
+        height: calc(100vh - 14rem);
     }
+    @media (max-width: 600px) {
+    .balance {
+      height: calc(100vh - 11rem);
+    }
+  }
+
 </style>
 
 <script lang="ts" setup>

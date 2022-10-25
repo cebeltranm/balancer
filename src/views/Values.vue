@@ -19,9 +19,26 @@
     :rowClass="rowPendingSyncClass"
     scrollHeight="flex"
     scrollDirection="both"
+    filterDisplay="menu" 
+    :globalFilterFields="['entity', 'type']"
+    v-model:filters="filters"
     >
-    <Column field="entity" header="Entity" style="width:100px"></Column>
-    <Column field="type" header="Type" style="width:120px"></Column>
+    <Column field="entity" header="Entity" style="width:100px" :showFilterMatchModes="false" class="p-column-filter">
+      <template #body="{data}">
+          {{data.entity}}
+      </template>
+      <template #filter="{filterModel}">
+        <MultiSelect v-model="filterModel.value" :options="entities" />
+      </template>
+    </Column>
+    <Column field="type" header="Type" style="width:120px" :showFilterMatchModes="false">
+      <template #body="{data}">
+          {{data.type}}
+      </template>
+      <template #filter="{filterModel}">
+        <MultiSelect v-model="filterModel.value" :options="types" />
+      </template>
+    </Column>
     <Column field="name" header="Name" style="width:150px" fixed></Column>
     <Column field="currency" header="Currency" style="width:80px"></Column>
     <Column header="value" style="width:200px" v-tooltip.top="'teest'">
@@ -55,7 +72,15 @@
 
 <style scoped>
   .values {
-      height: 70vh;
+      height: calc(100vh - 14rem);
+  }
+  :deep( .p-column-header-content ) {
+    width: 100%;
+  }
+  @media (max-width: 600px) {
+    .values {
+      height: calc(100vh - 11rem);
+    }
   }
 </style>
 
@@ -65,7 +90,7 @@ import { getCurrentPeriod, getPeriodDate, rowPendingSyncClass } from '@/helpers/
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
-import { getBinanceValues } from '@/helpers/binance';
+import {FilterMatchMode,FilterOperator} from 'primevue/api';
 
   const period = ref({
     type: Period.Month,
@@ -76,6 +101,14 @@ import { getBinanceValues } from '@/helpers/binance';
   const values = ref([]);
 
   const pendingToSave = ref(false);
+
+  const filters = ref({
+    'entity': {value: null, matchMode: FilterMatchMode.IN},
+    'type': {value: null, matchMode: FilterMatchMode.IN}
+  });
+
+  const entities = computed(() => [...new Set( values.value.map( v => v.entity ))])
+  const types = computed(() => [...new Set( values.value.map( v => v.type ))])
 
   watch( () => store.state.values.values[period.value.value.year], () => recalculateValues(), {deep: true})
 

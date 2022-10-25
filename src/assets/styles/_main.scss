@@ -7,7 +7,7 @@ html {
     font-size: $fontSize;
 }
 
-body {
+html, body {
     font-family: var(--font-family);
     color: var(--text-color);
     background-color: var(--surface-ground);
@@ -16,6 +16,7 @@ body {
     min-height: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    height: 100%;
 }
 
 a {
@@ -28,4 +29,7 @@ a {
 }
 .hidden {
     display: none !important;
+}
+#app {
+    height: 100%;
 }
