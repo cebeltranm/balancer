@@ -67,43 +67,31 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-5774ec20'], (function (workbox) { 'use strict';
-
-  /**
-  * Welcome to your Workbox-powered service worker!
-  *
-  * You'll need to register this file in your web app.
-  * See https://goo.gl/nhQhGp
-  *
-  * The rest of the code is auto-generated. Please don't update this file
-  * directly; instead, make changes to your Workbox build configuration
-  * and re-run your build process.
-  * See https://goo.gl/2aRDsh
-  */
+define(['./workbox-990a474c'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
+
   /**
    * The precacheAndRoute() method efficiently caches and responds to
    * requests for URLs in the manifest.
    * See https://goo.gl/S9QRab
    */
-
   workbox.precacheAndRoute([{
     "url": "assets/auto.264f6c8c.js",
     "revision": null
   }, {
-    "url": "assets/index.0594c5b3.js",
+    "url": "assets/index.c31b24bd.js",
     "revision": null
   }, {
     "url": "registerSW.js",
     "revision": "2a272aeee910100ba224f9b19acf5d58"
   }, {
-    "url": "assets/index.34e87643.css",
+    "url": "assets/index.200445e9.css",
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "8840d59a42d476f4b15e77e30c72d16c"
+    "revision": "31872bbf27bea6ad768c5d97f610d677"
   }, {
     "url": "assets/primeicons.feb68bf6.woff",
     "revision": null
