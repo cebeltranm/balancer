@@ -97,7 +97,7 @@ async function onChangePeriod() {
 }
 
 async function recalculateValues() {
-    const date = new Date( period.value.value.year, period.value.value.month -1, 2 );
+    // const date = new Date( period.value.value.year, period.value.value.month -1, 2 );
     var totPer = period.value.type === Period.Month ? 13 : 5;
     var totConsPer = period.value.type === Period.Month ? 3 : 5;
     var per: any[]  =  Array.from(new Array(totConsPer), (val, index) => ({period: increasePeriod(period.value.type, period.value.value, -index)}));
@@ -107,14 +107,15 @@ async function recalculateValues() {
     }
 
     var per = per.map( (p, index) => {
-        return {
-            ...p,
-            position: p.position || index,
-            date: new Date( 
+        const date = new Date( 
                 p.period.year, 
                 period.value.type === Period.Year ? ( p.period.year < new Date().getFullYear() ? 11 : new Date().getMonth() -1 ) : 
                 period.value.type === Period.Quarter ? ( p.period.quarter * 3 ) : p.period.month - 1,
-                2 )
+                2 );
+        return {
+            ...p,
+            position: p.position || index,
+            date: date.getTime() > Date.now() ? new Date() : date
         }
     });
 
@@ -173,7 +174,6 @@ async function recalculateValues() {
                             }
                         }
                     }
-                    // console.log(balance[a]);
                     return all;
                 }, {} );
             ant2.push(...Object.keys(groups).map( (key) => ({...groups[key], name: key}) ) );
