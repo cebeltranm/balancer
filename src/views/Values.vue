@@ -228,8 +228,8 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
         .filter( a => a.yahoo_symbol);
       if (yahoo_symbols.length > 0 ){
         const url = `https://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map(a => a.yahoo_symbol).join(',')}`;
-        // var proxyUrl = 'https://fast-dawn-89938.herokuapp.com/';
-        var proxyUrl = 'https://thingproxy.freeboard.io/fetch/'
+        // var proxyUrl = 'https://thingproxy.freeboard.io/fetch/'
+        var proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=';
         const res = await fetch(proxyUrl + url)
         if (res.status === 200) {
           const data = await res.json();

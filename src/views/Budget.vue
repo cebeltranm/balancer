@@ -22,7 +22,7 @@
           {{ data.type !== AccountType.Category ? "&nbsp;>&nbsp;&nbsp;" : "" }} {{ data.name }}
          </template>
     </Column>
-    <Column header="Total" style="width:150px" frozen>
+    <Column header="Total" style="width:150px" :frozen="isDesktop()">
          <template #body="{ data }">
           {{format.currency(getTotal(data, null), data.currency)}}
          </template>
@@ -67,6 +67,7 @@ import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
 import { EVENTS, FORM_WITH_PENDING_EVENTS } from '@/helpers/events';
 import format from '@/format';
+import { isDesktop } from '@/helpers/browser';
 
   const period = ref({
     type: Period.Year,

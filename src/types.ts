@@ -34,6 +34,7 @@ export enum AccountType {
     Loan = "Loan",
     Property = "Property",
     OpenBalance = "OpenBalance",
+    MutualFund = "MutualFund",
 }
 
 export enum AccountGroupType {

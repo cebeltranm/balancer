@@ -224,7 +224,8 @@
 
       const res = group.filter(g => g.data.values[0].value).reduce( (arr: any[], g: any, index: number) => {
         // const n = parent !== 'Total' ? `${parent}::${g.data.name}` : g.data.name;
-        arr.push([g.data.name, parent, values[index], -100*  g.data.values[0].gp,
+        arr.push([g.data.name, parent, values[index], -100*  
+          g.data.values[0].gp,
           values[index] / total,
           g.data.values[0].gp
           // g.data.values[0] - g.data.values[1] 
@@ -236,7 +237,6 @@
       }, [])
       return [ ['Total', null, total, 0, 1, 0], ...res];
     };
-
     var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ['Total', null, 0, 0, 1, 0]];
     if (onChartReady.value && window.google && window.google.visualization) {
       var byValue = byCategory.value;
@@ -247,8 +247,17 @@
         byValue = byType.value;
       }
 
+      var dataTable = groupElements(byValue, 'Total');
+      const min = Math.min(...dataTable.map( t => t[3])) || -1;
+      const max = Math.max(...dataTable.map( t => t[3])) || 1;
+      dataTable = dataTable.map( t =>  [
+          t[0], t[1], t[2], 
+          t[3] < 0 ? - 100 * t[3]/min : 100 * t[3]/max, 
+          t[4], t[5],
+        ]);
+
       gdata = window.google.visualization.arrayToDataTable(
-        [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ...groupElements(byValue, 'Total') ]
+        [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ...dataTable ]
       );
     }
 

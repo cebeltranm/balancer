@@ -7,40 +7,58 @@
         <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-period="true" />
     </template>
   </Toolbar>
-  <DataTable :value="list" :rows="20" :paginator="true" 
+  <div class="transacctions">
+  <DataTable :value="list"
     responsiveLayout="scroll" 
     :resizableColumns="true" columnResizeMode="fit" showGridlines
     class="p-datatable-sm"
-    :rowClass="rowClass">
-    <Column header="Date">
+    :rowClass="rowClass"
+    :scrollable="true"
+    scrollHeight="flex"
+    scrollDirection="both"
+    >
+    <Column header="Date" style="min-width:70px; width:80px">
         <template #body="slotProps">
         {{$format.date(slotProps.data.date)}}
         </template>
     </Column>
-    <Column field="account" header="Account"></Column>
-    <Column field="description" header="Description">
+    <Column field="account" header="Account"  style="min-width:100px; width:150px" v-if="isDesktop()"></Column>
+    <Column field="description" header="Description"  style="min-width:100px; width:150px">
       <template #footer>Total</template>
     </Column>
-    <Column field="tags" header="Tags">
+    <Column field="tags" header="Tags" style="width:50px" v-if="isDesktop()">
       <template #body="slotProps">
         <Chip v-for="tag in slotProps.data.tags" :key="tag" :label="tag" />
       </template>
     </Column>
-    <Column header="Value" class="text-right">
-        <template #body="slotProps"><div :class="{ 'text-right': true, 'text-red-400': slotProps.data.value < 0, 'text-green-400': slotProps.data.value > 0}">
+    <Column header="Value" class="text-right"  style="width:100px">
+        <template #body="slotProps"><div :class="{ 'text-right': true, 'text-red-400': slotProps.data.value < 0, 'text-green-400': slotProps.data.value > 0}" style="width: 100%">
         {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
         </div></template>
-        <template #footer>{{$format.currency(getTotal(), 'cop')}}</template>
+        <template #footer><div class="text-right" style="width: 100%">{{$format.currency(getTotal(), 'cop')}}</div></template>
     </Column>
-    <Column>
+    <Column  style="width:50px">
         <template #body="slotProps">
             <Button icon="pi pi-pencil" @click="editTrans(slotProps.data.id, $event)" />
             <Button icon="pi pi-times" @click="deleteTrans(slotProps.data.id, $event)" class="p-button-danger ml-2"/>
         </template>
     </Column>
   </DataTable>
+  </div>
   <TransactionEditDialog :transaction="transToEdit" ref="transactionDialog"/>
 </template>
+
+<style scoped>
+    .transacctions {
+        height: calc(100vh - 14rem);
+    }
+    @media (max-width: 600px) {
+    .transacctions {
+      height: calc(100vh - 11rem);
+    }
+  }
+
+</style>
 
 <script lang="ts" setup>
   import AccountsSelector from '@/components/AccountsSelector.vue'
@@ -53,6 +71,7 @@
   import { Currency, Period } from '@/types';
   import { useConfirm } from "primevue/useconfirm";
   import { EVENTS } from '@/helpers/events';
+  import { isDesktop } from '@/helpers/browser';
 
   const period = ref({
     type: Period.Month,
