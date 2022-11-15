@@ -181,7 +181,7 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
 
   async function syncCruptoInBTC() {
     const current = getCurrentPeriod();
-    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDay() : 31;
+    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDate() : 31;
     const date = new Date( period.value.value.year, period.value.value.month -1, day ).toISOString().split('T')[0];
     const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/btc.json`);
     if (res.status === 200) {
@@ -203,7 +203,7 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
 
   async function syncCurrencies() {
     const current = getCurrentPeriod();
-    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDay() : 31;
+    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDate() : 31;
     const date = new Date( period.value.value.year, period.value.value.month -1, day ).toISOString().split('T')[0];
     const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/usd.json`);
     if (res.status === 200) {
