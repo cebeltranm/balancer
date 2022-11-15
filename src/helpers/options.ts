@@ -38,6 +38,7 @@ export function increasePeriod(type: Period, period: any, value: number) {
         return period;
     }
     let diff, year, month;
+    const current = getCurrentPeriod();
     switch(type) {
         case Period.Month:
             diff = parseInt(`${value/12}`);
@@ -64,9 +65,17 @@ export function increasePeriod(type: Period, period: any, value: number) {
                 quarter = quarter - 4;
                 year = year + 1;
             }
-            return {year, quarter, month: 12};
+            return {
+                year, 
+                quarter, 
+                month: current.year === year && quarter === current.quarter ? current.month : quarter * 3
+            };
         case Period.Year:
-            return { year: period.year + value, quarter: 4, month: 12 };
+            return { 
+                year: period.year + value, 
+                quarter: current.year === period.year + value ? current.quarter : 4, 
+                month: current.year === period.year + value ? current.month : 12 
+            };
     }
 }
 

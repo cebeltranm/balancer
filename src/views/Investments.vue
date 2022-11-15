@@ -2,7 +2,7 @@
   <Toolbar>
     <template #start>
       <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
-      <Dropdown v-model="typeInvestment" :options="['ByCategory', 'ByType', 'ByRisk']" placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'pie'"/>
+      <Dropdown v-model="typeInvestment" :options="['ByCategory', 'ByType', 'ByRisk', 'ByCurrency']" placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'pie'"/>
       <AccountsSelector v-model:accounts="accounts" :groups="[AccountGroupType.Investments]" :date="getPeriodDate(period.type, period.value)"  v-if="displayType === 'bar'"/>
     </template>
     <template #end>
@@ -187,6 +187,18 @@
       return data || [];
   });
 
+  const byCurrency = computed(() => {
+      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
+      const inv = store.getters['accounts/investmentsGroupByCurrency'](new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
+        {
+          type: AccountType.Category,
+          name: key,
+          children: inv[key]
+        }, balance));
+      return data || [];
+  });
+
   function getInOut(val: any){
     return val ? val.in + (val.in_local || 0) - val.out -  (val.out_local || 0) : 0
   }
@@ -245,6 +257,9 @@
       }
       if (typeInvestment.value === 'ByType') {
         byValue = byType.value;
+      }
+      if (typeInvestment.value === 'ByCurrency') {
+        byValue = byCurrency.value;
       }
 
       var dataTable = groupElements(byValue, 'Total');

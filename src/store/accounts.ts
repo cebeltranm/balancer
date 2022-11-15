@@ -123,6 +123,17 @@ export default {
               return ant;
            }, {} );
       },
+      investmentsGroupByCurrency: (state: any, getters: any) => ( date: Date = new Date(), period: Period = Period.Month )  => {
+        return getters.activeAccounts( date, period )
+           .filter( (account:any) => ACCOUNT_GROUP_TYPES[AccountGroupType.Investments].includes( account.type ))
+           .reduce( (ant:any, account: any) => {
+              if (!ant[account.currency]) {
+                ant[account.currency] = {}
+              }
+              ant[account.currency][account.id] = {...account};
+              return ant;
+           }, {} );
+      },
       expensesByCategories(state: any) {
         return Object.keys(state.accounts)
           .filter( (id:string) => state.accounts[id].type === 'Expense' )
