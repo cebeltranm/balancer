@@ -39,7 +39,7 @@ export default {
                 .reduce( (ant, v) => {
                   return {
                     value: rootState.accounts.accounts[key].type === AccountType.Expense ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
-                    ...( [AccountType.Investment, AccountType.CDT, AccountType.ETF, AccountType.Stock, AccountType.Crypto].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
+                    ...( [AccountType.Investment, AccountType.CD, AccountType.ETF, AccountType.Stock, AccountType.Crypto, AccountType.MutualFund].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
                       p[k] = ant[k] + ( !v || v[k] === undefined ? 0 : v[k])
                       return p;
                     }, {}) : {}),
@@ -159,8 +159,9 @@ export default {
               balance[accounts[a].id][month].value = initValue +  (res[accounts[a].id] || 0);
               break;
             case AccountType.Investment:
-            case AccountType.CDT:
+            case AccountType.CD:
             case AccountType.Property:
+              case AccountType.MutualFund:
               balance[accounts[a].id][month] = {
                 ...( investments[accounts[a].id] || {}),
                 value: context.rootGetters['values/getValue'](date, accounts[a].id, accounts[a].currency ) || 0

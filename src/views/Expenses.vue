@@ -195,8 +195,9 @@ import { anyTypeAnnotation } from '@babel/types';
         minColor: '#009688',
         midColor: '#f7f7f7',
         maxColor: '#ee8100',
-        headerHeight: 15,
+        headerHeight: 20,
         showScale: true,
+        height: 500,
         generateTooltip: (row, value, size) => {
             return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
               '<span>' + format.currency(value, 'cop') + '</span><br />' +

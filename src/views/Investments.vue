@@ -31,13 +31,13 @@
       <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].expenses > 0}">
         {{ $format.currency(node.data.values[0].expenses, node.data.currency || 'cop') }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}">{{ $format.currency(getTotal[0].expenses, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].expenses, 'cop')}}</div></template>
     </Column>
     <Column header="G/P">
       <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
         {{ $format.percent( node.data.values[0].gp )}}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}">{{ $format.percent( getTotal[0].gp ) }}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}" v-if="getTotal && getTotal.length > 0">{{ $format.percent( getTotal[0].gp ) }}</div></template>
     </Column>
     <Column header="Balance">
       <template #body="{node}">
@@ -46,7 +46,7 @@
         </div>
         <div v-if="node.data.values[0].units" class="text-sm text-right">({{$format.number(node.data.values[0].units)}} und)</div>
       </template>
-      <template #footer><div :class="{ 'text-right': true}">{{ $format.currency(getTotal[0].value, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, 'cop')}}</div></template>
     </Column>
   </TreeTable>
   <GChart
@@ -188,7 +188,7 @@
   });
 
   function getInOut(val: any){
-    return val.in + (val.in_local || 0) - val.out -  (val.out_local || 0)
+    return val ? val.in + (val.in_local || 0) - val.out -  (val.out_local || 0) : 0
   }
 
   const getTotal = computed(() => {
@@ -204,7 +204,7 @@
       }) )
     }, undefined)
 
-    return val1.map( (v, index) => {
+    return val1 ? val1.map( (v, index) => {
       const val2 = index < val1.length - 1 ?  val1[index + 1].value : v.value;
       const div1 = v.value + v.out;
       const div2 = val2 + v.in + ( v.expenses || 0 );
@@ -212,8 +212,8 @@
         ...v,
         gp: (div2 > 0) ? (div1-div2) / div2 : 0
       }
-    })
-    } );
+    }) : []
+  } );
 
   const treeMap = computed(() => {
     const groupElements = (group: any, parent: string) => {

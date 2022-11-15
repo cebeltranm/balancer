@@ -29,7 +29,7 @@ export enum AccountType {
     Investment = "Investment",
     ETF = "ETF",
     Stock = "Stock",
-    CDT = "CDT",
+    CD = "CD",
     Crypto = "Crypto",
     Loan = "Loan",
     Property = "Property",
