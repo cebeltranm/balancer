@@ -148,8 +148,8 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
           name: a.name, 
           currency: a.currency,
           value: store.getters['values/getValue'](date, a.id, a.currency),
-          m_m: [AccountType.Stock, AccountType.ETF, AccountType.Crypto, AccountType.Property].includes(a.type) && store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
-          m_y: [AccountType.Stock, AccountType.ETF, AccountType.Crypto, AccountType.Property].includes(a.type) && store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
+          m_m: store.getters['values/getValue'](prevDate, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevDate, a.id, a.currency) ) : undefined,
+          m_y: store.getters['values/getValue'](prevYear, a.id, a.currency) ? (-1 + store.getters['values/getValue'](date, a.id, a.currency) / store.getters['values/getValue'](prevYear, a.id, a.currency) ) : undefined
         }))
     ];
   };
@@ -260,8 +260,9 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
               ant['usd'][v.currency] = v.value
               break;
             case AccountType.Investment:
+            case AccountType.MutualFund:
             case AccountType.ETF:
-            case AccountType.CDT:
+            case AccountType.CD:
             case AccountType.Stock:
             case AccountType.Crypto:
             case AccountType.Property:

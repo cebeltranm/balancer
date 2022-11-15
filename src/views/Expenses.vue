@@ -2,9 +2,7 @@
   <Toolbar>
     <template #start>
       <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
-        <!-- <Button icon="pi pi-caret-left" @click="reducePeriod" :disabled="!canReduce" v-if="['table', 'pie'].includes(displayType)" />
-        <Dropdown v-model="typePeriod" :options="periodTypes" optionLabel="name" optionValue="value"  placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" />
-        <Button icon="pi pi-caret-right" class="ml-0" @click="increasePeriod" :disabled="!canIncrease"  v-if="['table', 'pie'].includes(displayType)"/> -->
+      <Dropdown v-model="categorySelected" :options="['All', ...expenseCategories]" placeholder="Select a Category" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'bar'"/>
     </template>
     <template #end>
         <SelectButton v-model="displayType" :options="displayOptions" optionValue="id" @update:modelValue="onChangeDisplayType" >
@@ -81,12 +79,19 @@
     :data="treeMap.data"
     :options="treeMap.options"
   />
-  <template v-for="data in barData" :key="data.title"  v-if="displayType === 'bar'">
+  <template  v-if="displayType === 'bar'">
+    <div>
+      <h1>{{barData.title}}</h1>
+      <Chart type="bar" :data="barData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}" />
+    </div>
+  </template>
+
+  <!-- <template v-for="data in barData" :key="data.title"  v-if="displayType === 'bar'">
     <div>
       <h1>{{data.title}}</h1>
       <Chart type="bar" :data="data" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}" />
     </div>
-  </template>
+  </template> -->
 
 </template>
 
@@ -109,7 +114,6 @@
   import { Period } from '@/types';
   import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
   import format from '@/format';
-import { anyTypeAnnotation } from '@babel/types';
 
   const period = ref({
     type: Period.Month,
@@ -119,6 +123,8 @@ import { anyTypeAnnotation } from '@babel/types';
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
   const store = useStore();
+  const expenseCategories = computed(() => Object.keys(store.getters['accounts/expensesByCategories']))
+  const categorySelected = ref('All');
 
   function getTotalByCategory( category: any, balance: any, budget?: any) {
       var children = undefined;
@@ -213,15 +219,19 @@ import { anyTypeAnnotation } from '@babel/types';
     const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
     const expences = store.getters['accounts/expensesByCategories'];
 
-    const grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
+    var grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
     const labels = [];
     for (var i = 1 ; i < numPeriods + 1; i++) {
       labels.push(`${currentPeriod.year}${period.value.type === Period.Month ? '/'+currentPeriod.month: ''}${period.value.type === Period.Quarter ? '/'+currentPeriod.quarter: ''}`);
       currentPeriod = increasePeriod(period.value.type, currentPeriod, -1);
     }
 
-    const pieData = [{
-        title: 'TOTAL',
+    if (categorySelected.value !== 'All' ) {
+      grouped = grouped.find( g => g.data.name === categorySelected.value).children;
+    }
+
+    const pieData = {
+        title: categorySelected.value === 'All' ? 'TOTAL' : categorySelected.value,
         labels: labels.reverse(),
         datasets: grouped.map( (c: any, index) => {
           return {
@@ -231,23 +241,66 @@ import { anyTypeAnnotation } from '@babel/types';
             data: c.data.values.reverse()
           };
         })
-    },
-    ...grouped.filter(g => g.children && g.children.length).map( (g: any) => {
-      return  {
-        title: g.data.name,
-        labels: labels.reverse(),
-        datasets: g.children.map( (c: any, index) => {
-          return {
-            type: 'bar',
-            label: c.data.name,
-            backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
-            data: c.data.values.reverse()
-          };
-        })
-      }
-    }) ]
+    }
+
+      //   ...grouped.filter(g => g.children && g.children.length).map( (g: any) => {
+  //     return  {
+  //       title: g.data.name,
+  //       labels: labels.reverse(),
+  //       datasets: g.children.map( (c: any, index) => {
+  //         return {
+  //           type: 'bar',
+  //           label: c.data.name,
+  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
+  //           data: c.data.values.reverse()
+  //         };
+  //       })
+  //     }
+
     return pieData;
   });
+
+  // const barData = computed(() => {
+  //   var currentPeriod = getCurrentPeriod();
+  //   const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 10;
+  //   const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
+  //   const expences = store.getters['accounts/expensesByCategories'];
+
+  //   const grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
+  //   const labels = [];
+  //   for (var i = 1 ; i < numPeriods + 1; i++) {
+  //     labels.push(`${currentPeriod.year}${period.value.type === Period.Month ? '/'+currentPeriod.month: ''}${period.value.type === Period.Quarter ? '/'+currentPeriod.quarter: ''}`);
+  //     currentPeriod = increasePeriod(period.value.type, currentPeriod, -1);
+  //   }
+
+  //   const pieData = [{
+  //       title: 'TOTAL',
+  //       labels: labels.reverse(),
+  //       datasets: grouped.map( (c: any, index) => {
+  //         return {
+  //           type: 'bar',
+  //           label: c.data.name,
+  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
+  //           data: c.data.values.reverse()
+  //         };
+  //       })
+  //   },
+  //   ...grouped.filter(g => g.children && g.children.length).map( (g: any) => {
+  //     return  {
+  //       title: g.data.name,
+  //       labels: labels.reverse(),
+  //       datasets: g.children.map( (c: any, index) => {
+  //         return {
+  //           type: 'bar',
+  //           label: c.data.name,
+  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
+  //           data: c.data.values.reverse()
+  //         };
+  //       })
+  //     }
+  //   }) ]
+  //   return pieData;
+  // });
 
 
   const getTotal = (index: number) => byCategory.value.reduce( (ant, v) => ant + v.data.values[index] , 0);
