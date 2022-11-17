@@ -38,6 +38,7 @@ import Toast from 'primevue/toast';
 import ProgressBar from 'primevue/progressbar';
 import Chip from 'primevue/chip';
 import MultiSelect from 'primevue/multiselect';
+import Avatar from 'primevue/avatar';
 
 import { GChart } from 'vue-google-charts'
 
@@ -75,6 +76,7 @@ app.component('ProgressBar', ProgressBar);
 app.component('Chip', Chip);
 app.component('GChart', GChart);
 app.component('MultiSelect', MultiSelect);
+app.component('Avatar', Avatar);
 
 app.config.globalProperties.$format = format
 app.use(ConfirmationService);

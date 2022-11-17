@@ -14,41 +14,64 @@
     </template>
   </Toolbar>
   <template v-if="isAuthenticated">
-  <TreeTable :value="byCategory" v-if="displayType === 'table'" :showGridlines="true" :resizableColumns="true">
-    <Column field="name" header="Name" footer="Total" :expander="true"></Column>
-    <Column header="In/Out">
+  <div class="investments" v-if="displayType === 'table'" >
+  <TreeTable :value="byCategory"
+    responsiveLayout="scroll"
+    scrollDirection="both"
+    :resizableColumns="true" columnResizeMode="fit" showGridlines
+    :scrollable="true"
+    >
+    <Column field="name" header="Name" footer="Total" :expander="true" :style="`width:${isDesktop() ? 350 : 250}px; z-index:1;`" :frozen="isDesktop()">
+      <template #body="{node}">
+        <div class="flex flex-row flex-wrap" >
+          <div class="align-items-center justify-content-center mr-2" v-if="!node.data.isCategory">
+            <Avatar v-if="node.data.logo" :image="node.data.logo" :size="isDesktop() ? 'large' : 'small'" />
+            <div v-else class="w-3rem h-3rem">&nbsp;</div>
+            <!-- <Avatar v-else :label="node.data.name[0]" /> -->
+          </div>
+          <div class="align-items-center justify-content-center">
+            <span>{{node.data.name}}</span> <br />
+            <span v-if="node.data.code" class="text-xs"><a :href="'https://finance.yahoo.com/quote/' + node.data.code" target="_blank">({{node.data.code}})</a></span>
+          </div>
+        </div>
+      </template>
+    </Column>
+    <Column header="In/Out" style="width:200px">
       <template #body="{node}"><div 
-        :class="{ 'text-right': true, 'text-red-400': getInOut(node.data.values[0]) < 0, 'text-green-400': getInOut(node.data.values[0]) > 0}" 
+        :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(node.data.values[0]) < 0, 'text-green-400': getInOut(node.data.values[0]) > 0}" 
         v-tooltip.bottom="'IN: '+ $format.currency(node.data.values[0].in, node.data.currency || 'cop')+
             '\nOUT: '+$format.currency(node.data.values[0].out, node.data.currency || 'cop') +
             '\nLOCAL IN: '+$format.currency(node.data.values[0].in_local, node.data.currency || 'cop') +
             '\nLOCAL OUT: '+$format.currency(node.data.values[0].out_local, node.data.currency || 'cop')">
         {{ $format.currency(getInOut(node.data.values[0]), node.data.currency || 'cop') }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getInOut(getTotal[0]) < 0, 'text-green-400': getInOut(getTotal[0]) > 0}">{{ $format.currency(getInOut(getTotal[0]), 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(getTotal[0]) < 0, 'text-green-400': getInOut(getTotal[0]) > 0}">{{ $format.currency(getInOut(getTotal[0]), 'cop')}}</div></template>
     </Column>
-    <Column header="Expenses">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].expenses > 0}">
+    <Column header="Expenses"  style="width:150px">
+      <template #body="{node}"><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': node.data.values[0].expenses > 0}">
         {{ $format.currency(node.data.values[0].expenses, node.data.currency || 'cop') }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].expenses, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].expenses, 'cop')}}</div></template>
     </Column>
-    <Column header="G/P">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
+    <Column header="G/P"  style="width:100px">
+      <template #body="{node}"><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
         {{ $format.percent( node.data.values[0].gp )}}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}" v-if="getTotal && getTotal.length > 0">{{ $format.percent( getTotal[0].gp ) }}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}" v-if="getTotal && getTotal.length > 0">{{ $format.percent( getTotal[0].gp ) }}</div></template>
     </Column>
-    <Column header="Balance">
+    <Column header="Balance"  style="width:200px">
       <template #body="{node}">
-        <div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
+        <div class="w-full text-right">
+          <div>
         {{ $format.currency(node.data.values[0].value, node.data.currency || 'cop') }}
         </div>
-        <div v-if="node.data.values[0].units" class="text-sm text-right">({{$format.number(node.data.values[0].units)}} und)</div>
+        <div v-if="node.data.values[0].units" class="text-sm">({{$format.number(node.data.values[0].units)}} und)</div>
+        </div>
       </template>
-      <template #footer><div :class="{ 'text-right': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, 'cop')}}</div></template>
-    </Column>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, 'cop')}}</div></template>
+    </Column> 
   </TreeTable>
+  </div>
   <GChart
     v-if="displayType === 'pie'"
     :settings="{ packages: ['corechart','treemap'] }"
@@ -63,13 +86,16 @@
   </template>
 </template>
 
-<style lang="scss">
-  .error.p-progressbar {
-    .p-progressbar-value {
-      background-color: var(--red-800);
-    }
-    .p-progressbar-label {
-      color: var(--gray-50);
+<style lang="scss" scoped>
+  .investments {
+      height: calc(100vh - 14rem);
+  }
+  :deep( .p-column-header-content ) {
+    width: 100%;
+  }
+  @media (max-width: 600px) {
+    .investments {
+      height: calc(100vh - 11rem);
     }
   }
 </style>
@@ -83,6 +109,7 @@
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
+  import { isDesktop } from '@/helpers/browser';
 
   const period = ref({
     type: Period.Month,
@@ -148,9 +175,12 @@
       return { 
         key: category.type === AccountType.Category ? category.name : category.id,
         data: {
-          name: category.entity ? `${category.entity}::${category.name}` : category.name,
+          name: category.entity && displayType.value !== 'table' ? `${category.entity}::${category.name}` : category.name,
+          code: category.yahoo_symbol,
+          logo: category.logo,
           values: values,
-          currency: category.currency || 'cop'
+          currency: category.currency || 'cop',
+          isCategory: category.type === AccountType.Category,
         },
         children
       };
