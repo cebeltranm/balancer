@@ -39,19 +39,19 @@
     <Column header="In/Out" style="width:200px">
       <template #body="{node}"><div 
         :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(node.data.values[0]) < 0, 'text-green-400': getInOut(node.data.values[0]) > 0}" 
-        v-tooltip.bottom="'IN: '+ $format.currency(node.data.values[0].in, node.data.currency || 'cop')+
-            '\nOUT: '+$format.currency(node.data.values[0].out, node.data.currency || 'cop') +
-            '\nLOCAL IN: '+$format.currency(node.data.values[0].in_local, node.data.currency || 'cop') +
-            '\nLOCAL OUT: '+$format.currency(node.data.values[0].out_local, node.data.currency || 'cop')">
-        {{ $format.currency(getInOut(node.data.values[0]), node.data.currency || 'cop') }}
+        v-tooltip.bottom="'IN: '+ $format.currency(node.data.values[0].in, node.data.currency || CURRENCY)+
+            '\nOUT: '+$format.currency(node.data.values[0].out, node.data.currency || CURRENCY) +
+            '\nLOCAL IN: '+$format.currency(node.data.values[0].in_local, node.data.currency || CURRENCY) +
+            '\nLOCAL OUT: '+$format.currency(node.data.values[0].out_local, node.data.currency || CURRENCY)">
+        {{ $format.currency(getInOut(node.data.values[0]), node.data.currency || CURRENCY) }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(getTotal[0]) < 0, 'text-green-400': getInOut(getTotal[0]) > 0}">{{ $format.currency(getInOut(getTotal[0]), 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(getTotal[0]) < 0, 'text-green-400': getInOut(getTotal[0]) > 0}">{{ $format.currency(getInOut(getTotal[0]), CURRENCY)}}</div></template>
     </Column>
     <Column header="Expenses"  style="width:150px">
       <template #body="{node}"><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': node.data.values[0].expenses > 0}">
-        {{ $format.currency(node.data.values[0].expenses, node.data.currency || 'cop') }}
+        {{ $format.currency(node.data.values[0].expenses, node.data.currency || CURRENCY) }}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].expenses, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].expenses, CURRENCY)}}</div></template>
     </Column>
     <Column header="G/P"  style="width:100px">
       <template #body="{node}"><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
@@ -63,12 +63,12 @@
       <template #body="{node}">
         <div class="w-full text-right">
           <div>
-        {{ $format.currency(node.data.values[0].value, node.data.currency || 'cop') }}
+        {{ $format.currency(node.data.values[0].value, node.data.currency || CURRENCY) }}
         </div>
         <div v-if="node.data.values[0].units" class="text-sm">({{$format.number(node.data.values[0].units)}} und)</div>
         </div>
       </template>
-      <template #footer><div :class="{ 'text-right': true, 'w-full': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, 'cop')}}</div></template>
+      <template #footer><div :class="{ 'text-right': true, 'w-full': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, CURRENCY)}}</div></template>
     </Column> 
   </TreeTable>
   </div>
@@ -105,11 +105,14 @@
   import PeriodSelector from '@/components/PeriodSelector.vue'
 
   import { useStore } from 'vuex';
-  import { computed, ref, onMounted } from 'vue'
+  import { computed, ref, onMounted, inject } from 'vue'
+  import type { Ref } from 'vue';
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
   import { isDesktop } from '@/helpers/browser';
+
+  const CURRENCY: Ref | undefined = inject('CURRENCY');
 
   const period = ref({
     type: Period.Month,
@@ -140,8 +143,8 @@
               ant = Array.from(new Array(child.data.values.length), () => ({ value: 0, in: 0, out: 0, expenses: 0, in_local: 0, out_local: 0 }));
             }
             return ant.map( (v, index) => {
-              if (child.data.currency!=='cop' && child.data.values[index]) {
-                const conv = store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop');
+              if (child.data.currency!==CURRENCY.value && child.data.values[index]) {
+                const conv = store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY.value);
 
                 return {
                   value: v.value + (child.data.values[index].value * conv),
@@ -179,7 +182,7 @@
           code: category.yahoo_symbol,
           logo: category.logo,
           values: values,
-          currency: category.currency || 'cop',
+          currency: category.currency || CURRENCY.value,
           isCategory: category.type === AccountType.Category,
         },
         children
@@ -260,7 +263,7 @@
   const treeMap = computed(() => {
     const groupElements = (group: any, parent: string) => {
       const values = group.filter(g => g.data.values[0].value).map( (g: any) => {
-        return g.data.currency === 'cop' ? g.data.values[0].value :  g.data.values[0].value * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), g.data.currency, 'cop');
+        return g.data.currency === CURRENCY.value ? g.data.values[0].value :  g.data.values[0].value * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), g.data.currency, CURRENCY.value);
       });
       const total = values.reduce( (ant, g) => ant + g, 0 );
 
@@ -325,7 +328,7 @@
         generateTooltip: (row, value, size) => {
             return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
               '<span>' + (gdata.getValue && gdata.getValue(row, 0)) + '</span><br />' +
-              '<span>' + (gdata.getValue && format.currency(gdata.getValue(row, 2), 'cop')) + '</span><br />' +
+              '<span>' + (gdata.getValue && format.currency(gdata.getValue(row, 2), CURRENCY.value)) + '</span><br />' +
               '<span>' + (gdata.getValue && format.percent(gdata.getValue(row, 4))) + '</span><br />' +
               '<span>gp ' + (gdata.getValue && format.percent(gdata.getValue(row, 5))) + '</span><br />' +
            '</div>'

@@ -27,7 +27,7 @@
           {{format.currency(getTotal(data, null), data.currency)}}
          </template>
          <template #footer>
-          {{format.currency(getTotal(null, null), 'cop')}}
+          {{format.currency(getTotal(null, null), CURRENCY)}}
          </template>
     </Column>
     <Column v-for="m of months" :key="m" :header="format.month(m)" class="text-right" style="width:150px">
@@ -37,10 +37,10 @@
             </div>
         </template>
         <template #editor="{ data }">
-            <InputNumber v-if="data.type !== AccountType.Category" v-model="data[m]" mode="currency" :currency="data.currency || Currency.COP" currencyDisplay="code" locale="en-US" autofocus/>
+            <InputNumber v-if="data.type !== AccountType.Category" v-model="data[m]" mode="currency" :currency="data.currency || CURRENCY" currencyDisplay="code" locale="en-US" autofocus/>
         </template>
          <template #footer>
-          {{format.currency(getTotal(null, m), 'cop')}}
+          {{format.currency(getTotal(null, m), CURRENCY)}}
          </template>
     </Column>
   </DataTable>
@@ -63,11 +63,15 @@
 import PeriodSelector from '@/components/PeriodSelector.vue'
 import { getCurrentPeriod, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, onMounted, watch, ref, inject } from 'vue';
 import { useStore } from 'vuex';
 import { EVENTS, FORM_WITH_PENDING_EVENTS } from '@/helpers/events';
 import format from '@/format';
 import { isDesktop } from '@/helpers/browser';
+
+import type { Ref } from 'vue';
+
+const CURRENCY: Ref | undefined = inject('CURRENCY');
 
   const period = ref({
     type: Period.Year,
@@ -119,7 +123,7 @@ import { isDesktop } from '@/helpers/browser';
             ant.push({
                 type: AccountType.Category,
                 name: a,
-                currency: Currency.COP
+                currency: CURRENCY.value
             });
             ant.push(...getByCategory(a, '', account.children));
         }
@@ -168,7 +172,7 @@ import { isDesktop } from '@/helpers/browser';
                     .map( m => ({value: v[m], asset: v.currency })))
                 return ant;
             }, []);
-        return store.getters['values/joinValues'](date, (data && data.currency) || 'cop', totals);
+        return store.getters['values/joinValues'](date, (data && data.currency) || CURRENCY?.value, totals);
     }
 
     function getRowClass(data: any) {

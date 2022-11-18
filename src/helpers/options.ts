@@ -1,9 +1,15 @@
 import { useIntl } from 'vue-intl';
-import { AccountType, Period } from '@/types';
+import { AccountType, Period, Currency } from '@/types';
 import format from '@/format';
 
 
 export const BACKGROUNDS_COLOR_GRAPH = ["#75bef8", "#90cd93", "#fbc02d", "#61d5e4", "#f1749e", "8893d1", "#61beb5", "#f57c00", "#9caeb7", "#c279ce", "#E0E0E0", "#ff8980"];
+
+export const CURRENCY_ICONS = {
+    usd: 'pi pi-dollar',
+    eur: 'pi pi-euro',
+    btc: 'pi pi-bitcoin',
+}
 
 export function getCurrentPeriod() {
     var year = new Date().getFullYear();

@@ -16,9 +16,9 @@
       <Column field="name" header="Name" footer="Total" :expander="true"></Column>
       <Column header="Balance">
         <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
-          {{ $format.currency(node.data.values[0], node.data.currency || 'cop') }}
+          {{ $format.currency(node.data.values[0], node.data.currency || CURRENCY) }}
           </div></template>
-        <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal, 'cop')}}</div></template>
+        <template #footer><div :class="{ 'text-right': true, 'text-red-400': getTotal < 0, 'text-green-400': getTotal > 0}">{{ $format.currency(getTotal, CURRENCY)}}</div></template>
       </Column>
     </TreeTable>
     <!--
@@ -44,10 +44,14 @@
   import PeriodSelector from '@/components/PeriodSelector.vue'
 
   import { useStore } from 'vuex';
-  import { computed, ref, onMounted } from 'vue'
+  import { computed, ref, onMounted, inject } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
   import format from '@/format';
+
+  import type { Ref } from 'vue';
+
+  const CURRENCY: Ref | undefined = inject('CURRENCY');
 
   const period = ref({
     type: Period.Month,
@@ -70,8 +74,8 @@
               ant = Array.from(new Array(child.data.values.length), () => 0);
             }
             return ant.map( (v, index) => {
-              if (child.data.currency!=='cop' && child.data.values[index]) {
-                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, 'cop'))  
+              if (child.data.currency!==CURRENCY?.value && child.data.values[index]) {
+                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.values[index] 
             } );
@@ -83,7 +87,7 @@
         data: {
           name: category.name,
           values: values,
-          currency: category.currency || 'cop'
+          currency: category.currency || CURRENCY?.value
         },
         children
       };

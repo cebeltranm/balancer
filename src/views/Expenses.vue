@@ -27,7 +27,7 @@
         <template #body="{node}">
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">
-                {{ $format.currency(node.data.values[index], node.data.currency || 'cop') }}
+                {{ $format.currency(node.data.values[index], node.data.currency || CURRENCY?.value) }}
             </div>
             <div style="width: 100%"
               :class="{ 'text-right': true, 'text-red-400': node.data.values[0]- node.data.values[index] > 0, 'text-green-400': node.data.values[0]- node.data.values[index] < 0}"
@@ -40,7 +40,7 @@
                 :class="{ error: node.data.values[index] > node.data.budget[0], 'mt-1':true, 'text-xs': true, 'h-1rem': true }"
                 :showValue="true" 
                 :value="Math.trunc(100*node.data.values[index]/node.data.budget[index])"
-                v-tooltip.top="$format.currency(node.data.budget[index], node.data.currency || 'cop')"
+                v-tooltip.top="$format.currency(node.data.budget[index], node.data.currency || CURRENCY)"
                 v-if="node.data.budget[index]"
                 />
             </div>
@@ -48,7 +48,7 @@
         </template>
         <template #footer>
           <div class="grid" style="width: 100%">
-            <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), 'cop')}}</div>
+            <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), CURRENCY)}}</div>
             <div style="width: 100%" 
               :class="{ 'text-right': true, 'text-red-400': getTotal(0) - getTotal(index) > 0, 'text-green-400': getTotal(0) - getTotal(index) < 0}"
               v-if="index>0 && getTotal(index) > 0">
@@ -110,10 +110,14 @@
   import PeriodSelector from '@/components/PeriodSelector.vue'
 
   import { useStore } from 'vuex';
-  import { computed, ref, onMounted } from 'vue'
+  import { computed, ref, onMounted, inject } from 'vue'
   import { Period } from '@/types';
   import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
   import format from '@/format';
+
+  import type { Ref } from 'vue';
+
+  const CURRENCY: Ref | undefined = inject('CURRENCY');
 
   const period = ref({
     type: Period.Month,
@@ -137,8 +141,8 @@
               ant = Array.from(new Array(child.data.values.length), () => 0);
             }
             return ant.map( (v, index) => {
-              if (child.data.currency!=='cop' && child.data.values[index]) {
-                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), 'cop', child.data.currency))  
+              if (child.data.currency!==CURRENCY?.value && child.data.values[index]) {
+                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.values[index] 
             } );
@@ -148,8 +152,8 @@
               ant = Array.from(new Array(child.data.values.length), () => 0);
             }
             return ant.map( (v, index) => {
-              if (child.data.currency!=='cop' && child.data.budget[index]) {
-                return v + (child.data.budget[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), 'cop', child.data.currency))  
+              if (child.data.currency!==CURRENCY?.value && child.data.budget[index]) {
+                return v + (child.data.budget[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.budget[index]
             }  );
@@ -162,7 +166,7 @@
           name: category.name,
           values: values,
           budget: vBudget,
-          currency: category.currency || 'cop'
+          currency: category.currency || CURRENCY?.value
         },
         children
       };
@@ -206,7 +210,7 @@
         height: 500,
         generateTooltip: (row, value, size) => {
             return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
-              '<span>' + format.currency(value, 'cop') + '</span><br />' +
+              '<span>' + format.currency(value, CURRENCY?.value) + '</span><br />' +
            '</div>'
         }
       }

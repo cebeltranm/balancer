@@ -35,7 +35,7 @@
         <template #body="slotProps"><div :class="{ 'text-right': true, 'text-red-400': slotProps.data.value < 0, 'text-green-400': slotProps.data.value > 0}" style="width: 100%">
         {{$format.currency(slotProps.data.value, slotProps.data.currency)}}
         </div></template>
-        <template #footer><div class="text-right" style="width: 100%">{{$format.currency(getTotal(), 'cop')}}</div></template>
+        <template #footer><div class="text-right" style="width: 100%">{{$format.currency(getTotal(), CURRENCY)}}</div></template>
     </Column>
     <Column  style="width:50px">
         <template #body="slotProps">
@@ -66,12 +66,16 @@
   import TransactionEditDialog from '@/components/TransactionEditDialog.vue'
 
   import { useStore } from 'vuex';
-  import { computed, ref, onMounted, toRaw } from 'vue'
+  import { computed, ref, onMounted, toRaw, inject } from 'vue'
   import { getCurrentPeriod, getPeriodDate } from '@/helpers/options.js';
   import { Currency, Period } from '@/types';
   import { useConfirm } from "primevue/useconfirm";
   import { EVENTS } from '@/helpers/events';
   import { isDesktop } from '@/helpers/browser';
+
+  import type { Ref } from 'vue';
+
+  const CURRENCY: Ref | undefined = inject('CURRENCY');
 
   const period = ref({
     type: Period.Month,
@@ -111,7 +115,7 @@
   function getTotal() {
     return store.getters['values/joinValues']( 
       selectedDate.value,
-      Currency.COP,
+      CURRENCY?.value,
       list.value.map( l => ({value: l.value, asset: l.currency}))
     );
   }

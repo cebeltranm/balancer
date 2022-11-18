@@ -28,22 +28,25 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, ref, onMounted } from 'vue'
+  import { computed, ref, onMounted, provide } from 'vue'
   // import { initPWA } from '@/helpers/pwa';
   import { useStore } from 'vuex';
   import { isDesktop } from './helpers/browser';
   import { useToast } from "primevue/usetoast";
   import { EVENTS, CHECK_AUTHENTICATE } from '@/helpers/events';
-  
 
   import AppTopbar from './layout/AppTopbar.vue';
   import AppMenu from './layout/AppMenu.vue';
   import Auth from '@/components/Auth.vue';
+  import { Currency } from './types';
 
   const store = useStore();
   const toast = useToast();
 
   const authDialog = ref<InstanceType<typeof Auth> | null>(null);
+
+  const CURRENCY = ref(Currency.COP);
+  provide('CURRENCY', CURRENCY)
 
   // replaced dyanmicaly
   // const reloadSW: any = '__RELOAD_SW__'

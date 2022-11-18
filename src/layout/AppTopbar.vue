@@ -10,12 +10,14 @@
 			<i class="pi pi-ellipsis-v"></i>
 		</button> -->
 		<ul class="layout-topbar-menu lg:flex origin-top">
-			<!-- <li>
-				<button class="p-link layout-topbar-button">
-					<i class="pi pi-calendar"></i>
-					<span>Events</span>
+			<li>
+				<button class="p-link layout-topbar-button"  @click="menuCurrencies.toggle">
+					<i v-if="CURRENCY_ICONS[CURRENCY]" :class="CURRENCY_ICONS[CURRENCY]"></i>
+					<i v-else class="pi">{{CURRENCY}}</i>
+					<span>Currency</span>
 				</button>
-			</li> -->
+				<Menu id="currencies_menu" ref="menuCurrencies" :model="currencies" :popup="true" />
+			</li>
 			<li>
 				<button class="p-link layout-topbar-button" @click="onAddTransaction">
 					<i class="pi pi-plus"></i>
@@ -48,9 +50,11 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, computed} from 'vue';
+import {ref, computed, inject} from 'vue';
 import TransactionEditDialog from '@/components/TransactionEditDialog.vue';
 import { useStore } from 'vuex';
+import { Currency } from '@/types';
+import { CURRENCY_ICONS } from '@/helpers/options';
 
 const store = useStore();
 
@@ -59,6 +63,16 @@ const transactionDialog = ref<InstanceType<typeof TransactionEditDialog> | null>
 
 const isPendingToSync = computed(() => store.getters['storage/isPendingToSync'])
 const inSync = computed(() => store.state.storage.inSync)
+
+const CURRENCY = inject('CURRENCY');
+
+const menuCurrencies = ref();
+const currencies = computed( () => Object.keys(Currency).map( (c: string) => ({
+	label: c,
+	icon: CURRENCY_ICONS[Currency[c]],
+	command: () => { CURRENCY.value = Currency[c]; },
+})));
+
 
 function onMenuToggle(event:any) {
 	emit('menu-toggle', event);

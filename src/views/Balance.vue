@@ -28,10 +28,10 @@
         <Column :header="title" style="width:180px">
             <template #body="{ data }">
                 <div class="text-right" style="width: 100%">
-                    {{format.currency(data.values[index], 'cop')}}
+                    {{format.currency(data.values[index], CURRENCY)}}
                 </div>
             </template>
-            <template #footer><div class="text-right" style="width: 100%">{{ $format.currency(total[index], 'cop')}}</div></template>
+            <template #footer><div class="text-right" style="width: 100%">{{ $format.currency(total[index], CURRENCY)}}</div></template>
         </Column>
         <Column header="%" style="width:80px" v-if="index > 0">
             <template #body="{ data }">
@@ -64,8 +64,12 @@ import PeriodSelector from '@/components/PeriodSelector.vue'
 import format from '@/format';
 import { getCurrentPeriod, periodLabel, increasePeriod, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Period } from '@/types';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, inject } from 'vue';
 import { useStore } from 'vuex';
+
+import type { Ref } from 'vue';
+
+const CURRENCY: Ref | undefined = inject('CURRENCY');
 
 const store = useStore();
 
@@ -167,8 +171,8 @@ async function recalculateValues() {
                     }
                     for (var i = 0; i < per.length; i++) {
                         if (balance[a][ per[i].position ]) {
-                            if (account.currency !== 'cop') {
-                                all[account.type].values[i] += (balance[a][ per[i].position ].value * store.getters['values/getValue']( per[i].date, account.currency, 'cop'))  
+                            if (account.currency !== CURRENCY?.value) {
+                                all[account.type].values[i] += (balance[a][ per[i].position ].value * store.getters['values/getValue']( per[i].date, account.currency, CURRENCY?.value))  
                             } else {
                                 all[account.type].values[i] += balance[a][ per[i].position ].value;
                             }
