@@ -46,7 +46,7 @@
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
-  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
+  import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
 
   import type { Ref } from 'vue';
@@ -75,7 +75,7 @@
             }
             return ant.map( (v, index) => {
               if (child.data.currency!==CURRENCY?.value && child.data.values[index]) {
-                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY?.value))  
+                return v + (child.data.values[index] * store.getters['values/getValue']( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.values[index] 
             } );
@@ -95,7 +95,7 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 1, period.value.value);
-      const assets = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Assets, AccountGroupType.Receivables, AccountGroupType.Liabilities], new Date(period.value.value.year, period.value.value.month, 1));
+      const assets = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Assets, AccountGroupType.Receivables, AccountGroupType.Liabilities], getPeriodDate(period.value.type, period.value.value));
       const data =  Object.keys(assets).map( (key) => getTotalByCategory(
         {
           name: key,

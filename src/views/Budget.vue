@@ -61,7 +61,7 @@
 
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
-import { getCurrentPeriod, rowPendingSyncClass } from '@/helpers/options';
+import { getCurrentPeriod, getPeriodDate, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
 import { computed, onMounted, watch, ref, inject } from 'vue';
 import { useStore } from 'vuex';
@@ -89,7 +89,7 @@ const CURRENCY: Ref | undefined = inject('CURRENCY');
     pendingToSave.value = false;
     EVENTS.emit(FORM_WITH_PENDING_EVENTS, false);
 
-    const date = new Date( period.value.value.year, period.value.value.month -1, 2 );
+    const date = getPeriodDate(period.value.type, period.value.value);
     const budget = await store.dispatch('budget/getBudgetForYear', {year: period.value.value.year})
     
     const getByCategory = (category: string, sub: string, accounts: any) => {
@@ -159,7 +159,7 @@ const CURRENCY: Ref | undefined = inject('CURRENCY');
         }
 
         const opts = month ? [month] : months;
-        const date = new Date( period.value.value.year, period.value.value.month -1, 1 );
+        const date = getPeriodDate(period.value.type, period.value.value);
         var vfiltered = values.value.filter( v => v.type !==  AccountType.Category )
 
         if (data && data.type === AccountType.Category) {

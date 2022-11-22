@@ -112,7 +112,7 @@
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
   import { Period } from '@/types';
-  import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH } from '@/helpers/options.js';
+  import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
 
   import type { Ref } from 'vue';
@@ -142,7 +142,7 @@
             }
             return ant.map( (v, index) => {
               if (child.data.currency!==CURRENCY?.value && child.data.values[index]) {
-                return v + (child.data.values[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY?.value))  
+                return v + (child.data.values[index] * store.getters['values/getValue']( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.values[index] 
             } );
@@ -153,7 +153,7 @@
             }
             return ant.map( (v, index) => {
               if (child.data.currency!==CURRENCY?.value && child.data.budget[index]) {
-                return v + (child.data.budget[index] * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY?.value))  
+                return v + (child.data.budget[index] * store.getters['values/getValue']( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.budget[index]
             }  );

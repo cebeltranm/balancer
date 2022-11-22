@@ -38,12 +38,12 @@
     </Column>
     <Column header="In/Out" style="width:200px">
       <template #body="{node}"><div 
-        :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(node.data.values[0]) < 0, 'text-green-400': getInOut(node.data.values[0]) > 0}" 
+        :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(node.data.values[0], node.data.isCategory) < 0, 'text-green-400': getInOut(node.data.values[0], node.data.isCategory) > 0}" 
         v-tooltip.bottom="'IN: '+ $format.currency(node.data.values[0].in, node.data.currency || CURRENCY)+
             '\nOUT: '+$format.currency(node.data.values[0].out, node.data.currency || CURRENCY) +
             '\nLOCAL IN: '+$format.currency(node.data.values[0].in_local, node.data.currency || CURRENCY) +
             '\nLOCAL OUT: '+$format.currency(node.data.values[0].out_local, node.data.currency || CURRENCY)">
-        {{ $format.currency(getInOut(node.data.values[0]), node.data.currency || CURRENCY) }}
+        {{ $format.currency(getInOut(node.data.values[0], node.data.isCategory), node.data.currency || CURRENCY) }}
         </div></template>
       <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(getTotal[0]) < 0, 'text-green-400': getInOut(getTotal[0]) > 0}">{{ $format.currency(getInOut(getTotal[0]), CURRENCY)}}</div></template>
     </Column>
@@ -106,11 +106,12 @@
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
-  import type { Ref } from 'vue';
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
   import { isDesktop } from '@/helpers/browser';
+  
+  import type { Ref } from 'vue';
 
   const CURRENCY: Ref | undefined = inject('CURRENCY');
 
@@ -144,7 +145,12 @@
             }
             return ant.map( (v, index) => {
               if (child.data.currency!==CURRENCY.value && child.data.values[index]) {
-                const conv = store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), child.data.currency, CURRENCY.value);
+                const conv = store.getters['values/getValue']( 
+                  getPeriodDate(period.value.type, index > 0 
+                    ? increasePeriod( period.value.type, period.value.value, -index) 
+                    : period.value.value),
+                  child.data.currency,
+                  CURRENCY.value);
 
                 return {
                   value: v.value + (child.data.values[index].value * conv),
@@ -173,12 +179,13 @@
 
         const div1 = (values[i].value || 0) + (values[i].out || 0) + ( values[i].out_local || 0 );
         const div2 = values[i + 1].value + values[i].in + ( values[i].in_local || 0 ) + ( values[i].expenses || 0 );
-        values[i].gp = (div2 ) ? (div1-div2) / div2 : 0; 
+        values[i].gp = (div2 ) ? ( (div1 || 0 ) - div2) / div2 : 0; 
       }
       return { 
         key: category.type === AccountType.Category ? category.name : category.id,
         data: {
-          name: category.entity && displayType.value !== 'table' ? `${category.entity}::${category.name}` : category.name,
+          name: category.entity && displayType.value !== 'table' ? category.yahoo_symbol || category.name : category.name,
+          fullName: category.entity && displayType.value !== 'table' ? `${category.entity}::${category.name}` : category.name,
           code: category.yahoo_symbol,
           logo: category.logo,
           values: values,
@@ -191,14 +198,14 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], getPeriodDate(period.value.type, period.value.value), period.value.type);
       const data =  inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance));
       return data || [];
   });
 
   const byType = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/accountsGroupByType']([AccountGroupType.Investments], new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const inv = store.getters['accounts/accountsGroupByType']([AccountGroupType.Investments], getPeriodDate(period.value.type, period.value.value), period.value.type);
       const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
         {
           type: AccountType.Category,
@@ -210,7 +217,7 @@
 
   const byRisk = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/investmentsGroupByRisk'](new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const inv = store.getters['accounts/investmentsGroupByRisk']( getPeriodDate(period.value.type, period.value.value), period.value.type);
       const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
         {
           type: AccountType.Category,
@@ -222,7 +229,7 @@
 
   const byCurrency = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/investmentsGroupByCurrency'](new Date(period.value.value.year, period.value.value.month, 1), period.value.type);
+      const inv = store.getters['accounts/investmentsGroupByCurrency']( getPeriodDate(period.value.type, period.value.value), period.value.type);
       const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
         {
           type: AccountType.Category,
@@ -232,7 +239,10 @@
       return data || [];
   });
 
-  function getInOut(val: any){
+  function getInOut(val: any, isCategory?: boolean){
+    if (isCategory) {
+      return val ? val.in - val.out: 0;
+    }
     return val ? val.in + (val.in_local || 0) - val.out -  (val.out_local || 0) : 0
   }
 
@@ -261,28 +271,35 @@
   } );
 
   const treeMap = computed(() => {
-    const groupElements = (group: any, parent: string) => {
+    const groupElements = (group: any, parent: string, parentArr: any[]) => {
       const values = group.filter(g => g.data.values[0].value).map( (g: any) => {
-        return g.data.currency === CURRENCY.value ? g.data.values[0].value :  g.data.values[0].value * store.getters['values/getValue']( new Date(period.value.value.year, period.value.value.month, 1), g.data.currency, CURRENCY.value);
+        return g.data.currency === CURRENCY.value ? g.data.values[0].value :  g.data.values[0].value * store.getters['values/getValue']( getPeriodDate(period.value.type, period.value.value), g.data.currency, CURRENCY.value);
       });
       const total = values.reduce( (ant, g) => ant + g, 0 );
-
       const res = group.filter(g => g.data.values[0].value).reduce( (arr: any[], g: any, index: number) => {
         // const n = parent !== 'Total' ? `${parent}::${g.data.name}` : g.data.name;
-        arr.push([g.data.name, parent, values[index], -100*  
+        var n = g.data.name;
+        const childsByName = arr.filter( ch => ch[0] === n );
+        if (childsByName.length > 0) {
+          n = `${n} ${childsByName.length + 1}`;
+        }
+        arr.push([
+          n,
+          parent, 
+          values[index], -100*  
           g.data.values[0].gp,
           values[index] / total,
-          g.data.values[0].gp
-          // g.data.values[0] - g.data.values[1] 
+          g.data.values[0].gp,
+          g.data.fullName
         ]);
         if (g.children) {
-          arr.push(...groupElements(g.children, g.data.name));
+          groupElements(g.children, n, arr)
         }
         return arr;
-      }, [])
-      return [ ['Total', null, total, 0, 1, 0], ...res];
+      }, parentArr)
+      return [ ['Total', null, total, 0, 1, 0, ''], ...res];
     };
-    var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ['Total', null, 0, 0, 1, 0]];
+    var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp', 'fullName'], ['Total', null, 0, 0, 1, 0, 'Total']];
     if (onChartReady.value && window.google && window.google.visualization) {
       var byValue = byCategory.value;
       if (typeInvestment.value === 'ByRisk') {
@@ -295,17 +312,17 @@
         byValue = byCurrency.value;
       }
 
-      var dataTable = groupElements(byValue, 'Total');
+      var dataTable = groupElements(byValue, 'Total', []);
       const min = Math.min(...dataTable.map( t => t[3])) || -1;
       const max = Math.max(...dataTable.map( t => t[3])) || 1;
-      dataTable = dataTable.map( t =>  [
+      dataTable = dataTable.map( (t, index) =>  [
           t[0], t[1], t[2], 
           t[3] < 0 ? - 100 * t[3]/min : 100 * t[3]/max, 
-          t[4], t[5],
+          t[4], t[5], t[6]
         ]);
 
       gdata = window.google.visualization.arrayToDataTable(
-        [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp'], ...dataTable ]
+        [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp', 'fullName'], ...dataTable ]
       );
     }
 
@@ -327,7 +344,7 @@
         useWeightedAverageForAggregation: true,
         generateTooltip: (row, value, size) => {
             return '<div class="bg-blue-900 border-blue-100 p-2 border-3">' +
-              '<span>' + (gdata.getValue && gdata.getValue(row, 0)) + '</span><br />' +
+              '<span>' + (gdata.getValue && gdata.getValue(row, 6)) + '</span><br />' +
               '<span>' + (gdata.getValue && format.currency(gdata.getValue(row, 2), CURRENCY.value)) + '</span><br />' +
               '<span>' + (gdata.getValue && format.percent(gdata.getValue(row, 4))) + '</span><br />' +
               '<span>gp ' + (gdata.getValue && format.percent(gdata.getValue(row, 5))) + '</span><br />' +
@@ -365,7 +382,7 @@
             yAxisID: 'y',
             backgroundColor: BACKGROUNDS_COLOR_GRAPH[0],
             borderColor: BACKGROUNDS_COLOR_GRAPH[0],
-            data: data.map( d => d.value).reverse()
+            data: data.map( d => d.value || 0).reverse()
         }, {
             type: 'line',
             label: 'Invested',
@@ -376,7 +393,7 @@
                 if (!ant) {
                   return [v.value]
                 }
-                ant.push( Math.max(ant[ant.length -1 ] + v.in + (v.in_local || 0) + v.expenses - v.out - (v.out_local || 0), 0));
+                ant.push( Math.max(ant[ant.length -1 ] + v.in + (v.in_local || 0) + v.expenses - v.out - (v.out_local || 0), 0) || 0);
                 return ant;
               } , undefined)
         }, {
@@ -395,17 +412,10 @@
 
   function onChangeDisplayType() {
     if(displayType.value === 'bar') {
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 2})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 3})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 4})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 5})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 6})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 7})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 8})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 9})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 10})
+      for (var i = 0; i <= 10; i ++) {
+        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - i})
+        store.dispatch('values/getValuesForYear', {year: period.value.value.year - i})
+      }
     }
   }
 </script>

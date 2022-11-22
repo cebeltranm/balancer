@@ -86,7 +86,7 @@
 
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
-import { getCurrentPeriod, getPeriodDate, rowPendingSyncClass } from '@/helpers/options';
+import { getCurrentPeriod, getPeriodDate, increasePeriod, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
@@ -114,9 +114,9 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
 
   function recalculateValues() {
     pendingToSave.value = false;
-    const date = new Date( period.value.value.year, period.value.value.month - 1, 2 );
-    const prevDate = new Date( period.value.value.year - (period.value.value.month === 1 ? 1 : 0), period.value.value.month - (period.value.value.month === 1 ? 1 : 2), 2 );
-    const prevYear = new Date( period.value.value.year - 1, period.value.value.month - 1, 2 );
+    const date = getPeriodDate(period.value.type, period.value.value);
+    const prevDate = getPeriodDate(period.value.type, increasePeriod(Period.Month, period.value.value, -1));
+    const prevYear = getPeriodDate(period.value.type, increasePeriod(Period.Year, period.value.value, -1));
     const accounts = store.getters['accounts/activeAccounts'](date);
     const currencies = accounts.reduce( (ant: any[], a:any) => {
         if (
