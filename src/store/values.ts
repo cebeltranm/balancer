@@ -20,9 +20,9 @@ export default {
         }
         var levels = 0;
         var year = date.getFullYear();
-        const values = state.values[ year ] || [];
         var month = date.getMonth() + 1;
         while (month > 0 && levels < maxLevels) {
+          const values = state.values[ year ] || [];
           if (month in values) {
             if (asset in values[month] && currency in values[month][asset] ) {
               return values[month][asset][currency]
