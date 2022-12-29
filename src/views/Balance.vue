@@ -137,8 +137,8 @@ async function recalculateValues() {
             group: AccountGroupType.Assets
         }, {
             type: AccountType.Category,
-            name: "Receivables",
-            group: AccountGroupType.Receivables
+            name: "Accounts Receivable",
+            group: AccountGroupType.AccountsReceivable
         }, {
             type: AccountType.Category,
             name: "Investments",

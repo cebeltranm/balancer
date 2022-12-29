@@ -16,8 +16,8 @@ export const ACCOUNT_GROUP_TYPES = {
   [AccountGroupType.Assets]: [ AccountType.Cash, AccountType.BankAccount ],
   [AccountGroupType.FixedAssets]: [ AccountType.Property ],
   [AccountGroupType.Investments]: [AccountType.Investment, AccountType.ETF, AccountType.CD, AccountType.Stock, AccountType.MutualFund, AccountType.Crypto],
-  [AccountGroupType.Receivables]: [AccountType.Receivable],
-  [AccountGroupType.Liabilities]: [ AccountType.CreditCard, AccountType.Loan ],
+  [AccountGroupType.AccountsReceivable]: [AccountType.AccountReceivable],
+  [AccountGroupType.Liabilities]: [ AccountType.CreditCard, AccountType.Loan, AccountType.AccountPayable ],
   [AccountGroupType.Incomes]: [ AccountType.Income ],
   [AccountGroupType.Expenses]: [ AccountType.Expense ],
 };
@@ -162,8 +162,8 @@ export default {
           .filter( (id:string) => state.accounts[id].type !== AccountType.Expense )
           .map ( (id:string) => {
             var type = state.accounts[id].entity || '';
-            if (state.accounts[id].type === AccountType.Receivable) {
-              type = 'Receivable';
+            if (state.accounts[id].type === AccountType.AccountReceivable) {
+              type = 'Account receivable';
             }
             return {
               id,

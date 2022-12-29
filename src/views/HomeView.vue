@@ -33,7 +33,7 @@
           ...types,
           'Cash': [AccountType.Cash],
           'Bank Accounts': [AccountType.BankAccount],
-          'Receivables': [AccountType.Receivable],
+          'Accounts Receivable': [AccountType.AccountReceivable],
         }
       }
 

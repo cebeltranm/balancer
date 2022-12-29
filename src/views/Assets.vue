@@ -95,7 +95,7 @@
 
   const byCategory = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 1, period.value.value);
-      const assets = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Assets, AccountGroupType.Receivables, AccountGroupType.Liabilities], getPeriodDate(period.value.type, period.value.value));
+      const assets = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Assets, AccountGroupType.AccountsReceivable, AccountGroupType.Liabilities], getPeriodDate(period.value.type, period.value.value));
       const data =  Object.keys(assets).map( (key) => getTotalByCategory(
         {
           name: key,

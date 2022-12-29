@@ -151,7 +151,8 @@ export default {
             case AccountType.CreditCard:
             case AccountType.Loan:
             case AccountType.BankAccount:
-            case AccountType.Receivable:
+            case AccountType.AccountReceivable:
+              case AccountType.AccountPayable:
               var initValue = 0;
               if (prevBalance[accounts[a].id] && prevBalance[accounts[a].id][prevMonth]) {
                 initValue = prevBalance[accounts[a].id][prevMonth].value;

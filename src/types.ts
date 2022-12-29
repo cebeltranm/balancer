@@ -25,7 +25,8 @@ export enum AccountType {
     Cash = "Cash",
     CreditCard = "CreditCard",
     BankAccount = "BankAccount",
-    Receivable = "Receivable",
+    AccountReceivable = "AccountReceivable",
+    AccountPayable = "AccountPayable",
     Investment = "Investment",
     ETF = "ETF",
     Stock = "Stock",
@@ -42,7 +43,7 @@ export enum AccountGroupType {
     Assets = "Assets",
     FixedAssets = "FixedAssets",
     Investments = "Investments",
-    Receivables = "Receivables",
+    AccountsReceivable = "AccountsReceivable",
     Liabilities = "Liabilities",
     Incomes = "Incomes",
 }
