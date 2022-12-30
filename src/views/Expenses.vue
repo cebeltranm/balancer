@@ -21,7 +21,7 @@
     :resizableColumns="true" columnResizeMode="fit" showGridlines
     :scrollable="true"
     >
-    <Column field="name" header="Name" footer="Total" :expander="true" style="width:200px; z-index: 1;" frozen></Column>
+    <Column field="name" header="Name" footer="Net" :expander="true" style="width:200px; z-index: 1;" frozen></Column>
     <template v-for="(title, index) in [0,1,2,3,4]" :key="`${title}-${index}`">
       <Column :header="periodLabel(period.type, increasePeriod(period.type, period.value, -index) )"  style="width:200px">
         <template #body="{node}">
@@ -30,7 +30,9 @@
                 {{ $format.currency(node.data.values[index], node.data.currency || CURRENCY?.value) }}
             </div>
             <div style="width: 100%"
-              :class="{ 'text-right': true, 'text-red-400': node.data.values[0]- node.data.values[index] > 0, 'text-green-400': node.data.values[0]- node.data.values[index] < 0}"
+              :class="{ 'text-right': true, 
+              'text-red-400': node.data.values[0]- node.data.values[index] > 0, 
+              'text-green-400': node.data.values[0]- node.data.values[index] < 0}"
               v-if="index>0 && node.data.values[index] > 0">
               ({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})
             </div>
@@ -46,23 +48,15 @@
             </div>
           </div>
         </template>
-        <template #footer>
+        <template #footer v-if="isAuthenticated">
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), CURRENCY)}}</div>
             <div style="width: 100%" 
-              :class="{ 'text-right': true, 'text-red-400': getTotal(0) - getTotal(index) > 0, 'text-green-400': getTotal(0) - getTotal(index) < 0}"
+              :class="{ 'text-right': true, 'text-red-400': getTotal(0) - getTotal(index) < 0, 'text-green-400': getTotal(0) - getTotal(index) > 0}"
               v-if="index>0 && getTotal(index) > 0">
                 ({{ format.percent( (getTotal(0) - getTotal(index))/getTotal(index) ) }})
             </div>
             <div class="text-right" style="width: 100%" v-else>&nbsp;</div>
-            <div class="text-right" style="width: 100%">
-              <ProgressBar 
-                :class="{ error: getTotal(index) > getTotalBudget(index), 'mt-2':true, }"
-                :showValue="true" 
-                :value="Math.trunc(100*getTotal(index)/getTotalBudget(index))" 
-                v-tooltip.right="getTotalBudget(index)"
-                v-if="getTotalBudget(index)" />
-            </div>
           </div>
         </template>
       </Column>
@@ -111,7 +105,7 @@
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
-  import { Period } from '@/types';
+  import { AccountGroupType, Period } from '@/types';
   import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
 
@@ -129,10 +123,11 @@
   const store = useStore();
   const expenseCategories = computed(() => Object.keys(store.getters['accounts/expensesByCategories']))
   const categorySelected = ref('All');
+  const isAuthenticated = computed(() => store.state.storage.status.authenticated);
 
   function getTotalByCategory( category: any, balance: any, budget?: any) {
       var children = undefined;
-      var values = category.type === 'Category' ? [] : balance[category.id].map( v => v.value);
+      var values = category.type === 'Category' ? [] : (balance[category.id] ? balance[category.id].map( v => v.value) : []);
       var vBudget = (category.type === 'Category' || !budget) ? [] : budget[category.id];
       if ( category.children ) {
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget));
@@ -173,11 +168,23 @@
   }
 
   const byCategory = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 5, period.value.value);
-      const budget = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 5, period.value.value);
-      const expences = store.getters['accounts/expensesByCategories'];
+    const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 5, period.value.value);
+    const budget = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 5, period.value.value);
+    const accounts = store.getters['accounts/accountsGroupByCategories'](
+      isAuthenticated.value ? [AccountGroupType.Incomes, AccountGroupType.Expenses] : [AccountGroupType.Expenses], 
+      getPeriodDate(period.value.type, period.value.value), period.value.type);
+      
+    console.log(Object.keys(accounts).map( (key) => getTotalByCategory({
+      name: key,
+      type: 'Category',
+      children: accounts[key]
+    }, balance, budget)));
 
-      return Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance, budget));
+    return Object.keys(accounts).map( (key) => getTotalByCategory({
+      name: key,
+      type: 'Category',
+      children: accounts[key]
+    }, balance, budget));
   });
 
   const treeMap = computed(() => {
@@ -307,8 +314,7 @@
   // });
 
 
-  const getTotal = (index: number) => byCategory.value.reduce( (ant, v) => ant + v.data.values[index] , 0);
-  const getTotalBudget = (index: number) => byCategory.value.reduce( (ant, v) => ant + v.data.budget[index] , 0);
+  const getTotal = (index: number) => byCategory.value.reduce( (ant, v) => ant + (v.data.values[index]*(v.key === AccountGroupType.Expenses ? -1 : 1)), 0);
 
   function onChangePeriod() {
     store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})

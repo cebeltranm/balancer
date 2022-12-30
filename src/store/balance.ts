@@ -38,7 +38,7 @@ export default {
                 .map( (m) => (state.balance[year] && state.balance[year][key] && state.balance[year][key][m] ) ? state.balance[year][key][m] : undefined )
                 .reduce( (ant, v) => {
                   return {
-                    value: rootState.accounts.accounts[key].type === AccountType.Expense ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
+                    value: [AccountType.Expense, AccountType.Income].includes(rootState.accounts.accounts[key].type) ? ant.value + ( !v || v.value === undefined ? 0 : v.value) : ( !v || v.value === undefined ? ant.value : v.value),
                     ...( [AccountType.Investment, AccountType.CD, AccountType.ETF, AccountType.Stock, AccountType.Crypto, AccountType.MutualFund].includes(rootState.accounts.accounts[key].type) ? ['in', 'out', 'in_local', 'out_local', 'expenses'].reduce( (p,k) => {
                       p[k] = ant[k] + ( !v || v[k] === undefined ? 0 : v[k])
                       return p;
