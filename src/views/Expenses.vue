@@ -173,12 +173,6 @@
     const accounts = store.getters['accounts/accountsGroupByCategories'](
       isAuthenticated.value ? [AccountGroupType.Incomes, AccountGroupType.Expenses] : [AccountGroupType.Expenses], 
       getPeriodDate(period.value.type, period.value.value), period.value.type);
-      
-    console.log(Object.keys(accounts).map( (key) => getTotalByCategory({
-      name: key,
-      type: 'Category',
-      children: accounts[key]
-    }, balance, budget)));
 
     return Object.keys(accounts).map( (key) => getTotalByCategory({
       name: key,
