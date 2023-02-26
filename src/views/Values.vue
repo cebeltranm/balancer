@@ -52,14 +52,14 @@
             <InputNumber v-model="data.value" mode="currency" :currency="data.currency || Currency.USD" :maxFractionDigits="data.currency === Currency.BTC ? 10: 2" currencyDisplay="code" locale="en-US" autofocus/>
         </template>
     </Column>
-    <Column field="m_m" header="M/M" style="width:80px">
+    <Column field="m_m" header="MoM" style="width:80px">
       <template #body="slotProps">
             <div :class="{ 'text-right': true, 'text-red-400': slotProps.data.m_m < 0, 'text-green-400':slotProps.data.m_m > 0}">
                 {{slotProps.data.m_m && $format.percent(slotProps.data.m_m)}}
             </div>
         </template>
     </Column>
-    <Column field="m_m" header="Y/Y" style="width:80px">
+    <Column field="m_m" header="YoY" style="width:80px">
       <template #body="slotProps">
             <div :class="{ 'text-right': true, 'text-red-400': slotProps.data.m_y < 0, 'text-green-400':slotProps.data.m_y > 0}">
                 {{slotProps.data.m_y && $format.percent(slotProps.data.m_y)}}
@@ -116,7 +116,7 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
     pendingToSave.value = false;
     const date = getPeriodDate(period.value.type, period.value.value);
     const prevDate = getPeriodDate(period.value.type, increasePeriod(Period.Month, period.value.value, -1));
-    const prevYear = getPeriodDate(period.value.type, increasePeriod(Period.Year, period.value.value, -1));
+    const prevYear = new Date(date.getFullYear() -1, date.getMonth(), date.getDate());
     const accounts = store.getters['accounts/activeAccounts'](date);
     const currencies = accounts.reduce( (ant: any[], a:any) => {
         if (
@@ -130,6 +130,7 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
     }, []);
 
     const investments = accounts.filter( a => [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(store.getters['accounts/getAccountGroupType'](a.id)) );
+    console.log(prevYear);
 
     values.value = [
         ...currencies.map( (c) => ({
@@ -229,8 +230,9 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
       if (yahoo_symbols.length > 0 ){
         const url = `https://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map(a => a.yahoo_symbol).join(',')}`;
         // var proxyUrl = 'https://thingproxy.freeboard.io/fetch/'
-        var proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=';
-        const res = await fetch(proxyUrl + url)
+        // var proxyUrl = 'https://api.codetabs.com/v1/proxy/?quest=';
+        var proxyUrl = 'https://api.codetabs.com/v1/tmp/?quest=';
+        const res = await fetch(proxyUrl + encodeURIComponent(url))
         if (res.status === 200) {
           const data = await res.json();
           data.quoteResponse.result.forEach( s => {
