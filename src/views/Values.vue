@@ -87,10 +87,11 @@
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
 import { getCurrentPeriod, getPeriodDate, increasePeriod, rowPendingSyncClass } from '@/helpers/options';
-import { AccountGroupType, AccountType, Currency, Period } from '@/types';
+import { AccountGroupType, AccountType, Currency, Period, StockApiType } from '@/types';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
-import {FilterMatchMode,FilterOperator} from 'primevue/api';
+import {FilterMatchMode, FilterOperator} from 'primevue/api';
+import type { Account } from '@/types';
 
   const period = ref({
     type: Period.Month,
@@ -130,7 +131,6 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
     }, []);
 
     const investments = accounts.filter( a => [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(store.getters['accounts/getAccountGroupType'](a.id)) );
-    console.log(prevYear);
 
     values.value = [
         ...currencies.map( (c) => ({
@@ -161,6 +161,7 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
   }
 
   onMounted(() => {
+    store.dispatch('config/getConfig',{reload: false});
     recalculateValues();
   })
 
@@ -175,9 +176,35 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
   }
 
   async function syncValues() {
-    syncCurrencies();
-    syncCruptoInBTC();
-    syncFromYahoo();
+    async function process() {
+      const promises = [ syncCurrencies(),  syncCruptoInBTC()];
+      const current = getCurrentPeriod();
+      const accounts = store.getters['accounts/activeAccounts'](getPeriodDate(period.value.type, period.value.value));
+
+      const symbols = accounts
+          .filter( (a: Account) => [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(store.getters['accounts/getAccountGroupType'](a.id)) )
+          .filter( (a: Account) => a.symbol);
+      if (symbols.length > 0 ){
+        const config = store.getters['config/stockApi']();
+        if (config && config.type && config.key) {
+          switch(config.type){
+            case StockApiType.AlphaVantage:
+              if (current.year === period.value.value.year && current.month === period.value.value.month) {
+                promises.push(syncAlphaVantage(config.key, symbols));
+              }
+              break;
+            case StockApiType.TwelveData:            
+              if (current.year === period.value.value.year && current.month === period.value.value.month) {
+                promises.push(syncTwelveData(config.key, symbols));
+              }
+              break;
+          }
+        }
+      }
+      return Promise.all(promises);
+    }
+
+    return store.dispatch('storage/executeInSync', process());
   }
 
   async function syncCruptoInBTC() {
@@ -219,6 +246,71 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
     }
   }
 
+
+  // AlphaVantage https://www.alphavantage.co
+  async function syncAlphaVantage(key: string, accounts: Account[]) {
+    const current = getCurrentPeriod();
+    if (period.value.value.month === current.month || period.value.value.year === current.year) {
+      for (var a of accounts) {
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&datatype=json&symbol=${a.symbol}&apikey=${key}`;
+        const res = await fetch(url);
+        if (res.status === 200) {
+          const data = await res.json();
+          if (data && data['Global Quote']['05. price']) {
+            const v = values.value.find( v => v.id === a.id);
+            if (v) {
+              v.value = data['Global Quote']['05. price'];
+              v.to_sync = true
+              pendingToSave.value = true;
+            }
+          }
+        }
+        // return;
+      }
+    }
+  }
+
+    // TwelveData https://twelvedata.com/
+  async function syncTwelveData(key: string, accounts: Account[]) {
+    const current = getCurrentPeriod();
+    if (period.value.value.month === current.month || period.value.value.year === current.year) {
+      for (var a of accounts) {
+        const url = `https://api.twelvedata.com/time_series?symbol=${a.symbol}&apikey=${key}&interval=1day&outputsize=1&format=JSON${a.exchange ? '&exchange=' + a.exchange : '' }`;
+        const res = await fetch(url);
+        if (res.status === 200) {
+          const data = await res.json();
+          if (data && data.values && 
+            data.values.length > 0 && 
+            data.values[0].close && 
+            data.values[0].close !== '' && 
+            !Number.isNaN(Number(data.values[0].close))) {
+
+            const v = values.value.find( v => v.id === a.id);
+            if (v) {
+              v.value = Number(data.values[0].close);
+              v.to_sync = true
+              pendingToSave.value = true;
+            }
+          }
+        }
+        await new Promise(resolve => setTimeout(resolve, 7500));
+      }
+    }
+  }
+
+  // Market Stack https://marketstack.com/
+  // async function syncMarketStack(key: string, accounts: Account[]) {
+  //   const current = getCurrentPeriod();
+  //   var date = 'latest'
+  //   if (period.value.value.month !== current.month || period.value.value.year !== current.year) {
+  //     date = getPeriodDate(period.value.period, period.value.value).toISOString();
+  //   }
+
+  //   const url = `http://api.marketstack.com/v1/eod/${date}?access_key=${key}&symbols=${accounts.map(a => a.symbol).join(',')}`
+  //   const res = await fetch(new Request(url, {redirect: 'manual'}));
+  //   console.log(res);
+  // }
+
   // YAHOO Stock values
   async function syncFromYahoo() {      
     const current = getCurrentPeriod();
@@ -228,11 +320,12 @@ import {FilterMatchMode,FilterOperator} from 'primevue/api';
         .filter( a => [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(store.getters['accounts/getAccountGroupType'](a.id)) )
         .filter( a => a.yahoo_symbol);
       if (yahoo_symbols.length > 0 ){
-        const url = `https://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map(a => a.yahoo_symbol).join(',')}`;
+        const url = `http://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map(a => a.yahoo_symbol).join(',')}`;
         // var proxyUrl = 'https://thingproxy.freeboard.io/fetch/'
         // var proxyUrl = 'https://api.codetabs.com/v1/proxy/?quest=';
-        var proxyUrl = 'https://api.codetabs.com/v1/tmp/?quest=';
-        const res = await fetch(proxyUrl + encodeURIComponent(url))
+        // var proxyUrl = 'https://api.codetabs.com/v1/tmp/?quest=';
+        // const res = await fetch(proxyUrl + encodeURIComponent(url))
+        const res = await fetch(url);
         if (res.status === 200) {
           const data = await res.json();
           data.quoteResponse.result.forEach( s => {

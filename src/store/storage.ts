@@ -97,5 +97,16 @@ export default {
       async setAuthenticated(context: any, authenticated: Boolean) {
         context.commit('authenticated', authenticated );
       },
+      async executeInSync(context: any, promise: Promise<any>) {
+        context.commit('inSync', true);
+        try {
+          const r = await promise;
+          context.commit('inSync', false);
+          return r;
+        } catch( e) {
+          context.commit('inSync', false);
+          throw e;
+        }
+      },
     }
   };

@@ -62,7 +62,7 @@ const emit = defineEmits(['menu-toggle', 'topbar-menu-toggle']);
 const transactionDialog = ref<InstanceType<typeof TransactionEditDialog> | null>(null);
 
 const isPendingToSync = computed(() => store.getters['storage/isPendingToSync'])
-const inSync = computed(() => store.state.storage.inSync)
+const inSync = computed(() => store.state.storage.status.inSync)
 
 const CURRENCY = inject('CURRENCY');
 

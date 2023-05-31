@@ -177,6 +177,9 @@ async function syncCachedFiles() {
             case 'accounts':
                 store.dispatch('accounts/getAccounts', true)
               break;
+            case 'config':
+                store.dispatch('config/getConfig', true)
+              break;
             case 'transactions':
                 store.dispatch('transactions/getTransactionsForMonth', {year: fileNameData[1], month: fileNameData[2], reload: true})
               break;
@@ -200,6 +203,7 @@ async function syncCachedFiles() {
 
 async function loadBasicFiles() {
     store.dispatch('accounts/getAccounts');
+    store.dispatch('config/getconfig');
     const date = new Date();
     [date.getFullYear() , date.getFullYear() - 1].forEach( (year) => {
         store.dispatch('values/getValuesForYear', {year });

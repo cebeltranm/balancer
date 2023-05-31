@@ -55,6 +55,12 @@ export enum Currency {
     BTC = "btc",
 }
 
+export enum StockApiType {
+    // MarketStack = "marketstack",
+    AlphaVantage = "alphavantage",
+    TwelveData = "twelvedata",
+}
+
 export interface Account {
     id: string;
     name: string;
@@ -64,4 +70,6 @@ export interface Account {
     entity?: string;
     activeFrom?: string;
     hideSince?: string;
+    symbol?: string;
+    exchange?: string;
 }
