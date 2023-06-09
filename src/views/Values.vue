@@ -198,6 +198,11 @@ import type { Account } from '@/types';
                 promises.push(syncTwelveData(config.key, symbols));
               }
               break;
+            case StockApiType.MarketStack:
+              if (current.year === period.value.value.year && current.month === period.value.value.month) {
+                promises.push(syncMarketStack(config.key, symbols));
+              }
+              break;
           }
         }
       }
@@ -299,17 +304,33 @@ import type { Account } from '@/types';
   }
 
   // Market Stack https://marketstack.com/
-  // async function syncMarketStack(key: string, accounts: Account[]) {
-  //   const current = getCurrentPeriod();
-  //   var date = 'latest'
-  //   if (period.value.value.month !== current.month || period.value.value.year !== current.year) {
-  //     date = getPeriodDate(period.value.period, period.value.value).toISOString();
-  //   }
+  async function syncMarketStack(key: string, accounts: Account[]) {
+    const current = getCurrentPeriod();
+    var date = 'latest'
+    if (period.value.value.month !== current.month || period.value.value.year !== current.year) {
+      date = getPeriodDate(period.value.period, period.value.value).toISOString();
+    }
 
-  //   const url = `http://api.marketstack.com/v1/eod/${date}?access_key=${key}&symbols=${accounts.map(a => a.symbol).join(',')}`
-  //   const res = await fetch(new Request(url, {redirect: 'manual'}));
-  //   console.log(res);
-  // }
+    const url = `http://api.marketstack.com/v1/eod/${date}?access_key=${key}&symbols=${accounts.map(a => a.symbol).join(',')}`
+    const res = await fetch(url);
+    if (res.status === 200) {
+        const data = await res.json();
+        console.log(data);
+        if (data && data.data && data.data.length > 0) {
+          data.data.forEach( s => {
+            const a = accounts.find( y => y.symbol === s.symbol);
+            if (a) {
+              const v = values.value.find( v => v.id === a.id);
+              if (v) {
+                v.value = Number(s.close);
+                v.to_sync = true
+                pendingToSave.value = true;
+              }
+            }
+          })
+        }
+    }
+  }
 
   // YAHOO Stock values
   async function syncFromYahoo() {      

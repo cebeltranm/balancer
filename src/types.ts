@@ -56,7 +56,7 @@ export enum Currency {
 }
 
 export enum StockApiType {
-    // MarketStack = "marketstack",
+    MarketStack = "marketstack",
     AlphaVantage = "alphavantage",
     TwelveData = "twelvedata",
 }
