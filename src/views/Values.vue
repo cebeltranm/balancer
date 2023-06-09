@@ -203,6 +203,11 @@ import type { Account } from '@/types';
                 promises.push(syncMarketStack(config.key, symbols));
               }
               break;
+            case StockApiType.RapidApi:
+              if (current.year === period.value.value.year && current.month === period.value.value.month) {
+                promises.push(syncRaidApi(config.key, config.host, symbols));
+              }
+              break;
           }
         }
       }
@@ -323,6 +328,37 @@ import type { Account } from '@/types';
               const v = values.value.find( v => v.id === a.id);
               if (v) {
                 v.value = Number(s.close);
+                v.to_sync = true
+                pendingToSave.value = true;
+              }
+            }
+          })
+        }
+    }
+  }
+
+  // Market Stack https://rapidapi.com/
+  async function syncRaidApi(key: string, host: string, accounts: Account[]) {
+    const url = `https://apidojo-yahoo-finance-v1.p.rapidapi.com/market/v2/get-quotes?region=US&fields=regularMarketPrice&symbols=${accounts.map(a => a.symbol).join(',')}`
+    const options = {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': key,
+        'X-RapidAPI-Host': host
+      }
+    };
+
+    const res = await fetch(url,options);
+    if (res.status === 200) {
+        const data = await res.json();
+
+        if (data && data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result.length > 0) {
+          data.quoteResponse.result.forEach( s => {
+            const a = accounts.find( y => y.symbol === s.symbol);
+            if (a) {
+              const v = values.value.find( v => v.id === a.id);
+              if (v) {
+                v.value = Number(s.regularMarketPrice);
                 v.to_sync = true
                 pendingToSave.value = true;
               }
