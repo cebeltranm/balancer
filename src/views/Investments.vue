@@ -54,10 +54,18 @@
       <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].expenses > 0, 'text-green-400': getTotal[0].expenses < 0}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].expenses, CURRENCY)}}</div></template>
     </Column>
     <Column header="G/P"  style="width:100px">
-      <template #body="{node}"><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}">
-        {{ $format.percent( node.data.values[0].gp )}}
+      <template #body="{node}">
+        <div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': node.data.values[0].gp < 0, 'text-green-400': node.data.values[0].gp > 0}"
+          v-tooltip.bottom="$format.currency(node.data.values[0].gp_value, node.data.currency || CURRENCY)">
+          {{ $format.percent( node.data.values[0].gp )}}
         </div></template>
-      <template #footer><div :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}" v-if="getTotal && getTotal.length > 0">{{ $format.percent( getTotal[0].gp ) }}</div></template>
+      <template #footer>
+        <div 
+          :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getTotal[0].gp < 0, 'text-green-400': getTotal[0].gp > 0}" v-if="getTotal && getTotal.length > 0"
+          v-tooltip.bottom="$format.currency(getTotal[0].gp_value, CURRENCY)">
+          {{ $format.percent( getTotal[0].gp ) }}
+        </div>
+      </template>
     </Column>
     <Column header="Balance"  style="width:200px">
       <template #body="{node}">
@@ -180,6 +188,7 @@
         const div1 = (values[i].value || 0) + (values[i].out || 0) + ( values[i].out_local || 0 );
         const div2 = values[i + 1].value + values[i].in + ( values[i].in_local || 0 ) + ( values[i].expenses || 0 );
         values[i].gp = (div2 ) ? ( (div1 || 0 ) - div2) / div2 : 0; 
+        values[i].gp_value = (div2 ) ? ( (div1 || 0 ) - div2) : 0; 
       }
       return { 
         key: category.type === AccountType.Category ? category.name : category.id,
@@ -265,7 +274,8 @@
       const div2 = val2 + v.in + ( v.expenses || 0 );
       return {
         ...v,
-        gp: (div2 > 0) ? (div1-div2) / div2 : 0
+        gp: (div2 > 0) ? (div1-div2) / div2 : 0,
+        gp_value: (div2 > 0) ? (div1-div2) : 0,
       }
     }) : []
   } );

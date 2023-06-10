@@ -31,8 +31,8 @@
             </div>
             <div style="width: 100%"
               :class="{ 'text-right': true, 
-              'text-red-400': node.data.values[0]- node.data.values[index] > 0, 
-              'text-green-400': node.data.values[0]- node.data.values[index] < 0}"
+              'text-red-400': (node.data.values[0]- node.data.values[index]) * (node.data.positive ? 1 : -1) < 0, 
+              'text-green-400': (node.data.values[0]- node.data.values[index]) * (node.data.positive ? 1 : -1) > 0}"
               v-if="index>0 && node.data.values[index] > 0">
               ({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})
             </div>
@@ -105,7 +105,7 @@
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
-  import { AccountGroupType, Period } from '@/types';
+  import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
 
@@ -129,8 +129,10 @@
       var children = undefined;
       var values = category.type === 'Category' ? [] : (balance[category.id] ? balance[category.id].map( v => v.value) : []);
       var vBudget = (category.type === 'Category' || !budget) ? [] : budget[category.id];
+      var positive = category.type !== AccountType.Expense;
       if ( category.children ) {
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget));
+        positive = children[0].data.positive;
         values = children.reduce( (ant, child) => {
             if (!ant) {
               ant = Array.from(new Array(child.data.values.length), () => 0);
@@ -153,7 +155,6 @@
               return v + child.data.budget[index]
             }  );
         }, undefined );
-
       }
       return { 
         key: category.type === 'Category' ? category.name : category.id,
@@ -161,7 +162,8 @@
           name: category.name,
           values: values,
           budget: vBudget,
-          currency: category.currency || CURRENCY?.value
+          currency: category.currency || CURRENCY?.value,
+          positive,
         },
         children
       };
