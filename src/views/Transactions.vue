@@ -7,6 +7,13 @@
         <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-period="true" />
     </template>
   </Toolbar>
+  <div class="flex flex-row flex-wrap" v-if="accountsBalance.length > 0">
+    <template v-for="(account) in accountsBalance" :key="`${account.id}`">
+      <div class="flex align-items-center justify-content-center surface-card p-3 border-1 border-200">
+        <b>{{account.name}}:</b> <div class="text-green-400 ml-2">{{$format.currency(account.value, account.currency)}}</div>
+    </div>
+    </template>
+  </div>
   <div class="transacctions">
   <DataTable :value="list"
     responsiveLayout="scroll" 
@@ -49,15 +56,9 @@
 </template>
 
 <style scoped>
-    .transacctions {
-        height: calc(100vh - 14rem);
-    }
-    @media (max-width: 600px) {
-    .transacctions {
-      height: calc(100vh - 11rem);
-    }
+  .transacctions {
+      height: calc(100vh - 18rem);
   }
-
 </style>
 
 <script lang="ts" setup>
@@ -108,6 +109,24 @@
     return [];
   })
 
+  const accountsBalance = computed(() => {
+    if (accounts.value.length < 5) {
+      const balance =  store.state.balance.balance[period.value.value.year];
+      if (balance) {
+        return accounts.value.map((aid) => {
+          const a = store.state.accounts.accounts[aid];
+          return {
+            id: a,
+            name: a.name,
+            value: balance[a.id] && balance[a.id][period.value.value.month] && balance[a.id][period.value.value.month].value,
+            currency: a.currency
+          }
+        });
+      }
+    }
+    return [];
+  })
+
   function rowClass(data: any) {
     return data.to_sync ? 'bg-red-900': null;
   }
@@ -119,7 +138,6 @@
       list.value.map( l => ({value: l.value, asset: l.currency}))
     );
   }
-
 
   function getTransaction(id: string){
     if (store.state.transactions.values[period.value.value.year] && store.state.transactions.values[period.value.value.year][period.value.value.month]) {
@@ -150,6 +168,7 @@
     selectedDate.value = getPeriodDate(period.value.type, period.value.value);
     if (!store.state.transactions.values[period.value.value.year] || !store.state.transactions.values[period.value.value.year][period.value.value.month]) {
         store.dispatch('transactions/getTransactionsForMonth', {year: period.value.value.year, month: period.value.value.month})
+        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
     }
   }
 </script>
