@@ -254,9 +254,17 @@ async function onUpdateAccount (index: number) {
 }
 
 watch(
-  () => state.value.values,
+  () => state.value.values.map((v) => ({...v})),
     (t, oldT) => {
-    const sum = t.reduce( (ant:any, v:any, index:number) => ant + (v.account?.id ? v.value : 0), 0);
+      if (t[0].value !== oldT[0].value) {
+        if (
+          (!oldT[0].value && !oldT[1].value) ||
+          (oldT[0].value === -oldT[1].value)
+          ) {
+          state.value.values[1].value = -t[0].value;
+        }
+      }
+    const sum = state.value.values.reduce( (ant:any, v:any, index:number) => ant + (v.account?.id ? v.value : 0), 0);
     const lastPos = t.length - 1;
     if (sum === 0 || Math.abs(sum) < 0.00000000001) {
       if (t.length > 2 && (!t[t.length -1].account?.id || !t[t.length -1].value) ) {
