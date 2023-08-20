@@ -1,5 +1,6 @@
 <template>
-<Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '80vw', '640px': '100vw'}" header="Transaction" :modal="true" class="p-fluid trans-edit-dialog">
+<div class="trans-edit-content">
+<Dialog v-model:visible="visible" :style="{width: '960px'}" :breakpoints="{'960px': '80vw', '640px': '100vw'}" header="Transaction" :modal="true" class="p-fluid" id="trans-edit-dialog">
   <form @submit.prevent.stop="handleSubmit">
   <div class="grid formgrid sm:pt-2 pt-5">
     <div class="field col col-12 md:col-3">
@@ -69,18 +70,24 @@
     </div>
   </template>
 </Dialog>
+</div>
 </template>
 
 <style lang="scss">
-.trans-edit-dialog {
-  @media (max-width: 640px) {
+#trans-edit-dialog {
+  @media (max-width: 480px) {
     height: 100%;
+    max-height: 100%;
     .p-dialog-header, .p-dialog-content, .p-dialog-footer {
       padding: 5px;
-    }
-  
+    }    
   }
-}
+  input.p-inputtext {
+    @media (max-width: 480px) {
+      font-size: 1.2rem;
+    }
+  }
+} 
 </style>
 
 <script lang='ts' setup>
@@ -89,6 +96,7 @@ import { useStore } from 'vuex';
 import { type Account, type Transaction, Currency } from '@/types';
 import { helpers, required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
+import { toRaw } from 'vue';
 
 const props = defineProps<{
     transaction?: Transaction,
@@ -209,6 +217,7 @@ function searchTransaction(event: any) {
             .map( (t: any) => ({
               id: t.id, 
               name: t.description,
+              tags: t.tags,
               values: t.values
             }))
         );
@@ -239,10 +248,10 @@ async function onSelectTransaction(event: any) {
     },
     value: v.value,
     units: v.units,
-    tags: v.tags || [],
     accountValue: v.accountValue
   }))  
   state.value.description = event.value.name;
+  state.value.tags = event.value.tags;
 }
 
 async function onUpdateAccount (index: number) {
@@ -265,7 +274,7 @@ watch(
         }
       }
     const sum = state.value.values.reduce( (ant:any, v:any, index:number) => ant + (v.account?.id ? v.value : 0), 0);
-    const lastPos = t.length - 1;
+    // const lastPos = t.length - 1;
     if (sum === 0 || Math.abs(sum) < 0.00000000001) {
       if (t.length > 2 && (!t[t.length -1].account?.id || !t[t.length -1].value) ) {
         state.value.values.pop();
@@ -293,9 +302,13 @@ async function handleSubmit() {
       return;
   }
 
+  if (props.transaction?.id) {
+    store.dispatch('transactions/deleteTransaction', toRaw(props.transaction));
+  }
+
   const trans = {
     ...props.transaction,
-    id: props.transaction?.id ? props.transaction.id : Date.now(),
+    id: Date.now(),
     date: state.value.date.toISOString().split('T')[0],
     description: state.value.description,
     tags: state.value.tags && state.value.tags.length > 0 && [...state.value.tags],
@@ -311,6 +324,7 @@ async function handleSubmit() {
   emit('update:transaction', trans);
   state.value.values = [ { value: null, account: null, accountValue: null, units: null }, { value: null, account: null, accountValue: null, units: null }];
   state.value.description = '';
+  state.value.tags = [];
 }
 
 function updatePropTransaction() {
