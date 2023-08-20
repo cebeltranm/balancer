@@ -320,7 +320,6 @@ import type { Account } from '@/types';
     const res = await fetch(url);
     if (res.status === 200) {
         const data = await res.json();
-        console.log(data);
         if (data && data.data && data.data.length > 0) {
           data.data.forEach( s => {
             const a = accounts.find( y => y.symbol === s.symbol);

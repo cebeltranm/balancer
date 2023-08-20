@@ -58,7 +58,10 @@ export default {
         return values;
       },
       async saveTransaction (context:any, transaction: Transaction) {
-        await idb.saveTransaction(transaction);
+        await idb.saveTransaction(Object.keys(transaction).filter(key => key !== 'to_sync').reduce((obj: any, key) => {
+          obj[key] = transaction[key];
+          return obj;
+        }, {}));
         context.dispatch('storage/pendingToSync', null, {root: true});
         context.dispatch('getTransactionsForMonth', {year: new Date(`${transaction.date}T00:00:00.00`).getFullYear(), month: new Date(`${transaction.date}T00:00:00.00`).getMonth() + 1, reload: true })
       },

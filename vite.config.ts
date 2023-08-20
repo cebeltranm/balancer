@@ -53,7 +53,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
 }
 const replaceOptions = { __DATE__: new Date().toISOString() }
 const claims = false // process.env.CLAIMS === 'true'
-const reload = false // process.env.RELOAD_SW === 'true'
+const reload = true // process.env.RELOAD_SW === 'true'
 
 // if (process.env.SW === 'true') {
   // pwaOptions.srcDir = 'src'

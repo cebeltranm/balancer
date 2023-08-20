@@ -67,9 +67,10 @@
   import TransactionEditDialog from '@/components/TransactionEditDialog.vue'
 
   import { useStore } from 'vuex';
-  import { computed, ref, onMounted, toRaw, inject } from 'vue'
+  import { computed, ref, onMounted, toRaw, inject, watch } from 'vue'
+  import { useRoute,useRouter } from 'vue-router';
   import { getCurrentPeriod, getPeriodDate } from '@/helpers/options.js';
-  import { Currency, Period } from '@/types';
+  import { Period } from '@/types';
   import { useConfirm } from "primevue/useconfirm";
   import { EVENTS } from '@/helpers/events';
   import { isDesktop } from '@/helpers/browser';
@@ -88,10 +89,14 @@
   const accounts = ref([]);
 
   const store = useStore();
+  const route = useRoute();
+  const router = useRouter();
   const confirm = useConfirm();
 
   var transToEdit = ref();
   const transactionDialog = ref<InstanceType<typeof TransactionEditDialog> | null>(null);
+  
+  watch(accounts, () => router.push({query: {accounts: [...accounts.value]}} ) );
   
   const list = computed(() => {
     if (store.state.transactions.values[period.value.value.year] && store.state.transactions.values[period.value.value.year][period.value.value.month]) {
@@ -117,7 +122,7 @@
           const a = store.state.accounts.accounts[aid];
           return {
             id: a,
-            name: a.name,
+            name: store.getters['accounts/getAccountFullName'](a.id),
             value: balance[a.id] && balance[a.id][period.value.value.month] && balance[a.id][period.value.value.month].value,
             currency: a.currency
           }
@@ -171,4 +176,10 @@
         store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
     }
   }
+
+  onMounted( async () => {
+    if (route.query?.accounts?.length > 0) {
+      accounts.value = route.query.accounts;
+    }
+  });
 </script>

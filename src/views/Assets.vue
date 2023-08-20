@@ -13,7 +13,13 @@
   </Toolbar>
   <template v-if="isAuthenticated">
     <TreeTable :value="byCategory" v-if="displayType === 'table'">
-      <Column field="name" header="Name" footer="Total" :expander="true"></Column>
+      <Column field="name" header="Name" footer="Total" :expander="true">
+        <template #body="{node}">
+          <router-link :to="{ path: '/transactions', query:{accounts: node.data.ids} }">
+            {{ node.data.name }}
+          </router-link>  
+        </template>
+      </Column>
       <Column header="Balance">
         <template #body="{node}"><div :class="{ 'text-right': true, 'text-red-400': node.data.values[0] < 0, 'text-green-400': node.data.values[0] > 0}">
           {{ $format.currency(node.data.values[0], node.data.currency || CURRENCY) }}
@@ -47,7 +53,6 @@
   import { computed, ref, onMounted, inject } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, getPeriodDate } from '@/helpers/options.js';
-  import format from '@/format';
 
   import type { Ref } from 'vue';
 
@@ -67,6 +72,7 @@
   function getTotalByCategory( category: any, balance: any) {
       var children = undefined;
       var values = category.type === AccountType.Category ? [] : balance[category.id].map( v => v.value);
+      var ids = category.type === AccountType.Category ? [] : [category.id];
       if ( category.children ) {
         children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance));
         values = children.reduce( (ant, child) => {
@@ -80,13 +86,20 @@
               return v + child.data.values[index] 
             } );
         }, undefined );
+        ids = [...children.reduce((ant, child) => {
+          for(var id of child.data.ids) {
+            ant.add(id);
+          }
+          return ant;
+        }, new Set())];
       }
 
       return { 
         key: category.type === AccountType.Category ? category.name : category.id,
         data: {
+          ids,
           name: category.name,
-          values: values,
+          values,
           currency: category.currency || CURRENCY?.value
         },
         children
