@@ -1,5 +1,6 @@
 import * as idb from './idb';
 import * as files from './files';
+import { toRaw } from 'vue';
 
 export async function syncTransactions() {
     const transactions = await idb.getAllTransactions();
@@ -25,9 +26,16 @@ export async function syncTransactions() {
                     trans = file.filter( (t: any) => !transactions.find( t2 => t2.id === t.id) );
                     trans.push( ...byMonth[year][month].filter( t => !t.deleted) );
                 }
-                if (await files.writeJsonFile(`transactions_${year}_${month}.json`, trans )) {
-                    await idb.removeTransactions( byMonth[year][month].map( t => t.id) );
-                }
+                // if (await files.writeJsonFile(`transactions_${year}_${month}.json`, trans )) {
+                await idb.saveJsonFile({
+                    id: `transactions_${year}_${month}.json`,
+                    data: toRaw(trans),
+                    date_cached: Date.now(),
+                    to_sync: true,
+                });
+              
+                await idb.removeTransactions( byMonth[year][month].map( t => t.id) );
+                // }
                 return { year: Number(year), month: Number(month) };
             }));
         }));
@@ -36,41 +44,44 @@ export async function syncTransactions() {
     }   
 }
 
-export async function syncCachedFiles( listener: Function ) {
+export async function getAllFilesInCache( ) {
     const year = new Date().getFullYear();
     const month = new Date().getMonth() + 1;
 
     const fileKeys = await idb.getAllFilesInCache();
-    if (fileKeys.length > 0 ) {
-        await Promise.all(fileKeys.map(async (fileName: any) => {
-            const file = await idb.getJsonFile(fileName);
-            if (file && (Date.now() - file.date_cached) > 300000 && !file.to_sync) {
-                if (`${fileName}`.startsWith('transactions_')) {
-                    const parts = `${fileName}`.split('_');
-                    let months = (parseInt(parts[1]) - year) * 12;
-                    months -= parseInt(parts[2]);
-                    months += month;
-                    if (months > 5) {
-                        await idb.removeFile(fileName);
-                        return;
-                    }
-                } 
-                if(await files.readJsonFile(fileName, false)) {
-                    listener(fileName);
-                }
-            }
-        }));
-    }   
+    return fileKeys.reduce( async (ant, fileName) => {
+        const data: any = await ant;
+        const file = await idb.getJsonFile(fileName);
+        data[fileName] = file.date_cached;
+        return data;
+    }, {} );
 }
 
 export async function syncFiles( ) {
     const fileKeys = await idb.getAllFilesInCache();
     if (fileKeys.length > 0 ) {
-        return await Promise.all(fileKeys.map(async (fileName) => {
+        const data = await Promise.all(fileKeys.map(async (fileName) => {
             const file = await idb.getJsonFile(fileName);
             if (file.to_sync) {
-                return await files.writeJsonFile(fileName, file.data);
+                return {
+                    stored: await files.writeJsonFile(fileName, file.data),
+                    fileName: fileName,
+                };
             }
         }));
+        const fileSaved = data.filter( d => d && d.stored && d.fileName !== 'config.json');
+        if (fileSaved.length > 0) {
+            const config = (await files.readJsonFile('config.json')) || { files: {} };
+            for (var i in fileSaved) {
+                config.files[fileSaved[i].fileName] = Date.now();
+            }
+            idb.saveJsonFile({
+                id: `config.json`,
+                data: toRaw(config),
+                date_cached: Date.now(),
+                to_sync: true,
+              });      
+        }
+        return data;
     }   
 }

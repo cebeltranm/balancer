@@ -3,20 +3,20 @@ import { getStorage } from './storage';
 
 export async function readJsonFile(fileName: any, cache: boolean = true) {
     try {
-        const file: any = await idb.getJsonFile(fileName);
         if (cache) {
+            const file: any = await idb.getJsonFile(fileName);
             if (file) {
                 return file.data;
             }
         }
         const storage = getStorage();
 
-        if (file) {
-            const last_mod = await storage.getLastModification(fileName);
-            if (last_mod?.getTime() < file.date_cached) {
-                return file.data;
-            }
-        }
+        // if (file) {
+        //     const last_mod = await storage.getLastModification(fileName);
+        //     if (last_mod?.getTime() < file.date_cached) {
+        //         return file.data;
+        //     }
+        // }
         const data = await storage.readJsonFile(fileName);
         if (data) {
             idb.saveJsonFile({

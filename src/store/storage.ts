@@ -12,7 +12,7 @@ const syncAll = bounced(async (context:any)=> {
       }));
   
       const firstMonth = trans.reduce( 
-        (ant: any, t: any) =>  ant.year < t.year || ant.month < t.month ? ant : t , 
+        (ant: any, t: any) =>  ant.year < t.year || ( ant.year === t.year && ant.month < t.month) ? ant : t , 
         { year: new Date().getFullYear(), month: new Date().getMonth() + 1});
       
       await context.dispatch('balance/recalculateBalance', { year: firstMonth.year, month: firstMonth.month, save: true }, { root: true })
@@ -22,7 +22,7 @@ const syncAll = bounced(async (context:any)=> {
     context.commit('inSync', false);
     await context.dispatch('pendingToSync');
   }
-}, 5000);
+}, 1000);
 
 export default {
     namespaced: true,    

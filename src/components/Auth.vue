@@ -171,29 +171,38 @@ async function checkStore() {
 async function syncCachedFiles() {
     try {
         store.commit('storage/inSync', true);
-        await sync.syncCachedFiles((file:string) => {
-          const fileNameData = file.split('.')[0].split('_');
-          switch(fileNameData[0]) {
-            case 'accounts':
-                store.dispatch('accounts/getAccounts', true)
-              break;
-            case 'config':
-                store.dispatch('config/getConfig', true)
-              break;
-            case 'transactions':
-                store.dispatch('transactions/getTransactionsForMonth', {year: fileNameData[1], month: fileNameData[2], reload: true})
-              break;
-            case 'values':
-                store.dispatch('values/getValuesForYear', { year: fileNameData[1], reload: true })
-              break;
-            case 'budget':
-                store.dispatch('budget/getBudgetForYear', { year: fileNameData[1], reload: true })
-              break;
-            case 'balance':
-                store.dispatch('balance/getBalanceForYear', { year: fileNameData[1], reload: true })
-              break;
-            default:
-              console.log('Needs to reload the file: ', file);
+        const config = await store.dispatch('config/getConfig', true);
+
+        const cached = await sync.getAllFilesInCache(); 
+        Object.keys(cached).forEach(async (e) => {
+          if (config.files[e] &&  config.files[e] > cached[e]) {
+            const fileNameData = e.split('.')[0].split('_');
+            switch(fileNameData[0]) {
+              case 'accounts':
+                  await files.readJsonFile(e, false);
+                  store.dispatch('accounts/getAccounts', true)
+                break;
+              case 'config':
+                break;
+              case 'transactions':
+                  await files.readJsonFile(e, false);
+                  store.dispatch('transactions/getTransactionsForMonth', {year: fileNameData[1], month: fileNameData[2], reload: true})
+                break;
+              case 'values':
+                  await files.readJsonFile(e, false);
+                  store.dispatch('values/getValuesForYear', { year: fileNameData[1], reload: true })
+                break;
+              case 'budget':
+                  await files.readJsonFile(e, false);
+                  store.dispatch('budget/getBudgetForYear', { year: fileNameData[1], reload: true })
+                break;
+              case 'balance':
+                  await files.readJsonFile(e, false);
+                  store.dispatch('balance/getBalanceForYear', { year: fileNameData[1], reload: true })
+                break;
+              default:
+                console.log('Needs to reload the file: ', e);
+            }            
           }
         });
     } finally {

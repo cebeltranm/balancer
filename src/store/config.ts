@@ -22,7 +22,7 @@ export default {
         if (!reload && context.state.config && Object.keys(context.state.config).length > 0){
           return context.state.config;
         }
-        const config = await readJsonFile('config.json');
+        const config = await readJsonFile('config.json', !reload);
         context.commit('config', config);
         return config;
       }
