@@ -13,11 +13,13 @@ import ToastService from 'primevue/toastservice';
 import StyleClass from 'primevue/styleclass';
 import Ripple from 'primevue/ripple';
 import Tooltip from 'primevue/tooltip';
+import BadgeDirective from 'primevue/badgedirective';
 
 import Badge from 'primevue/badge';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
+import Textarea from 'primevue/textarea';
 import Calendar from 'primevue/calendar';
 import AutoComplete from 'primevue/autocomplete';
 import InputNumber from 'primevue/inputnumber';
@@ -40,6 +42,7 @@ import Chip from 'primevue/chip';
 import MultiSelect from 'primevue/multiselect';
 import Avatar from 'primevue/avatar';
 import Menu from 'primevue/menu';
+import ContextMenu from 'primevue/contextmenu';
 
 import { GChart } from 'vue-google-charts'
 
@@ -51,11 +54,13 @@ app.use(PrimeVue,  { ripple: true, inputStyle: 'outlined', condensed: true })
 app.directive('styleclass', StyleClass);
 app.directive('ripple', Ripple);
 app.directive('tooltip', Tooltip);
+app.directive('badge', BadgeDirective);
 
 app.component('Badge', Badge);
 app.component('Dialog', Dialog);
 app.component('Button', Button);
 app.component('InputText', InputText);
+app.component('Textarea', Textarea);
 app.component('Calendar', Calendar);
 app.component('AutoComplete', AutoComplete);
 app.component('InputNumber', InputNumber);
@@ -79,6 +84,8 @@ app.component('GChart', GChart);
 app.component('MultiSelect', MultiSelect);
 app.component('Avatar', Avatar);
 app.component('Menu', Menu);
+app.component('ContextMenu', ContextMenu);
+
 
 
 app.config.globalProperties.$format = format

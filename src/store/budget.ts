@@ -7,10 +7,12 @@ export default {
     namespaced: true,    
     state: {
       budget: {},
+      comments: {}
     },
     mutations: {
-        budget (state: any, {year, budget}) {
+        budget (state: any, {year, budget, comments}) {
             state.budget[year] = budget;
+            state.comments[year] = comments;
         },
     },
     getters: {
@@ -59,18 +61,27 @@ export default {
           return context.state.budget[ year ];
         }
         const budget = await readJsonFile(`budget_${year}.json`);
-        context.commit('budget', {year, budget:budget});
+        context.commit('budget', {year, budget:budget.values, comments: budget.comments});
   
-        return budget;
+        return budget.values;
       },
-      async setBudgetForYear(context: any, {year, values}) {
+      async getBudgetCommentsForYear (context: any, {year}) {
+        if (context.state.budget[ year ]) {
+          return context.state.comments[ year ];
+        }
+        const budget = await readJsonFile(`budget_${year}.json`);
+        context.commit('budget', {year, budget:budget.values, comments: budget.comments});
+  
+        return budget.comments;
+      },
+      async setBudgetForYear(context: any, {year, values, comments}) {
         idb.saveJsonFile({
           id: `budget_${year}.json`,
-          data: toRaw(values),
+          data: {values: toRaw(values), comments:toRaw(comments)},
           date_cached: Date.now(),
           to_sync: true,
         });
-        context.commit('budget', {year, budget:values});
+        context.commit('budget', {year, budget:values, comments});
         context.dispatch('storage/pendingToSync', null, {root: true});
       },
     }

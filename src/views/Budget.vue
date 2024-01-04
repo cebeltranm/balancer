@@ -30,20 +30,33 @@
           {{format.currency(getTotal(null, null), CURRENCY)}}
          </template>
     </Column>
-    <Column v-for="m of months" :key="m" :header="format.month(m)" class="text-right" style="width:150px">
+    <Column v-for="m of months" :key="m" :header="format.month(m)" class="text-right p-0" style="width:150px">
         <template #body="{ data }">
-            <div class="text-right">
+            <div class="text-right m-2 p-1 p-overlay-badge" @contextmenu="onShowContextMenu($event, data, m)">
                 {{format.currency( data.type === AccountType.Category ? getTotal(data, m) : data[m], data.currency)}}
+                <Badge v-if="data.type !== AccountType.Category && comments && comments[data.id] && comments[data.id][m]" class="ml-auto" :value="comments[data.id][m]?.length" @click.stop.prevent="editComments($event, data, m)" />
             </div>
         </template>
         <template #editor="{ data }">
-            <InputNumber v-if="data.type !== AccountType.Category" v-model="data[m]" mode="currency" :currency="data.currency || CURRENCY" currencyDisplay="code" locale="en-US" autofocus/>
+            <InputNumber v-if="data.type !== AccountType.Category" v-model="data[m]" mode="currency" :currency="data.currency || CURRENCY" currencyDisplay="code" locale="en-US" @contextmenu="onShowContextMenu($event, data, m)" autofocus/>
         </template>
          <template #footer>
           {{format.currency(getTotal(null, m), CURRENCY)}}
          </template>
     </Column>
   </DataTable>
+  <ContextMenu ref="contextMenu" :model="contextMenuItems">
+    <template #item="{ item, props }">
+        <a v-ripple class="flex align-items-center" v-bind="props.action">
+            <span :class="item.icon" />
+            <span class="ml-2">{{ item.label }}</span>
+            <Badge v-if="item.badge" class="ml-auto" :value="item.badge" />
+            <span v-if="item.shortcut" class="ml-auto border-1 surface-border border-round surface-100 text-xs p-1">{{ item.shortcut }}</span>
+            <i v-if="item.items" class="pi pi-angle-right ml-auto text-primary"></i>
+        </a>
+    </template>
+    </ContextMenu>
+    <CommentsDialog ref="commentDialog" @update:modelValue="addComments($event)"></CommentsDialog>
   </div>
 </template>
 
@@ -61,17 +74,22 @@
 
 <script lang="ts" setup>
 import PeriodSelector from '@/components/PeriodSelector.vue'
+import CommentsDialog from '@/components/CommentsDialog.vue'
 import { getCurrentPeriod, getPeriodDate, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
-import { computed, onMounted, watch, ref, inject } from 'vue';
+import { onMounted, watch, ref, inject } from 'vue';
 import { useStore } from 'vuex';
 import { EVENTS, FORM_WITH_PENDING_EVENTS } from '@/helpers/events';
 import format from '@/format';
 import { isDesktop } from '@/helpers/browser';
 
 import type { Ref } from 'vue';
+import { computed } from 'vue';
 
 const CURRENCY: Ref | undefined = inject('CURRENCY');
+
+const contextMenu = ref();
+const commentDialog = ref();
 
   const period = ref({
     type: Period.Year,
@@ -79,11 +97,43 @@ const CURRENCY: Ref | undefined = inject('CURRENCY');
   });
 
   const store = useStore();
-  const values = ref([]);
+  const values: Ref<any> = ref([]);
+  const comments: Ref<any> = ref({});
   const pendingToSave = ref(false);
   const months = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const selecteMenuData : Ref<any> = ref(null);
+
+  const contextMenuItems = [
+    {
+        label: 'Apply next',
+        icon: 'pi pi-play',
+        command: () => {
+            for (var i = 1 + Number(selecteMenuData.value.month); i < 13; i++) {
+                selecteMenuData.value.data[i] = selecteMenuData.value.data[selecteMenuData.value.month];    
+            }
+        }
+    },
+    {
+        label: 'Remove',
+        icon: 'pi pi-delete-left',
+        command: () => {
+            selecteMenuData.value.data[selecteMenuData.value.month] = undefined;
+        }
+        // shortcut: '⌘+D'
+    },
+    {
+        label: 'Add Comment',
+        icon: 'pi pi-plus-circle',
+        // shortcut: '⌘+A',
+        badge: 0,
+        command: () => {
+            commentDialog.value.show((comments.value && selecteMenuData.value && selecteMenuData.value.data && comments.value[selecteMenuData.value.data.id] && comments.value[selecteMenuData.value.data.id][selecteMenuData.value.month]) || []);
+        }
+    },
+    ];
 
   watch( () => store.state.budget.budget[period.value.value.year], () => recalculateValues(), {deep: true})
+
 
   async function recalculateValues() {
     pendingToSave.value = false;
@@ -115,9 +165,9 @@ const CURRENCY: Ref | undefined = inject('CURRENCY');
     }
 
     const accounts = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Expenses], date)
-    var res = [];
+    var res: any = [];
     if (accounts[AccountGroupType.Expenses]) {
-      res = Object.keys( accounts[AccountGroupType.Expenses] ).reduce( (ant, a) => {
+      res = Object.keys( accounts[AccountGroupType.Expenses] ).reduce( (ant: any, a) => {
         const account = accounts[AccountGroupType.Expenses][a];
         if (account.type === AccountType.Category) {
             ant.push({
@@ -131,6 +181,7 @@ const CURRENCY: Ref | undefined = inject('CURRENCY');
       }, [])
     }
     values.value = res;
+    comments.value = await store.dispatch('budget/getBudgetCommentsForYear', {year: period.value.value.year});
   }
 
   function onChangePeriod() {
@@ -190,7 +241,38 @@ const CURRENCY: Ref | undefined = inject('CURRENCY');
                     }, {} );
                 }
                 return ant;
-            }, {})
+            }, {}),
+            comments: comments.value
         });
+    }
+
+    const onShowContextMenu = (event: any, data: any, m: any) => {
+        selecteMenuData.value = {month: m, data};
+        if (data && data.type === AccountType.Expense) {
+            contextMenu.value.show(event);
+        }
+    };
+    const editComments = (event: any, data: any, m: any) => {
+        selecteMenuData.value = {month: m, data};
+        if (data && data.type === AccountType.Expense) {
+            commentDialog.value.show((comments.value && selecteMenuData.value && selecteMenuData.value.data && comments.value[selecteMenuData.value.data.id] && comments.value[selecteMenuData.value.data.id][selecteMenuData.value.month]) || []);
+        }
+    };
+    function addComments(comment: any) {
+        if (comment) {
+            if (comment.length> 0) {
+                if (!comments.value) {
+                    comments.value = {};
+                }
+                if (!comments.value[selecteMenuData.value.data.id]) {
+                    comments.value[selecteMenuData.value.data.id] = {};
+                }
+                comments.value[selecteMenuData.value.data.id][selecteMenuData.value.month] = comment;
+            } else if (comments.value[selecteMenuData.value.data.id] && comments.value[selecteMenuData.value.data.id][selecteMenuData.value.month]) {
+                delete comments.value[selecteMenuData.value.data.id][selecteMenuData.value.month];
+            }
+            selecteMenuData.value.data.to_sync = true
+            pendingToSave.value = true;
+        }
     }
 </script>

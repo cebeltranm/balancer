@@ -212,7 +212,7 @@ async function syncCachedFiles() {
 
 async function loadBasicFiles() {
     store.dispatch('accounts/getAccounts');
-    store.dispatch('config/getconfig');
+    store.dispatch('config/getConfig');
     const date = new Date();
     [date.getFullYear() , date.getFullYear() - 1].forEach( (year) => {
         store.dispatch('values/getValuesForYear', {year });
