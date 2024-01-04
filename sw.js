@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-839e7022'], (function (workbox) { 'use strict';
+define(['./workbox-728a0c38'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -78,22 +78,22 @@ define(['./workbox-839e7022'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
-    "url": "assets/auto-712ff3ee.js",
+    "url": "assets/auto-XYC5A0Ix.js",
     "revision": null
   }, {
-    "url": "assets/index-a7b8f60e.js",
+    "url": "assets/index-7XsP5Dau.js",
     "revision": null
   }, {
     "url": "registerSW.js",
     "revision": "2a272aeee910100ba224f9b19acf5d58"
   }, {
-    "url": "assets/index-53371d40.css",
+    "url": "assets/index-eIkjm8a6.css",
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "b8c9a80481b36ffd58d6166e62b1e3d7"
+    "revision": "cf604508446c19a42a1128e260bf6db9"
   }, {
-    "url": "assets/primeicons-90a58d3a.woff",
+    "url": "assets/primeicons-ghXmUeij.woff",
     "revision": null
   }, {
     "url": "favicon.svg",
