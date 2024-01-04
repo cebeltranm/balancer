@@ -265,7 +265,7 @@ async function onUpdateAccount (index: number) {
 watch(
   () => state.value.values.map((v) => ({...v})),
     (t, oldT) => {
-      if (t[0].value !== oldT[0].value) {
+      if (t[0].value !== oldT[0].value && t[1].value === oldT[1].value) {
         if (
           (!oldT[0].value && !oldT[1].value) ||
           (oldT[0].value === -oldT[1].value)

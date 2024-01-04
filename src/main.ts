@@ -46,7 +46,7 @@ import { GChart } from 'vue-google-charts'
 const app = createApp(App);
 app.use(router)
 app.use(store)
-app.use(PrimeVue,  { ripple: true, inputStyle: 'outlined' })
+app.use(PrimeVue,  { ripple: true, inputStyle: 'outlined', condensed: true })
 
 app.directive('styleclass', StyleClass);
 app.directive('ripple', Ripple);
