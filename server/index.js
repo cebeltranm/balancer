@@ -10,7 +10,7 @@ app.use(express.json());
 var port = 8181;
 app.get('/_ping', function (request, response) {
     console.log('ping');
-    response.send(200, 'ok');
+    response.status(200).end();
 });
 
 app.post(/\/.*\.json$/, function (req, res) {
@@ -18,9 +18,9 @@ app.post(/\/.*\.json$/, function (req, res) {
         console.log('Saved file ', req.path);
         if (err) {
             console.log(err);
-            return res.send(500, JSON.stringify(err));
+            return res.status(500).send(JSON.stringify(err)).end();
         }
-        res.send(200);
+        res.status(200).end();
     });
 });
 
