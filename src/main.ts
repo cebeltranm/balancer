@@ -43,6 +43,7 @@ import MultiSelect from 'primevue/multiselect';
 import Avatar from 'primevue/avatar';
 import Menu from 'primevue/menu';
 import ContextMenu from 'primevue/contextmenu';
+import OverlayPanel from 'primevue/overlaypanel';
 
 import { GChart } from 'vue-google-charts'
 
@@ -85,8 +86,7 @@ app.component('MultiSelect', MultiSelect);
 app.component('Avatar', Avatar);
 app.component('Menu', Menu);
 app.component('ContextMenu', ContextMenu);
-
-
+app.component('OverlayPanel', OverlayPanel);
 
 app.config.globalProperties.$format = format
 app.use(ConfirmationService);

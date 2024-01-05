@@ -1,5 +1,16 @@
 <template>
-    <Dialog v-model:visible="visible" header="Comments" :modal="true" class="p-fluid" :pt="{
+    <OverlayPanel v-if="props.readOnly" ref="readOnlyList">
+        <ul class="m-0 p-1 flex flex-column gap-2 w-full">
+        <template v-for="comment in comments" :key="comment.d">
+            <li
+                :class="['p-2 hover:surface-hover flex align-items-center justify-content-between border-bottom-1 surface-border']"
+            >
+                <p class="flex-grow-1 flex" @click="editing=comment.d;value = comment.m">{{ comment.m }}</p>
+            </li>
+        </template>
+        </ul>        
+    </OverlayPanel>
+    <Dialog v-else v-model:visible="visible" header="Comments" :modal="true" class="p-fluid" :pt="{
         mask: {
             style: 'backdrop-filter: blur(2px)'
         }
@@ -48,6 +59,11 @@ import type {Ref} from "vue";
 
 const emit = defineEmits(['update:modelValue'])
 
+const props = defineProps<{
+    readOnly?: Boolean,
+}>()
+
+const readOnlyList = ref();
 
 const visible = ref(false);
 const value: any = ref("");
@@ -88,11 +104,15 @@ function updateComment(d : any) {
     }
 }
 
-function show(c: any[]) {
+function show(c: any[], $event?: any) {
     comments.value = c || [];
     value.value = "";
     editing.value = undefined;
-    visible.value = true;
+    if (readOnlyList.value) {
+        readOnlyList.value.toggle($event)
+    } else {
+        visible.value = true;
+    }
 }
 
 function close() {

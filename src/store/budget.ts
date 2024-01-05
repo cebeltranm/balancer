@@ -22,6 +22,11 @@ export default {
           return ant;
         }, {});
 
+        const comments:any = Object.keys(rootState.accounts.accounts).reduce( (ant: any, key: any) => {
+          ant[key] = [];
+          return ant;
+        }, {});
+
         for (var period = 1; period<=numPeriods; period++){
           var months = [month];
           switch(type) {
@@ -29,13 +34,20 @@ export default {
               months = [quarter * 3 - 2, quarter * 3 - 1, quarter * 3 ];
               break;
             case Period.Year:
-              months = Array.from(new Array(month), (val, index) => index + 1)
+              months = Array.from(new Array(period === 1 ? month : 12), (val, index) => index + 1)
               break;
           }
           Object.keys(budget).forEach( (key:string) => {
             budget[key].push( months
                 .map( (m) => (state.budget[year] && state.budget[year][key] && state.budget[year][key][m]) ? state.budget[year][key][m] : undefined )
                 .reduce( (ant, v) => ant + ( v === undefined ? 0 : v) , 0 ) );
+          });
+
+          Object.keys(comments).forEach( (key:string) => {
+            comments[key].push( months
+                .map( (m) => (state.comments[year] && state.comments[year][key] && state.comments[year][key][m]) ? state.comments[year][key][m] : undefined )
+                .filter( (m) => m )
+                .reduce( (ant, v) => [...ant,...v] , [] ) );
           });
 
           switch(type) {
@@ -52,7 +64,7 @@ export default {
               break;
           }
         }
-        return budget;
+        return {budget, comments};
       }
     },
     actions: {

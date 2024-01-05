@@ -37,14 +37,17 @@
               ({{ format.percent( (node.data.values[0]- node.data.values[index])/node.data.values[index] ) }})
             </div>
             <div class="text-right" style="width: 100%" v-else>&nbsp;</div>
-            <div class="text-right" style="width: 100%">
+            <div class="text-right p-overlay-badge" style="width: 100%">
               <ProgressBar 
+                class=""
                 :class="{ error: node.data.values[index] > node.data.budget[0], 'mt-1':true, 'text-xs': true, 'h-1rem': true }"
                 :showValue="true" 
                 :value="Math.trunc(100*node.data.values[index]/node.data.budget[index])"
                 v-tooltip.top="$format.currency(node.data.budget[index], node.data.currency || CURRENCY)"
                 v-if="node.data.budget[index]"
-                />
+                >
+              </ProgressBar>
+              <Badge v-if="node.data.comments[index].length > 0"  :value="node.data.comments[index].length > 9 ? '+9' : node.data.comments[index].length" @click.stop.prevent=" commentDialog.show(node.data.comments[index], $event)" />
             </div>
           </div>
         </template>
@@ -62,9 +65,6 @@
       </Column>
     </template>
     </TreeTable>
-  <!-- <div style="max-width:600px">
-  <Chart type="doughnut" :data="pieData" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }}" " />
-  </div> -->
 
   <GChart
     v-if="displayType === 'pie'"
@@ -80,12 +80,7 @@
     </div>
   </template>
 
-  <!-- <template v-for="data in barData" :key="data.title"  v-if="displayType === 'bar'">
-    <div>
-      <h1>{{data.title}}</h1>
-      <Chart type="bar" :data="data" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: true}, y: {stacked: true} }}" />
-    </div>
-  </template> -->
+  <CommentsDialog :readOnly="true" ref="commentDialog"></CommentsDialog>
 
 </template>
 
@@ -102,6 +97,7 @@
 
 <script lang="ts" setup>
   import PeriodSelector from '@/components/PeriodSelector.vue'
+  import CommentsDialog from '@/components/CommentsDialog.vue'
 
   import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
@@ -118,6 +114,8 @@
     value: getCurrentPeriod()
   });
 
+  const commentDialog = ref();
+
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
   const store = useStore();
@@ -125,13 +123,15 @@
   const categorySelected = ref('All');
   const isAuthenticated = computed(() => store.state.storage.status.authenticated);
 
-  function getTotalByCategory( category: any, balance: any, budget?: any) {
+  function getTotalByCategory( category: any, balance: any, budget?: any, comments?: any) {
       var children = undefined;
       var values = category.type === 'Category' ? [] : (balance[category.id] ? balance[category.id].map( v => v.value) : []);
       var vBudget = (category.type === 'Category' || !budget) ? [] : budget[category.id];
+      var vComments = (category.type === 'Category' || !comments) ? [] : comments[category.id];
+
       var positive = category.type !== AccountType.Expense;
       if ( category.children ) {
-        children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget));
+        children = Object.keys(category.children).map((key) => getTotalByCategory(category.children[key], balance, budget, comments));
         positive = children[0].data.positive;
         values = children.reduce( (ant, child) => {
             if (!ant) {
@@ -155,6 +155,12 @@
               return v + child.data.budget[index]
             }  );
         }, undefined );
+        vComments = comments && children.reduce( (ant, child) => {
+            if (!ant) {
+              ant = Array.from(new Array(child.data.values.length), () => []);
+            }
+            return ant.map( (v, index) => child.data.comments && child.data.comments[index] ? [...v, ...child.data.comments[index]] : v);
+        }, undefined );        
       }
       return { 
         key: category.type === 'Category' ? category.name : category.id,
@@ -162,6 +168,7 @@
           name: category.name,
           values: values,
           budget: vBudget,
+          comments: vComments,
           currency: category.currency || CURRENCY?.value,
           positive,
         },
@@ -171,7 +178,7 @@
 
   const byCategory = computed(() => {
     const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 5, period.value.value);
-    const budget = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 5, period.value.value);
+    const {budget, comments} = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 5, period.value.value);
     const accounts = store.getters['accounts/accountsGroupByCategories'](
       isAuthenticated.value ? [AccountGroupType.Incomes, AccountGroupType.Expenses] : [AccountGroupType.Expenses], 
       getPeriodDate(period.value.type, period.value.value), period.value.type);
@@ -180,7 +187,7 @@
       name: key,
       type: 'Category',
       children: accounts[key]
-    }, balance, budget));
+    }, balance, budget, comments));
   });
 
   const treeMap = computed(() => {
@@ -250,64 +257,8 @@
         })
     }
 
-      //   ...grouped.filter(g => g.children && g.children.length).map( (g: any) => {
-  //     return  {
-  //       title: g.data.name,
-  //       labels: labels.reverse(),
-  //       datasets: g.children.map( (c: any, index) => {
-  //         return {
-  //           type: 'bar',
-  //           label: c.data.name,
-  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
-  //           data: c.data.values.reverse()
-  //         };
-  //       })
-  //     }
-
     return pieData;
   });
-
-  // const barData = computed(() => {
-  //   var currentPeriod = getCurrentPeriod();
-  //   const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 10;
-  //   const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
-  //   const expences = store.getters['accounts/expensesByCategories'];
-
-  //   const grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
-  //   const labels = [];
-  //   for (var i = 1 ; i < numPeriods + 1; i++) {
-  //     labels.push(`${currentPeriod.year}${period.value.type === Period.Month ? '/'+currentPeriod.month: ''}${period.value.type === Period.Quarter ? '/'+currentPeriod.quarter: ''}`);
-  //     currentPeriod = increasePeriod(period.value.type, currentPeriod, -1);
-  //   }
-
-  //   const pieData = [{
-  //       title: 'TOTAL',
-  //       labels: labels.reverse(),
-  //       datasets: grouped.map( (c: any, index) => {
-  //         return {
-  //           type: 'bar',
-  //           label: c.data.name,
-  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
-  //           data: c.data.values.reverse()
-  //         };
-  //       })
-  //   },
-  //   ...grouped.filter(g => g.children && g.children.length).map( (g: any) => {
-  //     return  {
-  //       title: g.data.name,
-  //       labels: labels.reverse(),
-  //       datasets: g.children.map( (c: any, index) => {
-  //         return {
-  //           type: 'bar',
-  //           label: c.data.name,
-  //           backgroundColor: BACKGROUNDS_COLOR_GRAPH[index],
-  //           data: c.data.values.reverse()
-  //         };
-  //       })
-  //     }
-  //   }) ]
-  //   return pieData;
-  // });
 
 
   const getTotal = (index: number) => byCategory.value.reduce( (ant, v) => ant + (v.data.values[index]*(v.key === AccountGroupType.Expenses ? -1 : 1)), 0);
