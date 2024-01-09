@@ -33,13 +33,13 @@
             </template>
             <template #footer><div class="text-right" style="width: 100%">{{ $format.currency(total[index], CURRENCY)}}</div></template>
         </Column>
-        <Column header="%" style="width:80px" v-if="index > 0">
+        <Column header="&nabla; %" style="width:80px" v-if="index > 0">
             <template #body="{ data }">
                 <div class="text-right"  style="width: 100%">
-                {{data.values[0] && Math.abs( data.values[index]/data.values[0]) < 100 ? format.percent(1 - data.values[index]/data.values[0]) : ''}}
+                {{data.values[0] && Math.abs( data.values[index]/data.values[0]) < 100 ? format.percent((data.values[0] - data.values[index])/data.values[index]) : ''}}
                 </div>
             </template>
-            <template #footer><div class="text-right" style="width: 100%">{{ $format.percent(1 - total[index] / total[0])}}</div></template>
+            <template #footer><div class="text-right" style="width: 100%">{{ $format.percent( (total[0] - total[index])/ total[index])}}</div></template>
         </Column>
     </template>
     </DataTable>
