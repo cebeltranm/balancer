@@ -219,10 +219,7 @@ import { isConstructorDeclaration } from 'typescript';
   }
 
   async function syncCruptoInBTC() {
-    const current = getCurrentPeriod();
-    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDate() : 31;
-    const date = new Date( period.value.value.year, period.value.value.month -1, day ).toISOString().split('T')[0];
-    const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/btc.json`);
+    const res = await getCurrencyValues('btc');
     if (res.status === 200) {
         const data = await res.json();
         values.value.forEach( (v:any) => {
@@ -240,11 +237,23 @@ import { isConstructorDeclaration } from 'typescript';
     }
   }
 
-  async function syncCurrencies() {
+  async function getCurrencyValues(currency: String) {
     const current = getCurrentPeriod();
-    const day = current.year === period.value.value.year &&  current.month === period.value.value.month ? new Date().getDate() : 31;
-    const date = new Date( period.value.value.year, period.value.value.month -1, day ).toISOString().split('T')[0];
-    const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/usd.json`);
+    var date = 'latest';
+    if (current.year > period.value.value.year || current.month > period.value.value.month) {
+      date = (period.value.value.year < 2024 || period.value.value.month < 3) ?  
+      new Date( period.value.value.year, period.value.value.month -1, 30 ).toISOString().split('T')[0] :
+      `${period.value.value.year}.${period.value.value.month}.30`;  
+    }
+
+    const url = (period.value.value.year < 2024 || period.value.value.month < 3) ?
+      `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/${currency}.json` :
+      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/${currency}.json`;
+    return fetch(url);
+  }
+
+  async function syncCurrencies() {
+    const res = await getCurrencyValues('usd');
     if (res.status === 200) {
         const data = await res.json();
         values.value.forEach( (v:any) => {

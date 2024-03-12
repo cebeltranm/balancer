@@ -159,7 +159,6 @@
                     : period.value.value),
                   child.data.currency,
                   CURRENCY.value);
-
                 return {
                   value: v.value + (child.data.values[index].value * conv),
                   in: v.in + (child.data.values[index].in * conv),
@@ -267,7 +266,6 @@
         expenses: v.expenses + child.data.values[index].expenses,
       }) )
     }, undefined)
-
     return val1 ? val1.map( (v, index) => {
       const val2 = index < val1.length - 1 ?  val1[index + 1].value : v.value;
       const div1 = v.value + v.out;

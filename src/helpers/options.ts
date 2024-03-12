@@ -100,18 +100,18 @@ export function getPeriodDate(type: Period, period: any) {
         case Period.Year:
             if (year < current.year) {
                 month = 12;
-                day = 31;
+                day = 1;
             }
             break;
         case Period.Month:
             if (year < current.year || month < current.month) {
-                day = 30;
+                day = 1;
             }
             break;
         case Period.Quarter:
             if (year < current.year || period.quarter < current.quarter) {
                 month = period.quarter*3;
-                day = 30;
+                day = 1;
             }
             break;
     }    

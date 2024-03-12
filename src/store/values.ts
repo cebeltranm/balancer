@@ -41,8 +41,9 @@ export default {
         if (asset !== Currency.USD && currency !== Currency.USD) {
           const usd1 = getters.getValue(date, asset, Currency.USD, 2);
           const usd2 = getters.getValue(date, Currency.USD, currency, 2);
-          if (  usd1 && usd2 ) {
-            return usd1 * usd2;
+          if (  usd1 && usd2) {
+            const res = usd1 * usd2;
+            return Number.isFinite(res) ? res : 0;
           }
         }
         return 0;
