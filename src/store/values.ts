@@ -67,6 +67,7 @@ export default {
         return values;
       },
       async setValuesForMonth(context: any, {year, month, values}) {
+        console.log(year, month, values);
         const data = await context.dispatch('getValuesForYear', {year}) || {};
         data[month] = values;
         idb.saveJsonFile({

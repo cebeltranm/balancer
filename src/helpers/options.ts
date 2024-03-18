@@ -93,25 +93,25 @@ export function periodLabel(type: Period, period: any) {
 
 export function getPeriodDate(type: Period, period: any) {
     const current = getCurrentPeriod();
-    var day = new Date().getDay();
+    var day = new Date().getDate();
     var month = period.month;
     var year = period.year;
     switch(type) {
         case Period.Year:
             if (year < current.year) {
                 month = 12;
-                day = 1;
+                day = 2;
             }
             break;
         case Period.Month:
             if (year < current.year || month < current.month) {
-                day = 1;
+                day = 2;
             }
             break;
         case Period.Quarter:
             if (year < current.year || period.quarter < current.quarter) {
                 month = period.quarter*3;
-                day = 1;
+                day = 2;
             }
             break;
     }    
