@@ -119,4 +119,21 @@ export default class DropboxStore {
             }
         }
     }
+
+    async listFiles() {
+        const dbx = this.__getDropbox();
+        try {
+            const res = await dbx.filesListFolder({ path: '' });
+            if (res.status === 200) {
+                return res.result.entries.map(file => ({
+                    name: file.name,
+                    lastModified: new Date(file.client_modified).getTime()
+                }));
+            }
+        } catch(e) {
+            if (!(e instanceof DropboxResponseError) || e.status < 404 || e.status > 410) {
+                throw e;
+            }
+        }
+    }
 }

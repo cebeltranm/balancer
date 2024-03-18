@@ -69,19 +69,6 @@ export async function syncFiles( ) {
                 };
             }
         }));
-        const fileSaved = data.filter( d => d && d.stored && d.fileName !== 'config.json');
-        if (fileSaved.length > 0) {
-            const config = (await files.readJsonFile('config.json')) || { files: {} };
-            for (var i in fileSaved) {
-                config.files[fileSaved[i].fileName] = Date.now();
-            }
-            idb.saveJsonFile({
-                id: `config.json`,
-                data: toRaw(config),
-                date_cached: Date.now(),
-                to_sync: true,
-              });      
-        }
         return data;
     }   
 }

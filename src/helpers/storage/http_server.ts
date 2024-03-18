@@ -47,4 +47,12 @@ export default class HttpServerStore {
     async getLastModification(fileName: string) {
         return new Date();
     }
+
+    async listFiles() {
+        const res = await fetch(`${SERVER_URL}list`);
+        if (res.status === 200) {
+            const data = await res.json();
+            return data.map( (file: any) => ({...file, lastModified: new Date(file.lastModified).getTime() }));
+        }
+    }
 }

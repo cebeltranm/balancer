@@ -65,7 +65,7 @@ onMounted(async () => {
     loadBasicFiles();
   }
   if (storeInfo.value.loggedIn && !storeInfo.value.offline) {
-    setTimeout( () => syncCachedFiles(), 1000);
+    setTimeout( () => syncCachedFiles(), 200);
   }
   if (storeInfo.value.type === 'Dropbox' && route.query.code) {
     doLoginStore();
@@ -171,11 +171,15 @@ async function checkStore() {
 async function syncCachedFiles() {
     try {
         store.commit('storage/inSync', true);
-        const config = await store.dispatch('config/getConfig', true);
+        const storage = getStorage();
+        const listFiles = (await storage.listFiles()).reduce( (acc: any, e: any) => {
+          acc[e.name] = e.lastModified;
+          return acc;
+        }, {})
 
         const cached = await sync.getAllFilesInCache(); 
         Object.keys(cached).forEach(async (e) => {
-          if (config.files[e] &&  config.files[e] > cached[e]) {
+          if (listFiles[e] &&  listFiles[e] > cached[e]) {
             const fileNameData = e.split('.')[0].split('_');
             switch(fileNameData[0]) {
               case 'accounts':
@@ -183,6 +187,7 @@ async function syncCachedFiles() {
                   store.dispatch('accounts/getAccounts', true)
                 break;
               case 'config':
+                store.dispatch('config/getConfig', true)
                 break;
               case 'transactions':
                   await files.readJsonFile(e, false);
