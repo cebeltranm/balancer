@@ -84,11 +84,11 @@ define(['./workbox-728a0c38'], (function (workbox) { 'use strict';
     "url": "registerSW.js",
     "revision": "2a272aeee910100ba224f9b19acf5d58"
   }, {
-    "url": "assets/index-D0Wfsw2b.css",
+    "url": "assets/index-CP3dMAZg.css",
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "715a14ce8341d2b4b085d102fe02a3d6"
+    "revision": "8bdddee9bb48b2c4b048e485d2164e7f"
   }, {
     "url": "assets/primeicons-CCFeZR6K.woff",
     "revision": null
