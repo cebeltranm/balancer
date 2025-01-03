@@ -246,7 +246,7 @@ import { isConstructorDeclaration } from 'typescript';
       `${period.value.value.year}.${period.value.value.month}.30`;  
     }
 
-    const url = (period.value.value.year < 2024 || period.value.value.month < 3) ?
+    const url = (period.value.value.year < 2024 || (period.value.value.year === 2024 && period.value.value.month < 3)) ?
       `https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/${date}/currencies/${currency}.json` :
       `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/${currency}.json?rand=${Math.random()}`;
     return fetch(url);
