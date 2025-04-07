@@ -6,13 +6,12 @@ const TOKEN_ID = 'dbx_token';
 const REFRESH_TOKEN_ID = 'dbx__refresh_token';
 const CODE_VERIFIER_ID = '__codeVerifier';
 
-
 export default class DropboxStore {
 
     __getDropbox() {
         var dbxAuth = new DropboxAuth({
             clientId: CLIENT_ID,
-            accessToken: window.localStorage.getItem(TOKEN_ID),
+            accessToken: window.localStorage.getItem(TOKEN_ID)
         });
 
         return new Dropbox({ auth: dbxAuth });    
@@ -31,7 +30,10 @@ export default class DropboxStore {
                 info.loggedIn = true;
                 const dbx = this.__getDropbox();
                 try {
-                    const res = await dbx.checkUser({});
+                    // it is generating a CORS error
+                    // const res = await dbx.checkUser({});
+                    const res = await dbx.filesGetMetadata({ path: `/config.json`});
+                    // const res = await dbx.filesListFolder({ path: '' });
                     if (res.status === 200) {
                         info.offline = false;
                     }
