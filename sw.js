@@ -88,7 +88,10 @@ define(['./workbox-728a0c38'], (function (workbox) { 'use strict';
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "8bdddee9bb48b2c4b048e485d2164e7f"
+    "revision": "23d732ac7378ff1aed5101b380f8d664"
+  }, {
+    "url": "test.html",
+    "revision": "4670954d7bb37ce2bf962025c347f730"
   }, {
     "url": "assets/primeicons-CCFeZR6K.woff",
     "revision": null
