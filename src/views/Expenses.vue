@@ -2,7 +2,7 @@
   <Toolbar>
     <template #start>
       <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
-      <Dropdown v-model="categorySelected" :options="['All', ...expenseCategories]" placeholder="Select a Category" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'bar'"/>
+      <Select v-model="categorySelected" :options="['All', ...expenseCategories]" placeholder="Select a Category" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'bar'"/>
     </template>
     <template #end>
         <SelectButton v-model="displayType" :options="displayOptions" optionValue="id" @update:modelValue="onChangeDisplayType" >

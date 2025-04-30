@@ -2,7 +2,7 @@
   <Toolbar>
     <template #start>
       <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
-      <Dropdown v-model="typeInvestment" :options="['ByCategory', 'ByType', 'ByRisk', 'ByCurrency']" placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'pie'"/>
+      <Select v-model="typeInvestment" :options="['ByCategory', 'ByType', 'ByRisk', 'ByCurrency']" placeholder="Select a Period" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'pie'"/>
       <AccountsSelector v-model:accounts="accounts" :groups="[AccountGroupType.Investments]" :date="getPeriodDate(period.type, period.value)"  v-if="displayType === 'bar'"/>
     </template>
     <template #end>

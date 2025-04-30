@@ -1,52 +1,30 @@
 <template>
-	<div class="layout-topbar">
-		<button class="p-link layout-menu-button layout-topbar-button" @click.stop="onMenuToggle">
-			<i class="pi pi-bars"></i>
-		</button>
+<Toolbar>
+    <template #start>
+		<Button icon="pi pi-bars" variant="outlined" rounded aria-label="Menu" @click.stop="onMenuToggle"/>
+    </template>
 
-		<!-- <button class="p-link layout-topbar-menu-button layout-topbar-button"
-			v-styleclass="{ selector: '@next', enterClass: 'hidden', enterActiveClass: 'scalein', 
-			leaveToClass: 'hidden', leaveActiveClass: 'fadeout', hideOnOutsideClick: true}">
-			<i class="pi pi-ellipsis-v"></i>
-		</button> -->
-		<ul class="layout-topbar-menu lg:flex origin-top">
-			<li>
-				<button class="p-link layout-topbar-button"  @click="menuCurrencies.toggle">
-					<i v-if="CURRENCY_ICONS[CURRENCY]" :class="CURRENCY_ICONS[CURRENCY]"></i>
-					<i v-else class="pi">{{CURRENCY}}</i>
-					<span>Currency</span>
-				</button>
-				<Menu id="currencies_menu" ref="menuCurrencies" :model="currencies" :popup="true" />
-			</li>
-			<li>
-				<button class="p-link layout-topbar-button" @click="onAddTransaction">
-					<i class="pi pi-plus"></i>
-					<span>Add transaction</span>
-				</button>
-			</li>
-			<li>
-				<button class="p-link layout-topbar-button" @click="() => store.dispatch('storage/sync')">
-					<i :class="{
+    <template #end> 
+		<Button :icon="currencyIcon" variant="outlined" rounded aria-label="Currencies" @click="menuCurrencies?.toggle">
+					<span v-if="currencyIconText">{{ currencyIconText }}</span>
+		</Button>
+		<Menu id="currencies_menu" ref="menuCurrencies" :model="currencies" :popup="true" />
+		<div class="pl-2" />
+		<Button icon="pi pi-plus" variant="outlined" rounded aria-label="Add transaction" @click="onAddTransaction"/>
+		<div class="pl-2" />
+		<Button :icon="{
 						pi:true, 
 						'pi-circle-fill': !inSync,
 						'pi-spin': inSync,
 						'pi-spinner': inSync,
 						'text-green-500': !isPendingToSync,
 						'text-red-500': isPendingToSync 
-						}"></i>
-					<span>Sync</span>
+						}" variant="outlined" rounded raised aria-label="Add transaction" @click="() => store.dispatch('storage/sync')">
 				</button>
-			</li>
-			<!-- <li>
-				<button class="p-link layout-topbar-button">
-					<i class="pi pi-user"></i>
-					<span>Profile</span>
-				</button>
-			</li> -->
-		</ul>
-
-		<TransactionEditDialog ref="transactionDialog"/>
-	</div>
+		
+	</template>
+</Toolbar>
+<TransactionEditDialog ref="transactionDialog"/>
 </template>
 
 <script lang="ts" setup>
@@ -61,10 +39,12 @@ const store = useStore();
 const emit = defineEmits(['menu-toggle', 'topbar-menu-toggle']);
 const transactionDialog = ref<InstanceType<typeof TransactionEditDialog> | null>(null);
 
+const CURRENCY = inject('CURRENCY');
+
 const isPendingToSync = computed(() => store.getters['storage/isPendingToSync'])
 const inSync = computed(() => store.state.storage.status.inSync)
-
-const CURRENCY = inject('CURRENCY');
+const currencyIcon = computed(() => CURRENCY_ICONS[CURRENCY.value] ? CURRENCY_ICONS[CURRENCY.value] : {'pi':true});
+const currencyIconText= computed(() => CURRENCY_ICONS[CURRENCY.value] ? '' : CURRENCY.value);
 
 const menuCurrencies = ref();
 const currencies = computed( () => Object.keys(Currency).map( (c: string) => ({
@@ -73,13 +53,8 @@ const currencies = computed( () => Object.keys(Currency).map( (c: string) => ({
 	command: () => { CURRENCY.value = Currency[c]; },
 })));
 
-
 function onMenuToggle(event:any) {
 	emit('menu-toggle', event);
-}
-
-function onTopbarMenuToggle(event:any) {
-	emit('topbar-menu-toggle', event);
 }
 
 function onAddTransaction() {

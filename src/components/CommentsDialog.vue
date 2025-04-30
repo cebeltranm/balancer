@@ -1,5 +1,5 @@
 <template>
-    <OverlayPanel v-if="props.readOnly" ref="readOnlyList">
+    <Popover v-if="props.readOnly" ref="readOnlyList">
         <ul class="m-0 p-1 flex flex-column gap-2 w-full">
         <template v-for="comment in comments" :key="comment.d">
             <li
@@ -9,7 +9,7 @@
             </li>
         </template>
         </ul>        
-    </OverlayPanel>
+    </Popover>
     <Dialog v-else v-model:visible="visible" header="Comments" :modal="true" class="p-fluid" :pt="{
         mask: {
             style: 'backdrop-filter: blur(2px)'

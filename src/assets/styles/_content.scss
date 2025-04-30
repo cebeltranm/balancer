@@ -1,9 +1,11 @@
+@use "variables" as *;
+
 .layout-main-container {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     justify-content: space-between;
-    padding: 7rem 2rem 2rem 4rem;
+    padding: 5px;
     transition: margin-left $transitionDuration;
 }
 
@@ -12,7 +14,7 @@
 }
 
 .card {
-    background-color: var(--surface-card);
+    // background-color: var(--p-card-background);
     padding: 1.5rem;
     color: var(--surface-900);
     margin-bottom: 1rem;

@@ -4,9 +4,12 @@ import format from './format'
 
 import App from './App.vue'
 import router from './router'
+
+import { Form, FormField } from '@primevue/forms';
 // import { loadFonts } from './plugins/webfontloader'
 import store from './store';
 import PrimeVue from 'primevue/config';
+import Theme from '@primeuix/themes/lara';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
 
@@ -20,7 +23,7 @@ import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
-import Calendar from 'primevue/calendar';
+import DatePicker from 'primevue/datepicker';
 import AutoComplete from 'primevue/autocomplete';
 import InputNumber from 'primevue/inputnumber';
 import Card from 'primevue/card';
@@ -29,7 +32,7 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     
 import Row from 'primevue/row';
 import Divider from 'primevue/divider';
-import Dropdown from 'primevue/dropdown';
+import Select from 'primevue/select';
 import TreeTable from 'primevue/treetable';
 import Toolbar from 'primevue/toolbar';
 import SelectButton from 'primevue/selectbutton';
@@ -43,14 +46,27 @@ import MultiSelect from 'primevue/multiselect';
 import Avatar from 'primevue/avatar';
 import Menu from 'primevue/menu';
 import ContextMenu from 'primevue/contextmenu';
-import OverlayPanel from 'primevue/overlaypanel';
+import Popover from 'primevue/popover';
+import Message from 'primevue/message';
+import Fluid from 'primevue/fluid';
+import FloatLabel from 'primevue/floatlabel';
 
 import { GChart } from 'vue-google-charts'
 
 const app = createApp(App);
 app.use(router)
 app.use(store)
-app.use(PrimeVue,  { ripple: true, inputStyle: 'outlined', condensed: true })
+app.use(PrimeVue,  { 
+    ripple: true, inputStyle: 'outlined', condensed: true,
+    theme: {
+        preset: Theme,
+        options: {
+            prefix: 'p',
+            darkModeSelector: 'system',
+            cssLayer: false
+        }
+    }
+})
 
 app.directive('styleclass', StyleClass);
 app.directive('ripple', Ripple);
@@ -62,7 +78,7 @@ app.component('Dialog', Dialog);
 app.component('Button', Button);
 app.component('InputText', InputText);
 app.component('Textarea', Textarea);
-app.component('Calendar', Calendar);
+app.component('DatePicker', DatePicker);
 app.component('AutoComplete', AutoComplete);
 app.component('InputNumber', InputNumber);
 app.component('DataTable', DataTable);
@@ -71,7 +87,7 @@ app.component('ColumnGroup', ColumnGroup);
 app.component('Row', Row);
 app.component('Card', Card);
 app.component('Divider', Divider);
-app.component('Dropdown', Dropdown);
+app.component('Select', Select);
 app.component('TreeTable', TreeTable);
 app.component('Toolbar', Toolbar);
 app.component('SelectButton', SelectButton);
@@ -86,7 +102,13 @@ app.component('MultiSelect', MultiSelect);
 app.component('Avatar', Avatar);
 app.component('Menu', Menu);
 app.component('ContextMenu', ContextMenu);
-app.component('OverlayPanel', OverlayPanel);
+app.component('Popover', Popover);
+app.component('Form', Form);
+app.component('FormField', FormField);
+app.component('Message', Message);
+app.component('Fluid', Fluid);
+app.component('FloatLabel', FloatLabel);
+
 
 app.config.globalProperties.$format = format
 app.use(ConfirmationService);

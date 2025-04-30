@@ -4,16 +4,18 @@
         'layout-static': true,
         'layout-static-sidebar-inactive': staticMenuInactive,
         'layout-mobile-sidebar-active': mobileMenuActive,
-        'p-input-filled': $primevue.config.inputStyle === 'filled',
+        'p-input-filled': $primevue.config.inputVariant === 'filled',
         'p-ripple-disabled': $primevue.config.ripple === false
       }"
       @click="onWrapperClick"
     >
       <AppTopbar  @menu-toggle="onMenuToggle"/>
       <div class="layout-sidebar" @click="onSidebarClick">
-        <div class="layout-menu-container"> 
+        <Card>
+          <template #content>
             <AppMenu :items="menu" :root="true" class="layout-menu"/>
-        </div>
+          </template>
+        </Card>
       </div>
 
       <div class="layout-main-container">
@@ -122,5 +124,5 @@
 </script>
 
 <style lang="scss">
-@import './assets/styles/index.scss';
+@use './assets/styles/index.scss';
 </style>

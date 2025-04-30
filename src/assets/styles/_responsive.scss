@@ -3,7 +3,6 @@
         &.layout-overlay {
             .layout-main-container {
                 margin-left: 0;
-                padding-left: 2rem;
             }
 
             .layout-sidebar {
@@ -35,7 +34,6 @@
 
                 .layout-main-container {
                     margin-left: 0;
-                    padding-left: 2rem;
                 }
             }
         }
@@ -50,13 +48,12 @@
     .layout-wrapper {
         .layout-main-container {
             margin-left: 0;
-            padding-left: 2rem;
         }
 
         .layout-sidebar {
             transform: translateX(-100%);
-            left: 0;
-            top: 0;
+            // left: 0;
+            // top: 30px;
             height: 100vh;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
@@ -92,7 +89,7 @@
     .layout-wrapper {
         .layout-main-container {
             margin-left: 0;
-            padding: 6rem 0 0 0;
+            // padding: 6rem 0 0 0;
         }
 
         .layout-sidebar {

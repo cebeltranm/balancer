@@ -90,9 +90,8 @@ import { getCurrentPeriod, getPeriodDate, increasePeriod, rowPendingSyncClass } 
 import { AccountGroupType, AccountType, Currency, Period, StockApiType } from '@/types';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useStore } from 'vuex';
-import {FilterMatchMode, FilterOperator} from 'primevue/api';
+import {FilterMatchMode} from '@primevue/core/api';
 import type { Account } from '@/types';
-import { isConstructorDeclaration } from 'typescript';
 
   const period = ref({
     type: Period.Month,
