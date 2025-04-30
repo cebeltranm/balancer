@@ -6,14 +6,16 @@
     <div class="grid formgrid sm:pt-2 pt-5">
       <div class="field col col-12 md:col-3 mb-0 pt-5">
         <FloatLabel>
-          <DatePicker name="date" :showIcon="true" v-model="state.date"/>
+          <DatePicker name="date" :showIcon="true" v-model="state.date" :invalid="formErrors?.date?._errors?.length > 0"/>
           <label for="date">Date</label>
         </FloatLabel>
         <Message v-if="formErrors?.date?._errors?.length > 0" severity="error" size="small" variant="simple">{{ formErrors.date._errors[0] }}</Message>
       </div>
       <div class="field col col-12 md:col-6 mb-0 pt-5">
         <FloatLabel>
-          <AutoComplete v-if="!transaction?.id" name="description" v-model="state.description" :suggestions="suggestedTransactions" @item-select="onSelectTransaction" @complete="searchTransaction($event)" optionLabel="name" />
+          <AutoComplete v-if="!transaction?.id" name="description" v-model="state.description" 
+            :suggestions="suggestedTransactions" @item-select="onSelectTransaction" @complete="searchTransaction($event)" optionLabel="name" 
+            :invalid="formErrors?.description?._errors?.length > 0"/>
           <InputText v-else name="description" :showIcon="true"/>
           <label class="text-sm" for="description">Description</label>
         </FloatLabel>
@@ -21,7 +23,8 @@
       </div>
       <div class="field col col-12 md:col-3  mb-0 pt-5">
         <FloatLabel>
-            <AutoComplete id="tags" :multiple="true" v-model="state.tags" :suggestions="suggestedTags" @complete="searchTags($event)" />
+            <AutoComplete id="tags" :multiple="true" v-model="state.tags" :suggestions="suggestedTags" @complete="searchTags($event)" 
+            :invalid="formErrors?.tags?._errors?.length > 0"/>
             <label for="tags">tags</label>
         </FloatLabel>
         <Message v-if="formErrors?.tags?._errors?.length > 0" severity="error" size="small" variant="simple">{{ formErrors.tags._errors[0] }}</Message>
@@ -32,7 +35,9 @@
         <FloatLabel>
           <AutoComplete placeholder="Account" v-model="item.account" :suggestions="suggestedAccounts" optionLabel="name" @complete="searchAccounts($event, index)" :dropdown="true" 
               @item-select="onUpdateAccount(index)"
-              :name="`values[${index}].account`" />
+              :name="`values[${index}].account`" 
+              :invalid="formErrors?.values?.[index]?.account?._errors?.length > 0"
+              />
               <label for="account">Account</label>
             </FloatLabel>
             <Message v-if="formErrors?.values?.[index]?.account?._errors?.length > 0" 
@@ -41,7 +46,8 @@
       <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-0 pt-5 mb-0">
         <FloatLabel>
           <InputNumber v-model="item.value" mode="currency" :currency="state.values[0].account?.currency || 'COP'" :maxFractionDigits="item.account?.currency === Currency.BTC ? 10: 2" 
-              currencyDisplay="code" locale="en-US" :name="`values[${index}].value`"/>
+              currencyDisplay="code" locale="en-US" :name="`values[${index}].value`"
+              :invalid="formErrors?.values?.[index]?.value?._errors?.length > 0"/>
           <label class="text-sm" v-if="index>0 && item.account && item.account?.currency !== state.values[0].account?.currency">1 {{state.values[0].account?.currency}} = {{getRate(item.value, item.accountValue)}} {{item.account?.currency}}</label>
           <label class="text-sm" v-else >Value*</label>
         </FloatLabel>
@@ -58,7 +64,8 @@
       </div>
       <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-8 pt-5 mb-0" v-if="isAccountInUnits(item.account?.id)">
         <FloatLabel>
-            <InputNumber v-model="item.units" mode="decimal" :maxFractionDigits="10" locale="en-US" :name="`values[${index}].units`"/>
+            <InputNumber v-model="item.units" mode="decimal" :maxFractionDigits="10" locale="en-US" :name="`values[${index}].units`"
+              :invalid="formErrors?.values?.[index]?.units?._errors?.length > 0"/>
             <label>1 unit = {{getRate(item.units, item.accountValue || item.value)}} {{item.account?.currency}}</label>
         </FloatLabel>
         <Message v-if="formErrors?.values?.[index]?.units?._errors?.length > 0" 
@@ -275,7 +282,7 @@ function validate() {
   return result.success;
 }
 watch(
-  () => state.value.values.map((v) => ({...v})),
+  state.value,
   () => submitted.value && validate(),
   { deep: true }  
 );

@@ -76,7 +76,7 @@
         items: [
           { label: 'Values', icon: 'pi pi-fw pi-cog', to: '/settings/values' },
           { label: 'Budget', icon: 'pi pi-fw pi-cog', to: '/settings/budget' },
-          { label: 'General', icon: 'pi pi-fw pi-cog', to: '/' }
+          { label: 'Settings', icon: 'pi pi-fw pi-cog', to: '/settings/general' }
         ]
     },
   ]

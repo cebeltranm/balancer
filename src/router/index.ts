@@ -7,6 +7,7 @@ import Budget from '@/views/Budget.vue'
 import Assets from '@/views/Assets.vue'
 import Investments from '@/views/Investments.vue'
 import Balance from '@/views/Balance.vue'
+import Settings from '@/views/Settings.vue'
 import { EVENTS, FORM_WITH_PENDING_EVENTS, CHECK_AUTHENTICATE } from '@/helpers/events'
 
 const router = createRouter({
@@ -47,8 +48,11 @@ const router = createRouter({
       path: '/settings/budget',
       name: 'budget',
       component: Budget
-    },
-    {
+    }, {
+      path: '/settings/general',
+      name: 'settings',
+      component: Settings
+    }, {
       path: '/balance',
       name: 'balance',
       component: Balance
