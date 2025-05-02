@@ -10,7 +10,7 @@
     "https-preview": "serve dist",
     "preview": "vite preview --port 4173",
     "type-check": "vue-tsc --noEmit",
-    "release": "vite build --base=/balancer/ && gh-pages -d dist"
+    "release": "npm version patch && vite build --base=/balancer/ && gh-pages -d dist"
   },
   "dependencies": {
     "@primeuix/themes": "^1.0.3",
