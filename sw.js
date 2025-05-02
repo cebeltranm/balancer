@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-728a0c38'], (function (workbox) { 'use strict';
+define(['./workbox-e28b2a22'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -78,22 +78,28 @@ define(['./workbox-728a0c38'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
-    "url": "assets/auto-BwZvv_Gp.js",
+    "url": "assets/auto-C3mEb9gQ.js",
+    "revision": null
+  }, {
+    "url": "assets/index-DeJDo73v.js",
     "revision": null
   }, {
     "url": "registerSW.js",
     "revision": "2a272aeee910100ba224f9b19acf5d58"
   }, {
-    "url": "assets/index-CP3dMAZg.css",
+    "url": "assets/index-BTN0gtwO.css",
     "revision": null
   }, {
     "url": "index.html",
-    "revision": "23d732ac7378ff1aed5101b380f8d664"
+    "revision": "32aed6f4bd4dd4c0e8969e9637a8997a"
   }, {
     "url": "test.html",
-    "revision": "4670954d7bb37ce2bf962025c347f730"
+    "revision": "b1b8ccfc7f689f3a1650d83865ff523e"
   }, {
-    "url": "assets/primeicons-CCFeZR6K.woff",
+    "url": "test2.html",
+    "revision": "112ef82d53b60fac568ca54b10f5a732"
+  }, {
+    "url": "assets/primeicons-WjwUDZjB.woff",
     "revision": null
   }, {
     "url": "favicon.svg",
@@ -106,7 +112,7 @@ define(['./workbox-728a0c38'], (function (workbox) { 'use strict';
     "revision": "835e9124f499025f98c49c9d5a6b335a"
   }, {
     "url": "manifest.webmanifest",
-    "revision": "c7b7b811565f33cd8fba6dbd822f06df"
+    "revision": "61ed1b327a9248be017a00ae1895bbeb"
   }], {});
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html")));
 

@@ -1,0 +1,34 @@
+
+<html>
+<body>
+    <div id="buttonDiv"></div>
+
+</body>
+
+<script>
+
+    function handleCredentialResponse(response) {
+        console.log("Encoded JWT ID token: " + response.credential);
+    }
+
+    window.onload = function () {
+      google.accounts.id.initialize({
+        client_id: '2810570285-avu7e0nd22nsci4a5soq58egfri3i90h.apps.googleusercontent.com',
+        callback: handleCredentialResponse
+      });
+    //   google.accounts.id.renderButton(
+    //       document.getElementById("buttonDiv"),
+    //       { theme: "outline", size: "large" }  // customization attributes
+    //   );
+
+      google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              // try next provider if OneTap is not displayed or skipped
+          }
+      });
+    }
+  </script>
+        <script async defer src="https://accounts.google.com/gsi/client"></script>
+        <script async defer src="https://apis.google.com/js/api.js"></script>
+
+  </html>
