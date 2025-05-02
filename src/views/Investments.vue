@@ -96,7 +96,7 @@
 
 <style lang="scss" scoped>
   .investments {
-      height: calc(100vh - 14rem);
+      height: calc(100vh - 150px);
   }
   :deep( .p-column-header-content ) {
     width: 100%;

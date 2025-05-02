@@ -27,6 +27,9 @@
       <Toast />
       <Auth ref="authDialog"></Auth>
   </div>
+  <div class="fixed bottom-0 right-0 bg-primary-reverse font-bold justify-content-right p-2">
+          <p class="text-xs text-right m-0">Balancer ver: {{ version }}</p>
+        </div>
 </template>
 
 <script lang="ts" setup>
@@ -36,6 +39,7 @@
   import { isDesktop } from './helpers/browser';
   import { useToast } from "primevue/usetoast";
   import { EVENTS, CHECK_AUTHENTICATE } from '@/helpers/events';
+  import packageJson from '../package.json';
 
   import AppTopbar from './layout/AppTopbar.vue';
   import AppMenu from './layout/AppMenu.vue';
@@ -84,6 +88,7 @@
 
   const mobileMenuActive = ref(false);
   const staticMenuInactive = ref(false);
+  const version = computed(() => packageJson.version);
 
   EVENTS.on('message', (msg:any) => {
     toast.add({
@@ -125,4 +130,11 @@
 
 <style lang="scss">
 @use './assets/styles/index.scss';
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  height: 30px;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
 </style>
