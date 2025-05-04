@@ -49,7 +49,7 @@
 
 <style scoped>
     .balance {
-        height: calc(100vh - 150px);
+        height: calc(100vh - 130px);
     }
     @media (max-width: 600px) {
     .balance {

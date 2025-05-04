@@ -16,6 +16,9 @@
             <AppMenu :items="menu" :root="true" class="layout-menu"/>
           </template>
         </Card>
+        <div class="absolute bottom-0 right-0 bg-primary-reverse font-bold justify-content-right p-2">
+          <p class="text-xs text-right m-0">Balancer@{{ version }}</p>
+        </div>
       </div>
 
       <div class="layout-main-container">
@@ -27,9 +30,6 @@
       <Toast />
       <Auth ref="authDialog"></Auth>
   </div>
-  <div class="fixed bottom-0 right-0 bg-primary-reverse font-bold justify-content-right p-2">
-          <p class="text-xs text-right m-0">Balancer ver: {{ version }}</p>
-        </div>
 </template>
 
 <script lang="ts" setup>

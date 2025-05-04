@@ -72,7 +72,7 @@
 
 <style scoped>
   .values {
-      height: calc(100vh - 150px);
+      height: calc(100vh - 130px);
   }
   :deep( .p-column-header-content ) {
     width: 100%;

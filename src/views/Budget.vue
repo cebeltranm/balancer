@@ -62,7 +62,7 @@
 
 <style scoped>
 .expenses {
-    height: calc(100vh - 150px);
+    height: calc(100vh - 130px);
 }
 @media (max-width: 600px) {
     .expenses {

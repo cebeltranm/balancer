@@ -57,7 +57,7 @@
 
 <style scoped>
   .transacctions {
-      height: calc(100vh - 18rem);
+      height: calc(100vh - 140px);
   }
 </style>
 
