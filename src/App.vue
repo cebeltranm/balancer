@@ -10,15 +10,17 @@
       @click="onWrapperClick"
     >
       <AppTopbar  @menu-toggle="onMenuToggle"/>
-      <div class="layout-sidebar" @click="onSidebarClick">
+      <div id="menu" class="layout-sidebar" @click="onSidebarClick">
         <Card>
           <template #content>
             <AppMenu :items="menu" :root="true" class="layout-menu"/>
           </template>
+          <template #footer>
+            <div class="font-bold justify-content-right bg-primary-reverse">
+              <p class="text-xs text-right m-0">Balancer@{{ version }}</p>  
+            </div>
+          </template>
         </Card>
-        <div class="absolute bottom-0 right-0 bg-primary-reverse font-bold justify-content-right p-2">
-          <p class="text-xs text-right m-0">Balancer@{{ version }}</p>
-        </div>
       </div>
 
       <div class="layout-main-container">
@@ -70,7 +72,7 @@
           { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
           { label: 'Expenses', icon: 'pi pi-fw pi-shopping-cart', to: '/expenses' },
           { label: 'Assets', icon: 'pi pi-fw pi-credit-card', to: '/assets' },
-          { label: 'Investments', icon: 'pi pi-fw pi-bars', to: '/investments' },
+          { label: 'Portfolio', icon: 'pi pi-fw pi-bars', to: '/investments' },
           { label: 'Transactions', icon: 'pi pi-fw pi-bars', to: '/transactions' },
           { label: 'Balance', icon: 'pi pi-fw pi-bars', to: '/balance' },
         ]
@@ -80,7 +82,8 @@
         items: [
           { label: 'Values', icon: 'pi pi-fw pi-cog', to: '/settings/values' },
           { label: 'Budget', icon: 'pi pi-fw pi-cog', to: '/settings/budget' },
-          { label: 'Settings', icon: 'pi pi-fw pi-cog', to: '/settings/general' }
+          { label: 'Accounts', icon: 'pi pi-fw pi-cog', to: '/settings/accounts' },
+          { label: 'Settings', icon: 'pi pi-fw pi-cog', to: '/settings/general' },
         ]
     },
   ]
@@ -136,5 +139,17 @@
   bottom: 0;
   height: 30px;
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#menu {
+  .p-card {
+    height: 100%;
+    .p-card-body{
+      height: 100%;
+      .p-card-content {
+        height: 100%;
+      }
+    }
+  }
 }
 </style>

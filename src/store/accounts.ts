@@ -134,6 +134,42 @@ export default {
               return ant;
            }, {} );
       },
+      investmentsGroupByAssetClass: (state: any, getters: any) => ( date: Date = new Date(), period: Period = Period.Month )  => {
+        return getters.activeAccounts( date, period )
+           .filter( (account:any) => ACCOUNT_GROUP_TYPES[AccountGroupType.Investments].includes( account.type ))
+           .reduce( (ant:any, account: any) => {
+              Object.keys(account.class || {}).forEach( (c: string) => {
+                if (!ant[c]) {
+                  ant[c] = {}
+                }
+                Object.keys(account.class[c] || {}).forEach( (r: string) => {
+                  if (!ant[c][r]) {
+                    ant[c][r] = {}
+                  }
+                  ant[c][r][account.id] = {...account, percentage: account.class[c][r]};
+                });                
+              })
+              return ant;
+           }, {} );
+      },
+      investmentsGroupByRegion: (state: any, getters: any) => ( date: Date = new Date(), period: Period = Period.Month )  => {
+        return getters.activeAccounts( date, period )
+           .filter( (account:any) => ACCOUNT_GROUP_TYPES[AccountGroupType.Investments].includes( account.type ))
+           .reduce( (ant:any, account: any) => {
+              Object.keys(account.class || {}).forEach( (c: string) => {
+                Object.keys(account.class[c] || {}).forEach( (r: string) => {
+                  if (!ant[r]) {
+                    ant[r] = {}
+                  }
+                  if (!ant[r][c]) {
+                    ant[r][c] = {}
+                  }
+                  ant[r][c][account.id] = {...account, percentage: account.class[c][r]};
+                });                
+              })
+              return ant;
+           }, {} );
+      },      
       expensesByCategories(state: any) {
         return Object.keys(state.accounts)
           .filter( (id:string) => state.accounts[id].type === 'Expense' )

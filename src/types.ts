@@ -74,3 +74,19 @@ export interface Account {
     symbol?: string;
     exchange?: string;
 }
+
+export enum AssetClass {
+    Equities = "Equities",
+    FixedIncome = "Fixed-Income",
+    Cash = "Cash",
+    RealEstate = "Real-Estate",
+    Commodities = "Commodities",
+    Cryptocurrencies = "Cryptocurrencies",
+}
+
+export enum GeographicExposure {
+    US = "US",
+    Europe = "Europe",
+    Asia = "Asia",
+    LatinAmerica = "LatinAmerica",
+}
