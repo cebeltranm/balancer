@@ -39,7 +39,7 @@ export default {
         if ( !reload && context.state.values[ year ] && context.state.values[ year ][ month] ) {
             return context.state.values[ year ][ month].filter( t => !t.deleted);
         }
-        var values = await readJsonFile(`transactions_${year}_${month}.json`);
+        var values = await readJsonFile(`transactions_${year}_${month}.json`, !reload);
         const pendingTransactions = await idb.getAllTransactions();
         if (pendingTransactions.length > 0 ) {
           const filtered = pendingTransactions.filter( t => new Date(`${t.date}T00:00:00.00`).getFullYear() === year && new Date(`${t.date}T00:00:00.00`).getMonth() + 1 === month ).map( t => ({...t, 'to_sync': true}));

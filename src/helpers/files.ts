@@ -2,33 +2,29 @@ import * as idb from './idb';
 import { getStorage } from './storage';
 
 export async function readJsonFile(fileName: any, cache: boolean = true) {
-    try {
-        if (cache) {
-            const file: any = await idb.getJsonFile(fileName);
-            if (file) {
-                return file.data;
-            }
+    if (cache) {
+        const file: any = await idb.getJsonFile(fileName);
+        if (file) {
+            return file.data;
         }
-        const storage = getStorage();
+    }
+    const storage = getStorage();
 
-        // if (file) {
-        //     const last_mod = await storage.getLastModification(fileName);
-        //     if (last_mod?.getTime() < file.date_cached) {
-        //         return file.data;
-        //     }
-        // }
-        const data = await storage.readJsonFile(fileName);
-        if (data) {
-            idb.saveJsonFile({
-                id: fileName,
-                data,
-                date_cached: Date.now(),
-                to_sync: false,
-            });
-            return data;
-        }
-    } catch (e) {
-        console.log(e);
+    // if (file) {
+    //     const last_mod = await storage.getLastModification(fileName);
+    //     if (last_mod?.getTime() < file.date_cached) {
+    //         return file.data;
+    //     }
+    // }
+    const data = await storage.readJsonFile(fileName);
+    if (data) {
+        idb.saveJsonFile({
+            id: fileName,
+            data,
+            date_cached: Date.now(),
+            to_sync: false,
+        });
+        return data;
     }
     return false;
 }
