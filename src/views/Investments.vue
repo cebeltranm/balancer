@@ -36,7 +36,7 @@
         </div>
       </template>
     </Column>
-    <Column header="In/Out" style="width:200px">
+    <Column header="Net Transfer" style="width:200px">
       <template #body="{node}"><div 
         :class="{ 'text-right': true, 'w-full': true, 'text-red-400': getInOut(node.data.values[0], node.data.isCategory) < 0, 'text-green-400': getInOut(node.data.values[0], node.data.isCategory) > 0}" 
         v-tooltip.bottom="'IN: '+ $format.currency(node.data.values[0].in, node.data.currency || CURRENCY)+
