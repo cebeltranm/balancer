@@ -1,6 +1,23 @@
 import {readJsonFile} from '@/helpers/files';
-import { StockApiType } from "@/types"
 
+function groupComposition(composition: any){
+  const data = Object.keys(composition).reduce((data: any, key) => {
+    const item = composition[key];
+    if (typeof item === 'number') {
+      if (data[key]) {
+        data[key].value += item;
+      } else {
+        data[key] = { value: item };
+      }
+    }
+    if (typeof item === 'object' && item !== null) {
+      data[key] = groupComposition(item);
+    }
+    return data;
+  }, {});
+  data.value = Object.keys(data).reduce((sum: number, key: any) => sum + (data[key].value || 0), 0);
+  return data;
+}
 
 export default {
     namespaced: true,    
@@ -16,8 +33,32 @@ export default {
       stockApi: ( state: any) => (id: string) => { 
         return state.config && state.config.stock_api;
       },
-      invComposition: ( state: any) => (id: string) => { 
-        return state.config && state.config.inv_composition;
+      invCompositionByAssetClass: ( state: any) => (id: string) => { 
+        return state.config && state.config.inv_composition && groupComposition(state.config.inv_composition);
+      },
+      invCompositionByRegion: ( state: any) => (id: string) => { 
+        if (state.config && state.config.inv_composition) {
+          const data: any = {};
+          Object.keys(state.config.inv_composition).forEach((asset: any) => {
+            Object.keys(state.config.inv_composition[asset]).forEach((region: any) => {
+              if (! data[region]) {
+                data[region] = {};
+              }
+              if (! data[region][asset]) {
+                data[region][asset] = {};
+              }
+              Object.keys(state.config.inv_composition[asset][region]).forEach((type: any) => {
+                if (data[region][asset][type]) {
+                  data[region][asset][type] = data[region][asset][type] + state.config.inv_composition[asset][region][type];
+                } else {
+                  data[region][asset][type] = state.config.inv_composition[asset][region][type];
+                }
+              });
+            });
+          });
+          return groupComposition(data);
+        }
+        return {};
       },
     },
     actions: {

@@ -113,7 +113,6 @@
           <div>
         {{ $format.currency(node.data.values[0].value, node.data.currency || CURRENCY) }}
         </div>
-        <div v-if="node.data.values[0].units" class="text-sm">({{$format.number(node.data.values[0].units)}} und)</div>
         </div>
       </template>
     </Column> 
@@ -125,7 +124,27 @@
         </div>
         </div>
       </template>
-      <!-- <template #footer><div :class="{ 'text-right': true, 'w-full': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, CURRENCY)}}</div></template> -->
+    </Column> 
+    <Column header="Expected" style="width:60px">
+      <template #body="{node}">
+        <div class="w-full text-right">
+        <div v-if="node.data.expected">
+            {{ $format.percent(node.data.expected) }}
+        </div>
+        </div>
+      </template>
+    </Column> 
+    <Column header="Diff"  style="width:200px">
+      <template #body="{node}">
+        <div :class="{ 'text-right': true, 'w-full': true, 
+          'text-red-400': ( getTotal[0].value * node.data.expected) > (node.data.values[0].value * 1.7) || ( getTotal[0].value * node.data.expected) < (node.data.values[0].value * 0.7), 
+          }"
+          v-if="(node.data.currency || CURRENCY === CURRENCY) && node.data.expected">
+          <div>
+        {{ $format.currency( ( getTotal[0].value * node.data.expected ) - node.data.values[0].value, node.data.currency || CURRENCY) }}
+        </div>
+        </div>
+      </template>
     </Column> 
   </TreeTable>
   <!--------------------------
@@ -245,6 +264,7 @@
           values: values,
           currency: category.currency || CURRENCY.value,
           isCategory: category.type === AccountType.Category,
+          expected: category.expected,
         },
         children
       };
@@ -275,9 +295,11 @@
           break;
       }
       if (['ByRegion', 'ByAssetClass'].includes(typeInvestment.value)) {
-        const nestedCategories = mapInvestmentsBySubCategory(inv);
+        const expecteComposed = typeInvestment.value === 'ByAssetClass' 
+          ? store.getters['config/invCompositionByAssetClass']() 
+          : store.getters['config/invCompositionByRegion']();
+        const nestedCategories = mapInvestmentsBySubCategory(inv, expecteComposed);
         const data = nestedCategories.map(category => getTotalByCategory(category, balance)) || [];
-        console.log('data', data);
         return data;
       }
       return inv && Object.keys(inv).map( (key) => getTotalByCategory({
@@ -350,24 +372,6 @@
     var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp', 'fullName'], ['Total', null, 0, 0, 1, 0, 'Total']];
     if (onChartReady.value && window.google && window.google.visualization) {
       var byValue = accountsGroupBy.value;
-      // switch (typeInvestment.value) {
-      //   case 'ByCategory':
-      //     byValue = byCategory.value;
-      //     break;
-      //   case 'ByRegion':
-      //     byValue = byRegion.value;
-      //     break;
-      //   case 'ByRisk':
-      //     byValue = byRisk.value;
-      //     break;
-      //   case 'ByType':
-      //     byValue = byType.value;
-      //     break;
-      //   case 'ByCurrency':
-      //     byValue = byCurrency.value;
-      //     break;
-      // }
-      
 
       var dataTable = groupElements(byValue, 'Total', []);
       const min = Math.min(...dataTable.map( t => t[3])) || -1;
