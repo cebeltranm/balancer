@@ -15,7 +15,7 @@
   </Toolbar>
   <template v-if="isAuthenticated">
   <div class="investments" v-if="displayType === 'table'" >
-  <TreeTable :value="byCategory"
+  <TreeTable :value="accountsGroupBy"
     responsiveLayout="scroll"
     scrollDirection="both"
     :resizableColumns="true" columnResizeMode="fit" showGridlines
@@ -118,6 +118,7 @@
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
   import { isDesktop } from '@/helpers/browser';
+  import { mapInvestmentsBySubCategory } from '@/helpers/investments';
   
   import type { Ref } from 'vue';
 
@@ -207,79 +208,39 @@
       };
   }
 
-  const byCategory = computed(() => {
+  const accountsGroupBy = computed(() => {
       const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], getPeriodDate(period.value.type, period.value.value), period.value.type);
-      const data =  inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance));
-      return data || [];
-  });
-
-  const byType = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/accountsGroupByType']([AccountGroupType.Investments], getPeriodDate(period.value.type, period.value.value), period.value.type);
-      const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
-        {
+      var inv = [];
+      if (displayType.value !== 'pie' || typeInvestment.value === 'ByCategory') {
+        inv = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Investments], getPeriodDate(period.value.type, period.value.value), period.value.type);
+        return inv?.Investments && Object.keys(inv.Investments).map( (key) => getTotalByCategory( inv.Investments[key], balance)) || [];
+      }
+      switch (typeInvestment.value) {
+        case 'ByRegion':
+          inv = store.getters['accounts/investmentsGroupByRegion']( getPeriodDate(period.value.type, period.value.value), period.value.type);
+          break;
+        case 'ByRisk':
+          inv = store.getters['accounts/investmentsGroupByRisk']( getPeriodDate(period.value.type, period.value.value), period.value.type);
+          break;
+        case 'ByType':
+          inv = store.getters['accounts/accountsGroupByType']([AccountGroupType.Investments], getPeriodDate(period.value.type, period.value.value), period.value.type);
+          break;
+        case 'ByCurrency':
+          inv = store.getters['accounts/investmentsGroupByCurrency']( getPeriodDate(period.value.type, period.value.value), period.value.type);
+          break;
+        case 'ByAssetClass':
+          inv = store.getters['accounts/investmentsGroupByAssetClass']( getPeriodDate(period.value.type, period.value.value), period.value.type);
+          break;
+      }
+      if (['ByRegion', 'ByAssetClass'].includes(typeInvestment.value)) {
+        const nestedCategories = mapInvestmentsBySubCategory(inv);
+        return nestedCategories.map(category => getTotalByCategory(category, balance)) || [];
+      }
+      return inv && Object.keys(inv).map( (key) => getTotalByCategory({
           type: AccountType.Category,
           name: key,
           children: inv[key]
-        }, balance));
-      return data || [];
-  });
-
-  const byRisk = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/investmentsGroupByRisk']( getPeriodDate(period.value.type, period.value.value), period.value.type);
-      const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
-        {
-          type: AccountType.Category,
-          name: key,
-          children: inv[key]
-        }, balance));
-      return data || [];
-  });
-
-  const byCurrency = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/investmentsGroupByCurrency']( getPeriodDate(period.value.type, period.value.value), period.value.type);
-      const data =  inv && Object.keys(inv).map( (key) => getTotalByCategory( 
-        {
-          type: AccountType.Category,
-          name: key,
-          children: inv[key]
-        }, balance));
-      return data || [];
-  });
-
-  const byAssetClass = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/investmentsGroupByAssetClass']( getPeriodDate(period.value.type, period.value.value), period.value.type);
-      const prep = inv && Object.keys(inv).map( (key) => ({
-          type: AccountType.Category,
-          name: key,
-          children: inv[key] && Object.keys(inv[key]).map( (key2) => ({
-            type: AccountType.Category,
-            name: key2,
-            children: inv[key][key2]
-          }))
-        }));
-      const data =  prep && Object.keys(prep).map( (key) => getTotalByCategory(prep[key], balance));
-      return data || [];
-  });
-
-  const byRegion = computed(() => {
-      const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 2, period.value.value);
-      const inv = store.getters['accounts/investmentsGroupByRegion']( getPeriodDate(period.value.type, period.value.value), period.value.type);
-      const prep = inv && Object.keys(inv).map( (key) => ({
-          type: AccountType.Category,
-          name: key,
-          children: inv[key] && Object.keys(inv[key]).map( (key2) => ({
-            type: AccountType.Category,
-            name: key2,
-            children: inv[key][key2]
-          }))
-        }));
-      const data =  prep && Object.keys(prep).map( (key) => getTotalByCategory(prep[key], balance));
-      return data || [];
+        }, balance)) || [];
   });
 
   function getInOut(val: any, isCategory?: boolean){
@@ -290,7 +251,7 @@
   }
 
   const getTotal = computed(() => {
-    const val1 = byCategory.value.reduce( (ant, child) => {
+    const val1 = accountsGroupBy.value.reduce( (ant, child) => {
       if (!ant) {
         ant = Array.from(new Array(child.data.values.length), () => ({ value: 0, in: 0, out: 0, expenses: 0}));
       }
@@ -344,24 +305,24 @@
     };
     var gdata = [['Invest', 'Parent', 'Value', 'Diff', '%', 'gp', 'fullName'], ['Total', null, 0, 0, 1, 0, 'Total']];
     if (onChartReady.value && window.google && window.google.visualization) {
-      var byValue = byAssetClass.value;
-      switch (typeInvestment.value) {
-        case 'ByCategory':
-          byValue = byCategory.value;
-          break;
-        case 'ByRegion':
-          byValue = byRegion.value;
-          break;
-        case 'ByRisk':
-          byValue = byRisk.value;
-          break;
-        case 'ByType':
-          byValue = byType.value;
-          break;
-        case 'ByCurrency':
-          byValue = byCurrency.value;
-          break;
-      }
+      var byValue = accountsGroupBy.value;
+      // switch (typeInvestment.value) {
+      //   case 'ByCategory':
+      //     byValue = byCategory.value;
+      //     break;
+      //   case 'ByRegion':
+      //     byValue = byRegion.value;
+      //     break;
+      //   case 'ByRisk':
+      //     byValue = byRisk.value;
+      //     break;
+      //   case 'ByType':
+      //     byValue = byType.value;
+      //     break;
+      //   case 'ByCurrency':
+      //     byValue = byCurrency.value;
+      //     break;
+      // }
       
 
       var dataTable = groupElements(byValue, 'Total', []);
