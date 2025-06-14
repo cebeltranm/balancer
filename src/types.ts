@@ -80,13 +80,12 @@ export enum AssetClass {
     FixedIncome = "Fixed-Income",
     Cash = "Cash",
     RealEstate = "Real-Estate",
-    Commodities = "Commodities",
-    Cryptocurrencies = "Cryptocurrencies",
+    Alternative = "Alternative",
 }
 
 export enum GeographicExposure {
     US = "US",
     Europe = "Europe",
     Asia = "Asia",
-    LatinAmerica = "LatinAmerica",
+    Latam = "Latam",
 }

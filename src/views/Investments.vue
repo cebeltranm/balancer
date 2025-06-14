@@ -80,6 +80,9 @@
     </Column> 
   </TreeTable>
   </div>
+  <!--------------------------
+  Pie section
+  ----------------------------->
   <GChart
     v-if="displayType === 'pie'"
     :settings="{ packages: ['corechart','treemap'] }"
@@ -88,7 +91,46 @@
     :options="treeMap.options"
     @ready="() => onChartReady = true"
   />  
-    
+  <TreeTable :value="accountsGroupBy"
+    v-if="displayType === 'pie'"
+    responsiveLayout="scroll"
+    scrollDirection="both"
+    :resizableColumns="true" columnResizeMode="fit" showGridlines
+    :scrollable="true"
+    >
+    <Column field="name" header="Asset" :expander="true" :style="`width:${isDesktop() ? 350 : 250}px; z-index:1;`" :frozen="isDesktop()">
+      <template #body="{node}">
+        <div class="flex flex-row flex-wrap" >
+          <div class="align-items-center justify-content-center">
+            <span>{{node.data.name}}</span> <br />
+          </div>
+        </div>
+      </template>
+    </Column>
+    <Column header="Value"  style="width:200px">
+      <template #body="{node}">
+        <div class="w-full text-right">
+          <div>
+        {{ $format.currency(node.data.values[0].value, node.data.currency || CURRENCY) }}
+        </div>
+        <div v-if="node.data.values[0].units" class="text-sm">({{$format.number(node.data.values[0].units)}} und)</div>
+        </div>
+      </template>
+    </Column> 
+    <Column header="%" style="width:60px">
+      <template #body="{node}">
+        <div class="w-full text-right">
+        <div v-if="node.data.currency || CURRENCY === CURRENCY">
+            {{ $format.percent(node.data.values[0].value / getTotal[0].value) }}
+        </div>
+        </div>
+      </template>
+      <!-- <template #footer><div :class="{ 'text-right': true, 'w-full': true}" v-if="getTotal && getTotal.length > 0">{{ $format.currency(getTotal[0].value, CURRENCY)}}</div></template> -->
+    </Column> 
+  </TreeTable>
+  <!--------------------------
+  Bar section
+  ----------------------------->
     <Chart type="line" :data="barData[0]" :options="{ plugins: { legend: { labels: { color: '#ffffff' } } }, scales: { x: {stacked: false}, y: {position: 'left'}, y1: {position: 'right'} }}"  v-if="displayType === 'bar'" /> 
     
   </template>
@@ -113,7 +155,7 @@
   import PeriodSelector from '@/components/PeriodSelector.vue'
 
   import { useStore } from 'vuex';
-  import { computed, ref, onMounted, inject } from 'vue'
+  import { computed, ref, inject } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, BACKGROUNDS_COLOR_GRAPH, increasePeriod, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
@@ -234,7 +276,9 @@
       }
       if (['ByRegion', 'ByAssetClass'].includes(typeInvestment.value)) {
         const nestedCategories = mapInvestmentsBySubCategory(inv);
-        return nestedCategories.map(category => getTotalByCategory(category, balance)) || [];
+        const data = nestedCategories.map(category => getTotalByCategory(category, balance)) || [];
+        console.log('data', data);
+        return data;
       }
       return inv && Object.keys(inv).map( (key) => getTotalByCategory({
           type: AccountType.Category,

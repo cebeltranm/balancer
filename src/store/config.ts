@@ -16,6 +16,9 @@ export default {
       stockApi: ( state: any) => (id: string) => { 
         return state.config && state.config.stock_api;
       },
+      invComposition: ( state: any) => (id: string) => { 
+        return state.config && state.config.inv_composition;
+      },
     },
     actions: {
       async getConfig (context: any, reload: boolean) {
