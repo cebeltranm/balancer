@@ -8,7 +8,7 @@ const syncAll = bounced(async (context:any)=> {
     const trans = await sync.syncTransactions();
     if (trans) {
       await Promise.all(trans.map( t => {
-        return context.dispatch('transactions/getTransactionsForMonth', {year: t.year, month: t.month, reload: true}, { root: true })
+        return context.dispatch('transactions/getTransactionsForMonth', {year: t.year, month: t.month, reload: false}, { root: true })
       }));
   
       const firstMonth = trans.reduce( 
