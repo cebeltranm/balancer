@@ -28,8 +28,11 @@ export default class HttpServerStore {
     async readJsonFile(fileName: string) {
         const res = await fetch(`${SERVER_URL}${fileName}`);
         if (res.status === 200) {
-            const data = await res.json();
-            return data;
+            try {
+                return await res.json();
+            } catch (e) {
+                console.error(`loading file ${SERVER_URL}${fileName}`, e);
+            }
         }
     }
     async writeJsonFile(fileName: string, data: Object) {

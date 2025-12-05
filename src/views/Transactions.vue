@@ -66,7 +66,6 @@
   import PeriodSelector from '@/components/PeriodSelector.vue'
   import TransactionEditDialog from '@/components/TransactionEditDialog.vue'
 
-  import { useStore } from 'vuex';
   import { computed, ref, onMounted, toRaw, inject, watch } from 'vue'
   import { useRoute,useRouter } from 'vue-router';
   import { getCurrentPeriod, getPeriodDate } from '@/helpers/options.js';
@@ -74,10 +73,18 @@
   import { useConfirm } from "primevue/useconfirm";
   import { EVENTS } from '@/helpers/events';
   import { isDesktop } from '@/helpers/browser';
+  import { useTransactionsStore } from '@/stores/transactions';
+  import { useAccountsStore } from '@/stores/accounts';
+  import { useBalanceStore } from '@/stores/balance';
+  import { useValuesStore } from '@/stores/values';
 
   import type { Ref } from 'vue';
 
   const CURRENCY: Ref | undefined = inject('CURRENCY');
+  const transactionsStore = useTransactionsStore();
+  const accountsStore = useAccountsStore();
+  const balanceStore = useBalanceStore();
+  const valueStore = useValuesStore();
 
   const period = ref({
     type: Period.Month,
@@ -88,7 +95,6 @@
 
   const accounts = ref([]);
 
-  const store = useStore();
   const route = useRoute();
   const router = useRouter();
   const confirm = useConfirm();
@@ -99,30 +105,30 @@
   watch(accounts, () => router.push({query: {accounts: [...accounts.value]}} ) );
   
   const list = computed(() => {
-    if (store.state.transactions.values[period.value.value.year] && store.state.transactions.values[period.value.value.year][period.value.value.month]) {
-        return store.state.transactions.values[period.value.value.year][period.value.value.month].filter( t => !t.deleted).reduce( (ant, t) => {
+    if (transactionsStore.transactions?.[period.value.value.year]?.[period.value.value.month]) {
+        return transactionsStore.transactions?.[period.value.value.year]?.[period.value.value.month]?.filter( t => !t.deleted).reduce( (ant, t) => {
             return ant.concat(t.values.filter( (v: any) => accounts.value.includes(v.accountId) ).map( (v: any) => ({
                 id: t.id,
                 date: t.date, description: t.description, tags: t.tags,
-                account: store.getters['accounts/getAccountFullName'](v.accountId), 
+                account: accountsStore.getAccountFullName(v.accountId), 
                 value: v.accountValue,
-                currency: store.state.accounts.accounts[v.accountId].currency,
+                currency: accountsStore.accounts[v.accountId]?.currency,
                 to_sync: t.to_sync,
             })));
-        } , []);
+        } , [] as any[]);
     }
     return [];
   })
 
   const accountsBalance = computed(() => {
     if (accounts.value.length < 5) {
-      const balance =  store.state.balance.balance[period.value.value.year];
+      const balance =  balanceStore.balance[period.value.value.year];
       if (balance) {
         return accounts.value.map((aid) => {
-          const a = store.state.accounts.accounts[aid];
+          const a = accountsStore.accounts[aid];
           return {
             id: a,
-            name: store.getters['accounts/getAccountFullName'](a.id),
+            name: accountsStore.getAccountFullName(a.id),
             value: balance[a.id] && balance[a.id][period.value.value.month] && balance[a.id][period.value.value.month].value,
             currency: a.currency
           }
@@ -137,17 +143,15 @@
   }
 
   function getTotal() {
-    return store.getters['values/joinValues']( 
+    return valueStore.joinValues( 
       selectedDate.value,
       CURRENCY?.value,
-      list.value.map( l => ({value: l.value, asset: l.currency}))
+      list.value?.map( l => ({value: l.value, asset: l.currency})) || []
     );
   }
 
   function getTransaction(id: string){
-    if (store.state.transactions.values[period.value.value.year] && store.state.transactions.values[period.value.value.year][period.value.value.month]) {
-        return store.state.transactions.values[period.value.value.year][period.value.value.month].find( t => t.id === id)
-    }
+    return transactionsStore.transactions?.[period.value.value.year]?.[period.value.value.month]?.find( t => t.id === id)
   }
 
   function deleteTrans(id: string, event: any) {
@@ -157,9 +161,11 @@
         icon: 'pi pi-exclamation-triangle',
         accept: async () => {
             const trans = getTransaction(id);
-            await store.dispatch('transactions/deleteTransaction', toRaw(trans));
-            EVENTS.emit('message', { message: 'Transaction deleted'})
-            trans.deleted = true;
+            if (trans) {
+              await transactionsStore.deleteTransaction(toRaw(trans))
+              EVENTS.emit('message', { message: 'Transaction deleted'})
+              trans.deleted = true;
+            }
         },
         reject: () => {
         }
@@ -171,9 +177,9 @@
   }
   function onChangePeriod() {
     selectedDate.value = getPeriodDate(period.value.type, period.value.value);
-    if (!store.state.transactions.values[period.value.value.year] || !store.state.transactions.values[period.value.value.year][period.value.value.month]) {
-        store.dispatch('transactions/getTransactionsForMonth', {year: period.value.value.year, month: period.value.value.month})
-        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
+    if (!transactionsStore.transactions[period.value.value.year]?.[period.value.value.month]) {
+      transactionsStore.loadTransactionsForMonth(period.value.value.year, period.value.value.month);
+      balanceStore.loadBalanceForYear(period.value.value.year);
     }
   }
 

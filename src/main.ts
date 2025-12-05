@@ -7,7 +7,8 @@ import router from './router'
 
 import { Form, FormField } from '@primevue/forms';
 // import { loadFonts } from './plugins/webfontloader'
-import store from './store';
+// import store from './store';
+import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config';
 import Theme from '@primeuix/themes/lara';
 import ConfirmationService from 'primevue/confirmationservice';
@@ -55,7 +56,7 @@ import { GChart } from 'vue-google-charts'
 
 const app = createApp(App);
 app.use(router)
-app.use(store)
+app.use(createPinia())
 app.use(PrimeVue,  { 
     ripple: true, inputStyle: 'outlined', condensed: true,
     theme: {

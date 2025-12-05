@@ -78,15 +78,20 @@ import CommentsDialog from '@/components/CommentsDialog.vue'
 import { getCurrentPeriod, getPeriodDate, rowPendingSyncClass } from '@/helpers/options';
 import { AccountGroupType, AccountType, Currency, Period } from '@/types';
 import { onMounted, watch, ref, inject } from 'vue';
-import { useStore } from 'vuex';
 import { EVENTS, FORM_WITH_PENDING_EVENTS } from '@/helpers/events';
 import format from '@/format';
 import { isDesktop } from '@/helpers/browser';
+import { useBudgetStore } from '@/stores/budget';
+import { useAccountsStore } from '@/stores/accounts';
+import { useValuesStore } from '@/stores/values';
 
 import type { Ref } from 'vue';
-import { computed } from 'vue';
 
 const CURRENCY: Ref | undefined = inject('CURRENCY');
+
+const budgetStore = useBudgetStore();
+const accountsStore = useAccountsStore();
+const valueStore = useValuesStore();
 
 const contextMenu = ref();
 const commentDialog = ref();
@@ -96,7 +101,6 @@ const commentDialog = ref();
     value: getCurrentPeriod()
   });
 
-  const store = useStore();
   const values: Ref<any> = ref([]);
   const comments: Ref<any> = ref({});
   const pendingToSave = ref(false);
@@ -132,7 +136,7 @@ const commentDialog = ref();
     },
     ];
 
-  watch( () => store.state.budget.budget[period.value.value.year], () => recalculateValues(), {deep: true})
+  watch( () => budgetStore.budget[period.value.value.year], () => recalculateValues(), {deep: true})
 
 
   async function recalculateValues() {
@@ -140,7 +144,7 @@ const commentDialog = ref();
     EVENTS.emit(FORM_WITH_PENDING_EVENTS, false);
 
     const date = getPeriodDate(period.value.type, period.value.value);
-    const budget = await store.dispatch('budget/getBudgetForYear', {year: period.value.value.year})
+    const budget = await budgetStore.loadBudgetForYear(period.value.value.year, false);
     
     const getByCategory = (category: string, sub: string, accounts: any) => {
         return Object.keys(accounts).reduce( (ant: any[], a) => {
@@ -164,7 +168,7 @@ const commentDialog = ref();
         }, []);
     }
 
-    const accounts = store.getters['accounts/accountsGroupByCategories']([AccountGroupType.Expenses], date)
+    const accounts = accountsStore.accountsGroupByCategories([AccountGroupType.Expenses], date)
     var res: any = [];
     if (accounts[AccountGroupType.Expenses]) {
       res = Object.keys( accounts[AccountGroupType.Expenses] ).reduce( (ant: any, a) => {
@@ -181,7 +185,7 @@ const commentDialog = ref();
       }, [])
     }
     values.value = res;
-    comments.value = await store.dispatch('budget/getBudgetCommentsForYear', {year: period.value.value.year});
+    comments.value = budgetStore.comments[period.value.value.year] || {};
   }
 
   function onChangePeriod() {
@@ -223,7 +227,7 @@ const commentDialog = ref();
                     .map( m => ({value: v[m], asset: v.currency })))
                 return ant;
             }, []);
-        return store.getters['values/joinValues'](date, (data && data.currency) || CURRENCY?.value, totals);
+        return  valueStore.joinValues(date, (data && data.currency) || CURRENCY?.value, totals);
     }
 
     function getRowClass(data: any) {
@@ -231,9 +235,9 @@ const commentDialog = ref();
     }
 
     async function save() {
-        await store.dispatch('budget/setBudgetForYear',  { 
-            year: period.value.value.year, 
-            values: values.value.reduce( (ant: any, v:any) => {
+        await budgetStore.setBudgetForYear( 
+            period.value.value.year, 
+            values.value.reduce( (ant: any, v:any) => {
                 if (v.type !== AccountType.Category) {
                     ant[v.id] = months.reduce( (ant2, m) => {
                         ant2[m] = v[m];
@@ -242,8 +246,8 @@ const commentDialog = ref();
                 }
                 return ant;
             }, {}),
-            comments: comments.value
-        });
+            comments.value
+        );
     }
 
     const onShowContextMenu = (event: any, data: any, m: any) => {

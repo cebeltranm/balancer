@@ -62,7 +62,7 @@
         </FloatLabel>
         <!-- <small v-if="submitted" v-for="error in v$.values.$each.$response.$errors[index].accountValue" :key="error" class="p-error">{{ error.$message }}</small> -->
       </div>
-      <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-8 pt-5 mb-0" v-if="isAccountInUnits(item.account?.id)">
+      <div class="field col col-8 col-offset-4 md:col-4 md:col-offset-8 pt-5 mb-0" v-if="accountsStore.isAccountInUnits(item.account?.id)">
         <FloatLabel>
             <InputNumber v-model="item.units" mode="decimal" :maxFractionDigits="10" locale="en-US" :name="`values[${index}].units`"
               :invalid="formErrors?.values?.[index]?.units?._errors?.length > 0"/>
@@ -104,13 +104,16 @@
 
 <script lang='ts' setup>
 import { ref, reactive, computed, watch, watchEffect, onMounted } from 'vue';
-import { zodResolver } from '@primevue/forms/resolvers/zod';
 import { z } from 'zod';
-import { useStore } from 'vuex';
 import { type Account, type Transaction, Currency } from '@/types';
-// import { helpers, required } from "@vuelidate/validators";
-// import { useVuelidate } from "@vuelidate/core";
 import { toRaw } from 'vue';
+import { useAccountsStore } from '@/stores/accounts';
+import { useTransactionsStore } from '@/stores/transactions';
+import { useValuesStore } from '@/stores/values';
+
+const accountsStore = useAccountsStore();
+const trxStore = useTransactionsStore();
+const valuesStore = useValuesStore();
 
 const props = defineProps<{
     transaction?: Transaction,
@@ -124,8 +127,6 @@ const suggestedTags = ref<string[]>([]);
 // used to fix https://github.com/primefaces/primevue/issues/6924
 const formErrors = ref({});
 const submitted = ref(false);
-
-const store = useStore();
 
 const emit = defineEmits(['update:transaction'])
 
@@ -152,11 +153,11 @@ const zodSchema = z.object({
       value: z.number({required_error: "Value is required", invalid_type_error: "Value is required"}),
       accountValue: z.number().optional().nullable(),
       units: z.number().optional().nullable()
-    }).refine((data) =>  !(data.account?.id && store.state.accounts.accounts[data?.account?.id]?.type === 'Expense' && data.value <= 0), {
+    }).refine((data) =>  !(data.account?.id && accountsStore.accounts[data?.account?.id]?.type === 'Expense' && data.value <= 0), {
         message: 'Should be positive for expenses',
         path: ["value"],
     }).refine((data) =>  {
-      return !(isAccountInUnits(data.account?.id) && !data.units && data.units !== 0 )
+      return !(accountsStore.isAccountInUnits(data.account?.id) && !data.units && data.units !== 0 )
     }, {
         message: 'units value is required',
         path: ["units"],
@@ -171,10 +172,6 @@ const zodSchema = z.object({
 
 
 const getRate = (value: number, account_value: number) => value && account_value ? account_value/value : '';
-
-function isAccountInUnits(id:string) {
-  return id && store.getters['accounts/isAccountInUnits'](id);
-}
 
 function show() {
   visible.value = true;
@@ -193,9 +190,9 @@ defineExpose({
 })
 
 const accountList = computed(() => {
-  return store.getters['accounts/activeAccounts'](state.value.date).map( a => ({
+  return accountsStore.activeAccounts(state.value.date).map( a => ({
     id: a.id,
-    name: store.getters['accounts/getAccountFullName'](a.id),
+    name: accountsStore.getAccountFullName(a.id),
     currency: a.currency
   }));
 })
@@ -221,9 +218,9 @@ function searchTransaction(event: any) {
 
   setTimeout(() => {
     while (newFiltered.length < 5 && steps < 6) {
-      if (store.state.transactions.values[year] && store.state.transactions.values[year][month] ) {
+      if (trxStore.transactions[year]?.[month] ) {
         newFiltered.push( 
-          ...store.state.transactions.values[year][month]
+          ...trxStore.transactions[year][month]
             .filter( (t: any) => t.description.toLowerCase().indexOf(query) >= 0 )
             .map( (t: any) => ({
               id: t.id, 
@@ -245,16 +242,16 @@ function searchTags(event: any) {
   const query = event.query.toLowerCase();
 
   const tags = [ query ];
-  tags.push(...store.getters['transactions/getLastTags'].filter( t => t.toLowerCase().indexOf(query) >= 0 ))
+  tags.push(...trxStore.getLastTags().filter( t => t.toLowerCase().indexOf(query) >= 0 ))
   suggestedTags.value = tags;
 }
 
 async function onSelectTransaction(event: any) {
   state.value.values = event.value.values.map( v => ({
     account: {
-      id: store.state.accounts.accounts[v.accountId].id,
-      currency: store.state.accounts.accounts[v.accountId].currency,
-      name: store.getters['accounts/getAccountFullName'](v.accountId),
+      id: accountsStore.accounts[v.accountId]?.id,
+      currency: accountsStore.accounts[v.accountId]?.currency,
+      name: accountsStore.getAccountFullName(v.accountId),
     },
     value: v.value,
     units: v.units,
@@ -267,7 +264,7 @@ async function onSelectTransaction(event: any) {
 async function onUpdateAccount (index: number) {
   if ( state.value.values[0].account?.currency !== state.value.values[index].account?.currency 
     && state.value.values[index].value) { 
-    const rate = store.getters['values/getValue']( new Date(state.value.date), state.value.values[0].account?.currency, state.value.values[index].account?.currency );
+    const rate = valuesStore.getValue( new Date(state.value.date), state.value.values[0].account?.currency, state.value.values[index].account?.currency );
     state.value.values[index].accountValue = state.value.values[index].value * rate;
   }
 }
@@ -326,7 +323,7 @@ async function handleSubmit(event) {
   }
 
   if (props.transaction?.id) {
-    store.dispatch('transactions/deleteTransaction', toRaw(props.transaction));
+    await trxStore.deleteTransaction(toRaw(props.transaction));
   }
 
   const trans = {
@@ -334,7 +331,7 @@ async function handleSubmit(event) {
     id: Date.now(),
     date: state.value.date.toISOString().split('T')[0],
     description: state.value.description,
-    tags: state.value.tags && state.value.tags.length > 0 && [...state.value.tags],
+    tags: state.value.tags && state.value.tags.length > 0 ? [...state.value.tags] as string[] : undefined,
     values: state.value.values.map( v => ({
       accountId: v.account.id,
       value: v.value,
@@ -342,7 +339,7 @@ async function handleSubmit(event) {
       accountValue: v.account.currency !== state.value.values[0].account.currency ? v.accountValue : v.value
     }))
   }
-  await store.dispatch('transactions/saveTransaction', trans);
+  await trxStore.saveTransaction(toRaw(trans));
   close();
   emit('update:transaction', trans);
   state.value.values = [ { value: null, account: null, accountValue: null, units: null }, { value: null, account: null, accountValue: null, units: null }];
@@ -357,9 +354,9 @@ function updatePropTransaction() {
     state.value.tags = props.transaction.tags || [];
     state.value.values = props.transaction.values.map( v => ({
       account: {
-        id: store.state.accounts.accounts[v.accountId].id,
-        currency: store.state.accounts.accounts[v.accountId].currency,
-        name: store.getters['accounts/getAccountFullName'](v.accountId),
+        id: accountsStore.accounts[v.accountId]?.id,
+        currency: accountsStore.accounts[v.accountId]?.currency,
+        name: accountsStore.getAccountFullName(v.accountId),
       },
       value: v.value,
       units: v.units,

@@ -11,24 +11,26 @@
   import AccountValueCard from '@/components/AccountValueCard.vue'
   import { getCurrentPeriod } from '@/helpers/options';
   import { AccountType } from '@/types';
+  import { useBalanceStore } from '@/stores/balance';
+  import { useStorageStore } from '@/stores/storage';
+  import { useAccountsStore } from '@/stores/accounts';
+  import { computed } from 'vue'
 
-  import { computed } from '@vue/runtime-core'
-  import { useStore } from 'vuex';
 
-
-  const store = useStore();
-
+  const balanceStore = useBalanceStore();
+  const storageStore = useStorageStore();
+  const accountsStore = useAccountsStore();
 
   const values = computed(() => {
     const currentPeriod = getCurrentPeriod();
-    const balance =  store.state.balance.balance[currentPeriod.year];
+    const balance =  balanceStore.balance[currentPeriod.year];
     if (balance) {
       var types = {
         'Expenses': [AccountType.Expense],
         'Credit Cards': [AccountType.CreditCard],
       }
 
-      if (store.state.storage.status.authenticated) {
+      if (storageStore.status.authenticated) {
         types = {
           ...types,
           'Cash': [AccountType.Cash],
@@ -37,8 +39,8 @@
         }
       }
 
-      const total = Object.keys(store.state.accounts.accounts).reduce ( (ant, k) => {
-        const a = store.state.accounts.accounts[k];
+      const total = Object.keys(accountsStore.accounts).reduce ( (ant, k) => {
+        const a = accountsStore.accounts[k];
         if (balance[a.id] && balance[a.id][currentPeriod.month] && balance[a.id][currentPeriod.month].value) {
           const t = Object.keys(types).find( t => types[t].includes(a.type));
           if (t) {

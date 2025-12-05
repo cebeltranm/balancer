@@ -3,9 +3,9 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from 'vuex';
-import { ref, computed, watch, watchEffect } from "vue";
+import { ref, watchEffect } from "vue";
 import { AccountType } from '@/types';
+import { useAccountsStore } from '@/stores/accounts';
 
 const props = defineProps<{
     accounts: string[],
@@ -13,7 +13,7 @@ const props = defineProps<{
     date?: Date,
 }>()
 
-const store = useStore();
+const accountsStore = useAccountsStore();
 
 const emit = defineEmits(['update:accounts'])
 
@@ -29,7 +29,7 @@ watchEffect( () => {
             children: account.children && Object.keys(account.children).map( (a, index) => accountGroup(account.children[a], `${key}-${index}`) )
         }
     }
-    const accounts = store.getters['accounts/accountsGroupByCategories'](props.groups, props.date);
+    const accounts = accountsStore.accountsGroupByCategories(props.groups, props.date);
     items.value = Object.keys(accounts).map( (k, index) => ({
         label: k,
         key: `${index}`,
@@ -47,7 +47,7 @@ function onUpdate() {
         return [value.key];
     };
     const data = Object.keys(selected.value).map( k => {
-        if (store.state.accounts.accounts[k]) {
+        if (accountsStore.accounts[k]) {
             return k;
         }
         const group = k.split('-').reduce( (ant: any, k) => {

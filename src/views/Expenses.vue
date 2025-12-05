@@ -2,7 +2,7 @@
   <Toolbar>
     <template #start>
       <PeriodSelector v-model:period="period" @update:period="onChangePeriod" :only-type="!['table', 'pie'].includes(displayType)" />
-      <Select v-model="categorySelected" :options="['All', ...expenseCategories]" placeholder="Select a Category" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'bar'"/>
+      <Select v-model="categorySelected" :options="['All', ...Object.keys(accountsStore.expensesByCategories)]" placeholder="Select a Category" class="pt-1 pb-1 ml-1 mr-1 w-12rem text-center" panelClass="z-5" v-if="displayType === 'bar'"/>
     </template>
     <template #end>
         <SelectButton v-model="displayType" :options="displayOptions" optionValue="id" @update:modelValue="onChangeDisplayType" >
@@ -51,7 +51,7 @@
             </div>
           </div>
         </template>
-        <template #footer v-if="isAuthenticated">
+        <template #footer v-if="storageStore.status.authenticated">
           <div class="grid" style="width: 100%">
             <div class="text-right" style="width: 100%">{{ $format.currency(getTotal(index), CURRENCY)}}</div>
             <div style="width: 100%" 
@@ -99,11 +99,15 @@
   import PeriodSelector from '@/components/PeriodSelector.vue'
   import CommentsDialog from '@/components/CommentsDialog.vue'
 
-  import { useStore } from 'vuex';
   import { computed, ref, onMounted, inject } from 'vue'
   import { AccountGroupType, AccountType, Period } from '@/types';
   import { getCurrentPeriod, increasePeriod, periodLabel, BACKGROUNDS_COLOR_GRAPH, getPeriodDate } from '@/helpers/options.js';
   import format from '@/format';
+  import { useAccountsStore } from '@/stores/accounts';
+  import { useStorageStore } from '@/stores/storage';
+  import { useBalanceStore } from '@/stores/balance';
+  import { useBudgetStore } from '@/stores/budget';
+  import { useValuesStore } from '@/stores/values';
 
   import type { Ref } from 'vue';
 
@@ -118,10 +122,13 @@
 
   const displayType = ref('table');
   const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi pi-chart-pie'}, {id:'bar', icon:'pi pi-chart-bar'}];
-  const store = useStore();
-  const expenseCategories = computed(() => Object.keys(store.getters['accounts/expensesByCategories']))
+  const accountsStore = useAccountsStore();
+  const storageStore = useStorageStore();
+  const balanceStore = useBalanceStore();
+  const valuesStore = useValuesStore();
+  const budgetStore = useBudgetStore();
+
   const categorySelected = ref('All');
-  const isAuthenticated = computed(() => store.state.storage.status.authenticated);
 
   function getTotalByCategory( category: any, balance: any, budget?: any, comments?: any) {
       var children = undefined;
@@ -139,7 +146,7 @@
             }
             return ant.map( (v, index) => {
               if (child.data.currency!==CURRENCY?.value && child.data.values[index]) {
-                return v + (child.data.values[index] * store.getters['values/getValue']( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
+                return v + (child.data.values[index] * valuesStore.getValue( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.values[index] 
             } );
@@ -150,7 +157,7 @@
             }
             return ant.map( (v, index) => {
               if (child.data.currency!==CURRENCY?.value && child.data.budget[index]) {
-                return v + (child.data.budget[index] * store.getters['values/getValue']( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
+                return v + (child.data.budget[index] * valuesStore.getValue( getPeriodDate(period.value.type, period.value.value), child.data.currency, CURRENCY?.value))  
               }
               return v + child.data.budget[index]
             }  );
@@ -177,10 +184,10 @@
   }
 
   const byCategory = computed(() => {
-    const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, 5, period.value.value);
-    const {budget, comments} = store.getters['budget/getBudgetGrupedByPeriod'](period.value.type, 5, period.value.value);
-    const accounts = store.getters['accounts/accountsGroupByCategories'](
-      isAuthenticated.value ? [AccountGroupType.Incomes, AccountGroupType.Expenses] : [AccountGroupType.Expenses], 
+    const balance = balanceStore.getBalanceGroupedByPeriods(period.value.type, 5, period.value.value);
+    const {budget, comments} = budgetStore.getBudgetGrupedByPeriod(period.value.type, 5, period.value.value);
+    const accounts = accountsStore.accountsGroupByCategories(
+      storageStore.status.authenticated ? [AccountGroupType.Incomes, AccountGroupType.Expenses] : [AccountGroupType.Expenses], 
       getPeriodDate(period.value.type, period.value.value), period.value.type);
 
     return Object.keys(accounts).map( (key) => getTotalByCategory({
@@ -230,8 +237,8 @@
   const barData = computed(() => {
     var currentPeriod = getCurrentPeriod();
     const numPeriods = period.value.type === Period.Month ? 13 : period.value.type === Period.Quarter ? 9 : 10;
-    const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, numPeriods, currentPeriod);
-    const expences = store.getters['accounts/expensesByCategories'];
+    const balance = balanceStore.getBalanceGroupedByPeriods(period.value.type, numPeriods, currentPeriod);
+    const expences = accountsStore.expensesByCategories;
 
     var grouped = Object.keys(expences).map( (key) => getTotalByCategory(expences[key], balance));
     const labels = [];
@@ -264,21 +271,21 @@
   const getTotal = (index: number) => byCategory.value.reduce( (ant, v) => ant + (v.data.values[index]*(v.key === AccountGroupType.Expenses ? -1 : 1)), 0);
 
   function onChangePeriod() {
-    store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
+    balanceStore.loadBalanceForYear(period.value.value.year, false);
   }
   function onChangeDisplayType() {
     if(displayType.value === 'bar') {
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 2})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 3})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 4})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 5})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 6})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 7})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 8})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 9})
-      store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 10})
+      balanceStore.loadBalanceForYear(period.value.value.year, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 1, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 2, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 3, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 4, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 5, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 6, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 7, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 8, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 9, false);
+      balanceStore.loadBalanceForYear(period.value.value.year - 10, false);
     }
   }
 

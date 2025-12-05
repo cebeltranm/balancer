@@ -11,7 +11,7 @@
         </SelectButton>
     </template>
   </Toolbar>
-  <template v-if="isAuthenticated">
+  <template v-if="storageStore.status.authenticated">
     <div class="balance">
     <DataTable :value="values" 
     :resizableColumns="true" columnResizeMode="fit" showGridlines
@@ -60,18 +60,25 @@
 </style>
 
 <script lang="ts" setup>
+import type { Ref } from 'vue';
 import PeriodSelector from '@/components/PeriodSelector.vue'
 import format from '@/format';
-import { getCurrentPeriod, periodLabel, increasePeriod, rowPendingSyncClass } from '@/helpers/options';
+import { getCurrentPeriod, periodLabel, increasePeriod } from '@/helpers/options';
 import { AccountGroupType, AccountType, Period } from '@/types';
-import { computed, onMounted, ref, inject } from 'vue';
-import { useStore } from 'vuex';
+import { onMounted, ref, inject } from 'vue';
+import { useStorageStore } from '@/stores/storage';
+import { useAccountsStore } from '@/stores/accounts';
+import { useBalanceStore } from '@/stores/balance';
+import { useValuesStore } from '@/stores/values'
 
-import type { Ref } from 'vue';
 
 const CURRENCY: Ref | undefined = inject('CURRENCY');
 
-const store = useStore();
+const storageStore = useStorageStore();
+const accountsStore = useAccountsStore();
+const balanceStore = useBalanceStore();
+const valuesStore = useValuesStore();
+
 
 const period = ref({
     type: Period.Month,
@@ -82,7 +89,6 @@ const displayOptions = [{id: 'table', icon:'pi pi-table'}, {id: 'pie', icon:'pi 
 const values = ref([]);
 const total = ref([]);
 
-const isAuthenticated = computed(() => store.state.storage.status.authenticated);
 const periodTitles = ref(['Period1', 'Period2', 'Period3', 'Period4'])
 
 function getRowClass(data: any) {
@@ -91,11 +97,11 @@ function getRowClass(data: any) {
 
 async function onChangePeriod() {
     await Promise.all([
-        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year}),
-        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 1}),
-        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 2}),
-        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 3}),
-        store.dispatch('balance/getBalanceForYear', {year: period.value.value.year - 4}),
+        balanceStore.loadBalanceForYear(period.value.value.year),
+        balanceStore.loadBalanceForYear(period.value.value.year - 1),
+        balanceStore.loadBalanceForYear(period.value.value.year - 2),
+        balanceStore.loadBalanceForYear(period.value.value.year - 3),
+        balanceStore.loadBalanceForYear(period.value.value.year - 4),
     ])
     recalculateValues();
 }
@@ -127,7 +133,7 @@ async function recalculateValues() {
 
     periodTitles.value = per.map( (p) => periodLabel(period.value.type, p.period));
 
-    const balance = store.getters['balance/getBalanceGroupedByPeriods'](period.value.type, totPer, period.value.value);
+    const balance =  balanceStore.getBalanceGroupedByPeriods(period.value.type, totPer, period.value.value);
     values.value = [{
         type: "Type",
         name: "Assets",
@@ -160,19 +166,19 @@ async function recalculateValues() {
     .reduce( (ant, t) => {
         const total = t.groups.reduce( (ant2, t2) => {
             const groups = Object.keys( balance )
-                .filter( a => store.getters['accounts/getAccountGroupType'](a) === t2.group )
+                .filter( a => accountsStore.getAccountGroupType(a) === t2.group )
                 .reduce( (all: any, a) => {
-                    const account = store.state.accounts.accounts[a];
-                    if (!all[account.type]) {
+                    const account = accountsStore.accounts[a];
+                    if (account && !all[account.type]) {
                         all[account.type] = {
                             type: account.type,
                             values: Array.from(new Array(per.length), () => 0)
                         }
                     }
                     for (var i = 0; i < per.length; i++) {
-                        if (balance[a][ per[i].position ]) {
-                            if (account.currency !== CURRENCY?.value) {
-                                all[account.type].values[i] += (balance[a][ per[i].position ].value * store.getters['values/getValue']( per[i].date, account.currency, CURRENCY?.value))  
+                        if (balance?.[a]?.[ per[i].position ]) {
+                            if (account?.currency !== CURRENCY?.value) {
+                                all[account.type].values[i] += (balance[a][ per[i].position ].value * valuesStore.getValue( per[i].date, account.currency, CURRENCY?.value))  
                             } else {
                                 all[account.type].values[i] += balance[a][ per[i].position ].value;
                             }

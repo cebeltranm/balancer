@@ -89,7 +89,10 @@ export default class DropboxStore {
             const res = await dbx.filesDownload({ path: `/${fileName}`});
             if (res.status === 200) {
                 const data = await res.result.fileBlob.text();
-                return JSON.parse(data);
+                try {
+                    return JSON.parse(data);
+                }
+                catch(e) {}
             }
         } catch(e) {
             if (!(e instanceof DropboxResponseError) || e.status < 404 || e.status > 410) {

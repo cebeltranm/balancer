@@ -1,4 +1,4 @@
-import { AccountType } from '@/types';
+import { AccountType, type Account } from '@/types';
 
 type groupType = Record<string, { type: string; name: string; expected: number, children: any }>;
 
@@ -32,4 +32,14 @@ export function mapInvestmentsBySubCategory(inv: any, expected: any): any[] {
       children: groupInvestmentsByType(inv[assetClass][subClass], expected[assetClass] && expected[assetClass][subClass])
     }))
   }));
+}
+
+export function accountsGrupedByAttribute(accounts: Account[], att: string, def: any | undefined) {
+  return accounts.reduce((ant: any, account: any) => {
+    if (!ant[account[att] || def]) {
+      ant[account[att] || def] = {}
+    }
+    ant[account[att] || def][account.id] = { ...account };
+    return ant;
+  }, {});
 }

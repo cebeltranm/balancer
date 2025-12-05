@@ -5,7 +5,7 @@ import Expenses from '@/views/Expenses.vue'
 import Values from '@/views/Values.vue'
 import Budget from '@/views/Budget.vue'
 import Assets from '@/views/Assets.vue'
-import Investments from '@/views/Investments.vue'
+import Portafolio from '@/views/portafolio/index.vue'
 import Balance from '@/views/Balance.vue'
 import Settings from '@/views/Settings.vue'
 import Accounts from '@/views/Accounts.vue'
@@ -38,7 +38,7 @@ const router = createRouter({
     {
       path: '/investments',
       name: 'investments',
-      component: Investments
+      component: Portafolio
     },
     {
       path: '/settings/values',

@@ -37,18 +37,19 @@
 <script lang="ts" setup>
   import { computed, ref, onMounted, provide } from 'vue'
   // import { initPWA } from '@/helpers/pwa';
-  import { useStore } from 'vuex';
   import { isDesktop } from './helpers/browser';
   import { useToast } from "primevue/usetoast";
   import { EVENTS, CHECK_AUTHENTICATE } from '@/helpers/events';
   import packageJson from '../package.json';
-
+  import {useStorageStore} from '@/stores/storage';
   import AppTopbar from './layout/AppTopbar.vue';
   import AppMenu from './layout/AppMenu.vue';
   import Auth from '@/components/Auth.vue';
   import { Currency } from './types';
+  import { useBalanceStore } from '@/stores/balance';
 
-  const store = useStore();
+  const storageStore = useStorageStore();
+  const balanceStore = useBalanceStore();
   const toast = useToast();
 
   const authDialog = ref<InstanceType<typeof Auth> | null>(null);
@@ -103,7 +104,7 @@
   });
 
   EVENTS.on(CHECK_AUTHENTICATE, (msg:any) => {
-    if (!store.state.storage.status.authenticated) {
+    if (!storageStore.isAuthenticated) {
       authDialog.value?.show();
     }
   });
@@ -123,10 +124,10 @@
 
 
   onMounted(() => {
-    store.dispatch('storage/pendingToSync');
-    setTimeout(async () => {
-      // await store.dispatch('balance/recalculateBalance', { year: 2020, month: 1, save: true });
-    }, 2000)
+    storageStore.updatePendingToSync();
+    // setTimeout(async () => {
+    //   balanceStore.recalculateBalance(2020, 1, true );
+    // }, 2000)
   })
 
 </script>

@@ -1,6 +1,6 @@
 export interface Transaction {
     id?: number;
-    date: string;
+    date?: string;
     description: string;
     tags?: string[],
     values: [{
@@ -16,6 +16,17 @@ export enum Period {
     Month,
     Quarter,
     Year
+}
+
+export interface PeriodParams {
+    year: number;
+    month: number;
+    quarter: number;
+}
+
+export interface PeriodOption {
+    type: Period;
+    value: PeriodParams;
 }
 
 export enum AccountType {
@@ -69,8 +80,8 @@ export interface Account {
     currency: string;
     category: string[];
     entity?: string;
-    activeFrom?: string;
-    hideSince?: string;
+    activeFrom?: Date;
+    hideSince?: Date;
     symbol?: string;
     exchange?: string;
 }
@@ -88,4 +99,14 @@ export enum GeographicExposure {
     Europe = "Europe",
     Asia = "Asia",
     Latam = "Latam",
+}
+
+export interface BalanceEntry {
+    value: number;
+    expenses: number;
+    in: number;
+    out: number;
+    in_local: number;
+    out_local: number;
+    units: number;
 }
