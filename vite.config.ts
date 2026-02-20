@@ -74,6 +74,10 @@ export default defineConfig({
   define: {
     'process.env': {}
   },
+  test: {
+    environment: 'node',
+    setupFiles: ['./src/test/setup.ts'],
+  },
   plugins: [
     vue(),
     VitePWA(pwaOptions),
