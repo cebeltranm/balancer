@@ -1,13 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { accountsGrupedByAttribute, mapInvestmentsBySubCategory } from '@/helpers/investments';
+import { describe, expect, it } from "vitest";
+import {
+  accountsGrupedByAttribute,
+  mapInvestmentsBySubCategory,
+} from "@/helpers/investments";
 
-describe('investments helper', () => {
-  it('maps nested investments with expected values', () => {
+describe("investments helper", () => {
+  it("maps nested investments with expected values", () => {
     const mapped = mapInvestmentsBySubCategory(
       {
         Equities: {
           US: {
-            a1: { id: 'a1', name: 'SPY', type: 'ETF' },
+            a1: { id: "a1", name: "SPY", type: "ETF" },
           },
         },
       },
@@ -19,26 +22,39 @@ describe('investments helper', () => {
             ETF: { value: 60 },
           },
         },
-      }
+      },
     );
 
-    expect(mapped[0].name).toBe('Equities');
+    expect(mapped[0].name).toBe("Equities");
     expect(mapped[0].expected).toBe(60);
     expect(mapped[0].children[0].children[0].expected).toBe(60);
   });
 
-  it('groups accounts by selected attribute', () => {
+  it("groups accounts by selected attribute", () => {
     const grouped = accountsGrupedByAttribute(
       [
-        { id: 'a', name: 'A', currency: 'usd', type: 'Cash', category: [], entity: 'BrokerA' } as any,
-        { id: 'b', name: 'B', currency: 'usd', type: 'Cash', category: [] } as any,
+        {
+          id: "a",
+          name: "A",
+          currency: "usd",
+          type: "Cash",
+          category: [],
+          entity: "BrokerA",
+        } as any,
+        {
+          id: "b",
+          name: "B",
+          currency: "usd",
+          type: "Cash",
+          category: [],
+        } as any,
       ],
-      'entity',
-      'Unknown'
+      "entity",
+      "Unknown",
     );
 
-    expect(Object.keys(grouped)).toEqual(['BrokerA', 'Unknown']);
-    expect(grouped.BrokerA.a.name).toBe('A');
-    expect(grouped.Unknown.b.name).toBe('B');
+    expect(Object.keys(grouped)).toEqual(["BrokerA", "Unknown"]);
+    expect(grouped.BrokerA.a.name).toBe("A");
+    expect(grouped.Unknown.b.name).toBe("B");
   });
 });

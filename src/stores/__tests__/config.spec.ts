@@ -1,19 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createPinia, setActivePinia } from 'pinia';
-import { useConfigStore } from '@/stores/config';
-import { readJsonFile } from '@/helpers/files';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createPinia, setActivePinia } from "pinia";
+import { useConfigStore } from "@/stores/config";
+import { readJsonFile } from "@/helpers/files";
 
-vi.mock('@/helpers/files', () => ({
+vi.mock("@/helpers/files", () => ({
   readJsonFile: vi.fn(),
 }));
 
-describe('config store', () => {
+describe("config store", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
   });
 
-  it('loads config and computes composition by asset class and region', async () => {
+  it("loads config and computes composition by asset class and region", async () => {
     vi.mocked(readJsonFile).mockResolvedValue({
       inv_composition: {
         Equities: {

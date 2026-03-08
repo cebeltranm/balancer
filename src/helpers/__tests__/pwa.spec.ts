@@ -1,16 +1,16 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from "vitest";
 
 const { useRegisterSW } = vi.hoisted(() => ({
   useRegisterSW: vi.fn().mockReturnValue({ updateServiceWorker: vi.fn() }),
 }));
-vi.mock('virtual:pwa-register/vue', () => ({
+vi.mock("virtual:pwa-register/vue", () => ({
   useRegisterSW,
 }));
 
-import { initPWA } from '@/helpers/pwa';
+import { initPWA } from "@/helpers/pwa";
 
-describe('pwa helper', () => {
-  it('registers service worker with expected options', () => {
+describe("pwa helper", () => {
+  it("registers service worker with expected options", () => {
     initPWA();
 
     expect(useRegisterSW).toHaveBeenCalledTimes(1);
@@ -19,7 +19,7 @@ describe('pwa helper', () => {
         immediate: true,
         onRegistered: expect.any(Function),
         onOfflineReady: expect.any(Function),
-      })
+      }),
     );
   });
 });

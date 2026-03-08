@@ -1,13 +1,12 @@
-import { mode, msg } from './workerImport'
+import { mode, msg } from "./workerImport";
 
-let counter = 1
+let counter = 1;
 
 self.onmessage = (e) => {
-  if (e.data === 'ping') {
-    self.postMessage({ msg: `${msg} - ${counter++}`, mode })
+  if (e.data === "ping") {
+    self.postMessage({ msg: `${msg} - ${counter++}`, mode });
+  } else if (e.data === "clear") {
+    counter = 1;
+    self.postMessage({ msg: null, mode: null });
   }
-  else if (e.data === 'clear') {
-    counter = 1
-    self.postMessage({ msg: null, mode: null })
-  }
-}
+};

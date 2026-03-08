@@ -1,46 +1,48 @@
-# balancer
+# Balancer
 
-This template should help get you started developing with Vue 3 in Vite.
+Balancer is an application for tracking expenses and investments. The application runs in the browser and stores the data in json files in dropbox
 
-## Recommended IDE Setup
+## Tech Stack
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+- Vue 3
+- TypeScript
+- Vite
+- Pinia
+- Vue Router
+- PrimeVue / PrimeFlex
+- Chart.js
+- Vitest
+- ESLint
 
-## Type Support for `.vue` Imports in TS
+## Requirements
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+- Node.js
+- npm 
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+## Getting Started
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
+Install dependencies:
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+Starts the local server to return files
+```sh
+node server/index.js
+```
+
+Run the development server:
 
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+## Scripts
 
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+- `npm run dev`: start local dev server
+- `npm run build`: production build
+- `npm run test`: run Vitest
+- `npm run type-check`: run `vue-tsc --noEmit`
+- `npm run lint`: run ESLint
+- `npm run release`: version bump + build with `/balancer/` base + deploy via `gh-pages`
