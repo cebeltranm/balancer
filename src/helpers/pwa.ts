@@ -20,5 +20,8 @@ export function initPWA() {
     onOfflineReady() {
       console.log("onOfflineReady");
     },
+    onNeedRefresh() {
+      console.log("onNeedRefresh");
+    },
   });
 }

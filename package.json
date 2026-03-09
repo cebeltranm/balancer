@@ -2,11 +2,9 @@
   "name": "balancer",
   "version": "1.0.8",
   "scripts": {
-    "serve": "vite preview",
     "build": "vite build",
     "test": "vitest run",
     "lint": "eslint .",
-    "build-only": "vite build",
     "dev": "vite",
     "https-preview": "serve dist",
     "preview": "vite preview --port 4173",

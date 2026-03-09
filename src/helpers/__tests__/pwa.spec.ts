@@ -19,6 +19,7 @@ describe("pwa helper", () => {
         immediate: true,
         onRegistered: expect.any(Function),
         onOfflineReady: expect.any(Function),
+        onNeedRefresh: expect.any(Function),
       }),
     );
   });

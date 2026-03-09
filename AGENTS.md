@@ -19,6 +19,11 @@ This repository contains the Balancer application built with Vue 3, TypeScript, 
 - Prefer the existing `package-lock.json`.
 - Do not switch package managers.
 
+## Node version
+- Use Node `v22.16.0` for this project.
+- Before running checks/build/tests, run: `source ~/.nvm/nvm.sh && nvm use v22.16.0`.
+- If `.nvmrc` exists, keep it aligned with the required Node version.
+
 ## Working agreements
 - Prefer the smallest safe change that solves the task.
 - Follow existing patterns in nearby files before introducing new abstractions.

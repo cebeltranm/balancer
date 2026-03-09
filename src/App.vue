@@ -31,13 +31,23 @@
     </div>
     <ConfirmPopup></ConfirmPopup>
     <Toast />
+    <Toast group="pwa-update" position="bottom-center">
+      <template #message="slotProps">
+        <div
+          class="flex align-items-center justify-content-between gap-3 w-full"
+        >
+          <div class="text-sm">{{ slotProps.message.detail }}</div>
+          <Button label="Update now" size="small" @click="onUpdateNow" />
+        </div>
+      </template>
+    </Toast>
     <Auth ref="authDialog"></Auth>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, onMounted, provide } from "vue";
-// import { initPWA } from '@/helpers/pwa';
+import { computed, ref, onMounted, provide, watch } from "vue";
+import { initPWA } from "@/helpers/pwa";
 import { isDesktop } from "./helpers/browser";
 import { useToast } from "primevue/usetoast";
 import { EVENTS, CHECK_AUTHENTICATE } from "@/helpers/events";
@@ -56,14 +66,8 @@ const authDialog = ref<InstanceType<typeof Auth> | null>(null);
 const CURRENCY = ref(Currency.COP);
 provide("CURRENCY", CURRENCY);
 
-// replaced dyanmicaly
-// const reloadSW: any = '__RELOAD_SW__'
-
-// const {
-//   offlineReady,
-//   needRefresh,
-//   updateServiceWorker,
-// } = initPWA();
+const { needRefresh, updateServiceWorker } = initPWA();
+const updateToastShown = ref(false);
 
 const menu = [
   {
@@ -100,6 +104,26 @@ EVENTS.on("message", (msg: any) => {
     life: 3000,
   });
 });
+
+watch(needRefresh, (value) => {
+  if (value && !updateToastShown.value) {
+    updateToastShown.value = true;
+    toast.add({
+      group: "pwa-update",
+      severity: "info",
+      summary: "Update available",
+      detail: "A new version is available.",
+      life: 0,
+      closable: false,
+    });
+  }
+});
+
+function onUpdateNow() {
+  toast.removeGroup("pwa-update");
+  updateToastShown.value = false;
+  updateServiceWorker(true);
+}
 
 EVENTS.on(CHECK_AUTHENTICATE, (_msg: any) => {
   if (!storageStore.status.authenticated) {
