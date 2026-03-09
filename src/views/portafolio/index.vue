@@ -86,6 +86,7 @@ import { useStorageStore } from "@/stores/storage";
 import { useAccountsStore } from "@/stores/accounts";
 import { useBalanceStore } from "@/stores/balance";
 import { useConfigStore } from "@/stores/config";
+import { useValuesStore } from "@/stores/values";
 import { useTotalByCategory } from "@/composables/totalByCategory";
 
 import type { Ref } from "vue";
@@ -101,6 +102,7 @@ const storageStore = useStorageStore();
 const accountsStore = useAccountsStore();
 const balanceStore = useBalanceStore();
 const configStore = useConfigStore();
+const valuesStore = useValuesStore();
 const totalByCategory = useTotalByCategory();
 
 const typeInvestment = ref("ByAssetClass");
@@ -306,12 +308,14 @@ const getTotal = computed(() => {
 
 function onChangePeriod() {
   balanceStore.loadBalanceForYear(period.value.value.year - 1);
+  valuesStore.loadValuesForYear(period.value.value.year - 1);
 }
 
 function onChangeDisplayType() {
   if (displayType.value === "bar") {
     for (let i = 0; i <= 10; i++) {
       balanceStore.loadBalanceForYear(period.value.value.year - i);
+      valuesStore.loadValuesForYear(period.value.value.year - i);
     }
   }
 }

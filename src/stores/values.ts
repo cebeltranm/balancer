@@ -95,7 +95,7 @@ export const useValuesStore = defineStore("values", () => {
     // context.dispatch('balance/recalculateBalance', {year, month, save: true}, {root: true});
   }
 
-  async function loadValuesForYear(year: number, reload: boolean) {
+  async function loadValuesForYear(year: number, reload: boolean = false) {
     if (!reload && values.value[year]) {
       return values.value[year];
     }

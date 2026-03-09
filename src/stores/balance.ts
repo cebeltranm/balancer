@@ -59,9 +59,9 @@ export const useBalanceStore = defineStore("balance", () => {
         months
           .map(
             (monthNum) =>
-              (balance.value[year]?.[accountId]?.[monthNum] as
+              balance.value[year]?.[accountId]?.[monthNum] as
                 | BalanceEntry
-                | undefined) || createEmptyBalanceEntry(),
+                | undefined,
           )
           .reduce((accumulated, monthValue) => {
             const result: BalanceEntry = { ...createEmptyBalanceEntry() };
