@@ -9,7 +9,7 @@
     "https-preview": "serve dist",
     "preview": "vite preview --port 4173",
     "type-check": "vue-tsc --noEmit",
-    "release": "eslint . && vue-tsc --noEmit && vitest run && npm version patch && vite build --base=/balancer/ && gh-pages -d dist"
+    "release": "eslint . && vue-tsc --noEmit && vitest run && npm version patch && vite build --base=/balancer/ && gh-pages-clean && gh-pages -d dist"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.3",
