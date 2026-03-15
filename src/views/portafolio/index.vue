@@ -285,8 +285,8 @@ const getTotal = computed(() => {
       }
       return ant.map((v, index) => ({
         value: v.value + child.data.values[index].value,
-        in: v.in + child.data.values[index].in,
-        out: v.out + child.data.values[index].out,
+        in: v.in + child.data.values[index].in + child.data.values[index].in_local,
+        out: v.out + child.data.values[index].out + child.data.values[index].out_local,
         expenses: v.expenses + child.data.values[index].expenses,
       }));
     },
@@ -313,7 +313,7 @@ function onChangePeriod() {
 
 function onChangeDisplayType() {
   if (displayType.value === "bar") {
-    for (let i = 0; i <= 10; i++) {
+    for (let i = 0; i <= 11; i++) {
       balanceStore.loadBalanceForYear(period.value.value.year - i);
       valuesStore.loadValuesForYear(period.value.value.year - i);
     }
