@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useConfigStore } from "@/stores/config";
-import { readJsonFile } from "@/helpers/files";
+import { readJsonFile, writeJsonFile } from "@/helpers/files";
 
 vi.mock("@/helpers/files", () => ({
   readJsonFile: vi.fn(),
+  writeJsonFile: vi.fn(),
 }));
 
 describe("config store", () => {
@@ -33,5 +34,21 @@ describe("config store", () => {
     expect(store.invCompositionByAssetClass.value).toBe(100);
     expect(store.invCompositionByRegion.US.value).toBe(80);
     expect(store.invCompositionByRegion.Europe.value).toBe(20);
+  });
+
+  it("saves config and updates local state", async () => {
+    vi.mocked(writeJsonFile).mockResolvedValue(true);
+
+    const store = useConfigStore();
+    const nextConfig = {
+      stock_api: { type: "rapidapi", host: "host", key: "key" },
+      inv_composition: { Cash: { US: { ETF: 1 } } },
+    };
+
+    const result = await store.saveConfig(nextConfig);
+
+    expect(result).toBe(true);
+    expect(writeJsonFile).toHaveBeenCalledWith("config.json", nextConfig);
+    expect(store.config).toEqual(nextConfig);
   });
 });

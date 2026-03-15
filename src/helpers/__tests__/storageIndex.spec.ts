@@ -38,4 +38,20 @@ describe("storage index helper", () => {
     expect((storage as any).kind).toBe("dropbox");
     expect(DropboxCtor).toHaveBeenCalledTimes(1);
   });
+
+  it("ignores a stored local http selection outside localhost", async () => {
+    window.location.host = "example.com";
+    window.localStorage?.setItem("storage_provider", "httpServer");
+    const { getStorage, getAvailableStorageProviders } = await import(
+      "@/helpers/storage"
+    );
+
+    const storage = getStorage();
+
+    expect(
+      getAvailableStorageProviders().some((p) => p.id === "httpServer"),
+    ).toBe(false);
+    expect((storage as any).kind).toBe("dropbox");
+    expect(DropboxCtor).toHaveBeenCalledTimes(1);
+  });
 });

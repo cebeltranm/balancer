@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { put, getAllKeys, getAll, get, del } = vi.hoisted(() => ({
+const { put, getAllKeys, getAll, get, del, deleteDb } = vi.hoisted(() => ({
   put: vi.fn(),
   getAllKeys: vi.fn(),
   getAll: vi.fn(),
   get: vi.fn(),
   del: vi.fn(),
+  deleteDb: vi.fn(),
 }));
 
 vi.mock("idb", () => ({
@@ -16,7 +17,7 @@ vi.mock("idb", () => ({
     get,
     delete: del,
   }),
-  deleteDB: vi.fn(),
+  deleteDB: deleteDb,
   wrap: vi.fn(),
   unwrap: vi.fn(),
 }));
@@ -24,6 +25,7 @@ vi.mock("idb", () => ({
 import {
   countFilesToSync,
   countTransactions,
+  clearDatabase,
   getAllFilesInCache,
   getAllTransactions,
   getJsonFile,
@@ -65,5 +67,8 @@ describe("idb helper", () => {
     expect(del).toHaveBeenCalledWith("files", "x.json");
 
     expect(await countFilesToSync()).toBe(1);
+
+    await clearDatabase();
+    expect(deleteDb).toHaveBeenCalledWith("balancer");
   });
 });

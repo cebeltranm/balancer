@@ -6,6 +6,29 @@
     :modal="true"
     class="p-fluid"
   >
+    <div class="mb-3">
+      <label class="block mb-2 font-medium" for="auth-storage-provider">
+        Storage provider
+      </label>
+      <Select
+        id="auth-storage-provider"
+        v-model="selectedProvider"
+        :options="loginProviderOptions"
+        optionLabel="label"
+        optionValue="id"
+        class="w-full"
+        @update:model-value="onProviderChange"
+      >
+        <template #option="{ option }">
+          <div class="flex flex-column">
+            <span>{{ option.label }}</span>
+            <small class="text-color-secondary">
+              {{ option.description }}
+            </small>
+          </div>
+        </template>
+      </Select>
+    </div>
     <div>
       <template v-if="storeInfo?.loggedIn">
         <span v-if="storeInfo.type === 'HttpServer'">
@@ -14,7 +37,7 @@
         <span v-if="storeInfo.type === 'Dropbox'"> Logged In to Dropbox </span>
       </template>
       <template v-else>
-        <Button label="Logged In" @click="doLoginStore" />
+        <Button label="Login to store" @click="doLoginStore" />
       </template>
     </div>
     <Divider />
@@ -35,8 +58,8 @@
   </Dialog>
 </template>
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
-import { getStorage } from "@/helpers/storage";
+import { computed, onMounted, ref } from "vue";
+import { getStorage, type StorageProviderId } from "@/helpers/storage";
 import { useRoute, useRouter } from "vue-router";
 import * as files from "@/helpers/files";
 import * as sync from "@/helpers/sync";
@@ -51,6 +74,7 @@ import { useTransactionsStore } from "@/stores/transactions";
 const visible = ref(false);
 const storeInfo = ref();
 const localCredentials = ref(false);
+const selectedProvider = ref<StorageProviderId>("dropbox");
 
 const bufferToBase64 = (buffer: any) =>
   btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -68,6 +92,11 @@ const route = useRoute();
 const router = useRouter();
 const toQueryString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
+const loginProviderOptions = computed(() =>
+  storageStore.providerOptions.filter(
+    (option) => option.available && !option.planned,
+  ),
+);
 
 function show() {
   visible.value = true;
@@ -85,11 +114,9 @@ defineExpose({
 });
 
 onMounted(async () => {
-  const storage = getStorage();
-  storeInfo.value = await storage.getInfo();
+  selectedProvider.value = storageStore.selectedProvider;
+  await refreshStoreInfo();
   localCredentials.value = !!localStorage.getItem("crlocal");
-  storageStore.status.loggedIn = storeInfo.value.loggedIn;
-  storageStore.status.offline = storeInfo.value.offline;
   if (storeInfo.value.loggedIn) {
     loadBasicFiles();
   }
@@ -117,6 +144,16 @@ onMounted(async () => {
     authenticate();
   }
 });
+
+async function refreshStoreInfo() {
+  storeInfo.value = await storageStore.refreshStoreInfo();
+  selectedProvider.value = storageStore.selectedProvider;
+}
+
+async function onProviderChange(provider: StorageProviderId) {
+  await storageStore.selectProvider(provider);
+  await refreshStoreInfo();
+}
 
 function register() {
   let text = "";
@@ -188,17 +225,18 @@ async function authenticate() {
 }
 
 async function doLoginStore() {
+  await storageStore.selectProvider(selectedProvider.value);
   const storage = getStorage();
-  await storage.doAuth(toQueryString(route.query.code));
+  const success = await storage.doAuth(toQueryString(route.query.code));
   if (route.query.code) {
     router.replace({ query: null });
   }
-  storeInfo.value = await storage.getInfo();
-  await checkStore();
-  storageStore.status.loggedIn = true;
-  storageStore.status.offline = false;
-  await loadBasicFiles();
-  setTimeout(() => syncCachedFiles(), 5000);
+  await refreshStoreInfo();
+  if (success && storeInfo.value.loggedIn) {
+    await checkStore();
+    await loadBasicFiles();
+    setTimeout(() => syncCachedFiles(), 5000);
+  }
 }
 
 async function checkStore() {

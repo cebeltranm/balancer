@@ -107,6 +107,13 @@ export default class DropboxStore {
     }
   }
 
+  async logout() {
+    window.localStorage.removeItem(TOKEN_ID);
+    window.localStorage.removeItem(REFRESH_TOKEN_ID);
+    window.sessionStorage.removeItem(CODE_VERIFIER_ID);
+    return true;
+  }
+
   async readJsonFile(fileName: string) {
     const dbx = this.__getDropbox();
     try {

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, type Ref } from "vue";
-import { readJsonFile } from "@/helpers/files";
+import { readJsonFile, writeJsonFile } from "@/helpers/files";
 
 function groupComposition(composition: any) {
   const data = Object.keys(composition).reduce((data: any, key) => {
@@ -75,10 +75,19 @@ export const useConfigStore = defineStore("config", () => {
     return config.value;
   }
 
+  async function saveConfig(nextConfig: Record<string, any>) {
+    const saved = await writeJsonFile("config.json", nextConfig);
+    if (saved) {
+      config.value = nextConfig;
+    }
+    return saved;
+  }
+
   return {
     config,
     invCompositionByAssetClass,
     invCompositionByRegion,
     loadConfig,
+    saveConfig,
   };
 });

@@ -47,9 +47,11 @@
 
 <script lang="ts" setup>
 import { computed, ref, onMounted, provide, watch } from "vue";
+import { useRouter } from "vue-router";
 import { initPWA } from "@/helpers/pwa";
 import { isDesktop } from "./helpers/browser";
 import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import { EVENTS, CHECK_AUTHENTICATE } from "@/helpers/events";
 import packageJson from "../package.json";
 import { useStorageStore } from "@/stores/storage";
@@ -59,7 +61,9 @@ import Auth from "@/components/Auth.vue";
 import { Currency } from "./types";
 
 const storageStore = useStorageStore();
+const router = useRouter();
 const toast = useToast();
+const confirm = useConfirm();
 
 const authDialog = ref<InstanceType<typeof Auth> | null>(null);
 
@@ -76,18 +80,31 @@ const menu = [
       { label: "Dashboard", icon: "pi pi-fw pi-home", to: "/" },
       { label: "Expenses", icon: "pi pi-fw pi-shopping-cart", to: "/expenses" },
       { label: "Assets", icon: "pi pi-fw pi-credit-card", to: "/assets" },
-      { label: "Portfolio", icon: "pi pi-fw pi-bars", to: "/investments" },
-      { label: "Transactions", icon: "pi pi-fw pi-bars", to: "/transactions" },
-      { label: "Balance", icon: "pi pi-fw pi-bars", to: "/balance" },
+      { label: "Portfolio", icon: "pi pi-fw pi-chart-pie", to: "/investments" },
+      {
+        label: "Transactions",
+        icon: "pi pi-fw pi-arrow-right-arrow-left",
+        to: "/transactions",
+      },
+      { label: "Balance", icon: "pi pi-fw pi-chart-line", to: "/balance" },
     ],
   },
   {
     label: "Settings",
     items: [
-      { label: "Values", icon: "pi pi-fw pi-cog", to: "/settings/values" },
-      { label: "Budget", icon: "pi pi-fw pi-cog", to: "/settings/budget" },
-      { label: "Accounts", icon: "pi pi-fw pi-cog", to: "/settings/accounts" },
-      { label: "Settings", icon: "pi pi-fw pi-cog", to: "/settings/general" },
+      { label: "Values", icon: "pi pi-fw pi-dollar", to: "/settings/values" },
+      { label: "Budget", icon: "pi pi-fw pi-wallet", to: "/settings/budget" },
+      { label: "Accounts", icon: "pi pi-fw pi-book", to: "/settings/accounts" },
+      {
+        label: "Settings",
+        icon: "pi pi-fw pi-sliders-h",
+        to: "/settings/general",
+      },
+      {
+        label: "Logout",
+        icon: "pi pi-fw pi-sign-out",
+        command: (event: any) => logoutUser(event.originalEvent),
+      },
     ],
   },
 ];
@@ -123,6 +140,25 @@ function onUpdateNow() {
   toast.removeGroup("pwa-update");
   updateToastShown.value = false;
   updateServiceWorker(true);
+}
+
+function logoutUser(event?: Event) {
+  confirm.require({
+    target: (event?.currentTarget as HTMLElement) || document.body,
+    message: "Disconnect the current store session?",
+    icon: "pi pi-exclamation-triangle",
+    accept: async () => {
+      await storageStore.logout();
+      await router.push("/");
+      EVENTS.emit(CHECK_AUTHENTICATE);
+      toast.add({
+        severity: "info",
+        summary: "Logged out",
+        detail: "Store session cleared.",
+        life: 2500,
+      });
+    },
+  });
 }
 
 EVENTS.on(CHECK_AUTHENTICATE, (_msg: any) => {

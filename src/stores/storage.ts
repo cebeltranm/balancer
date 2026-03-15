@@ -1,12 +1,20 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import bounced from "lodash-es/debounce";
 import * as syncHelpers from "../helpers/sync";
 import * as idb from "../helpers/idb";
+import {
+  getAvailableStorageProviders,
+  getSelectedStorageProvider,
+  getStorage,
+  setSelectedStorageProvider,
+  type StorageProviderId,
+} from "@/helpers/storage";
 
 let currentSyncPromise: Promise<any> | null = null;
 
 export const useStorageStore = defineStore("storage", () => {
+  const storeInfo = ref<any>(null);
   const pendingToSync = ref({ transactions: 0, files: 0 });
   const status = ref({
     inSync: false,
@@ -14,6 +22,8 @@ export const useStorageStore = defineStore("storage", () => {
     loggedIn: false,
     authenticated: false,
   });
+  const selectedProvider = ref<StorageProviderId>(getSelectedStorageProvider());
+  const providerOptions = computed(() => getAvailableStorageProviders());
 
   const syncAll = bounced(async () => {
     try {
@@ -97,5 +107,64 @@ export const useStorageStore = defineStore("storage", () => {
     return currentSyncPromise;
   }
 
-  return { status, pendingToSync, sync, updatePendingToSync, executeInSync };
+  async function refreshStoreInfo() {
+    selectedProvider.value = getSelectedStorageProvider();
+    const info = await getStorage().getInfo();
+    storeInfo.value = info;
+    status.value.loggedIn = info.loggedIn;
+    status.value.offline = info.offline;
+    if (!info.loggedIn) {
+      status.value.authenticated = false;
+    } else if (info.type === "HttpServer") {
+      status.value.authenticated = true;
+    }
+    return info;
+  }
+
+  async function login(code?: string) {
+    const authenticated = await getStorage().doAuth(code);
+    if (authenticated) {
+      await refreshStoreInfo();
+    }
+    return authenticated;
+  }
+
+  async function logout() {
+    const storage = getStorage() as { logout?: () => Promise<boolean> };
+    await storage.logout?.();
+    await idb.clearDatabase();
+    storeInfo.value = null;
+    pendingToSync.value = { transactions: 0, files: 0 };
+    status.value.loggedIn = false;
+    status.value.offline = true;
+    status.value.authenticated = false;
+  }
+
+  async function selectProvider(provider: StorageProviderId) {
+    setSelectedStorageProvider(provider);
+    selectedProvider.value = provider;
+    status.value.authenticated = false;
+    return refreshStoreInfo();
+  }
+
+  function resetLocalCredentials() {
+    window.localStorage.removeItem("crlocal");
+    status.value.authenticated = false;
+  }
+
+  return {
+    storeInfo,
+    status,
+    pendingToSync,
+    selectedProvider,
+    providerOptions,
+    sync,
+    updatePendingToSync,
+    executeInSync,
+    refreshStoreInfo,
+    login,
+    logout,
+    selectProvider,
+    resetLocalCredentials,
+  };
 });

@@ -1,4 +1,4 @@
-import { openDB } from "idb";
+import { deleteDB, openDB } from "idb";
 import { toRaw } from "vue";
 
 const FILES_DB = "files";
@@ -57,4 +57,8 @@ export async function countFilesToSync() {
   const db = await getDb();
   const files = await db.getAll(FILES_DB);
   return files.reduce((ant, f) => ant + (f.to_sync ? 1 : 0), 0);
+}
+
+export async function clearDatabase() {
+  return deleteDB("balancer");
 }
