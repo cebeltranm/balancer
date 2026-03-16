@@ -129,13 +129,13 @@ export function useTotalByCategory() {
       data: {
         name:
           category.entity && displayType !== "table"
-            ? category.yahoo_symbol || category.name
+            ? category.symbol || category.name
             : category.name,
         fullName:
           category.entity && displayType !== "table"
             ? `${category.entity}::${category.name}`
             : category.name,
-        code: category.yahoo_symbol,
+        code: category.symbol,
         logo: category.logo,
         values: values,
         currency: category.currency || CURRENCY?.value,

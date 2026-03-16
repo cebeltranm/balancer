@@ -176,18 +176,16 @@ import { computed, onMounted, ref } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useConfigStore } from "@/stores/config";
 import { useStorageStore } from "@/stores/storage";
-import { GeographicExposure, StockApiType } from "@/types";
+import {
+  ASSET_CLASS_OPTIONS,
+  GEOGRAPHIC_EXPOSURE_OPTIONS,
+  StockApiType,
+} from "@/types";
 
 const configStore = useConfigStore();
 const storageStore = useStorageStore();
 const toast = useToast();
-const defaultAssetClasses = [
-  "Equities",
-  "FixedIncome",
-  "Cash",
-  "RealEstate",
-  "Alternative",
-];
+const defaultAssetClasses = ASSET_CLASS_OPTIONS;
 const defaultInstrumentTypes = ["ETF", "MutualFund"];
 
 interface CompositionMatrixRow {
@@ -292,7 +290,7 @@ function normalizeComposition(composition: Record<string, any>) {
     ...new Set([...defaultAssetClasses, ...Object.keys(composition)]),
   ];
   const regionList = [
-    ...new Set([...Object.values(GeographicExposure), "Global"]),
+    ...new Set([...GEOGRAPHIC_EXPOSURE_OPTIONS, "Global"]),
   ];
 
   const types = assetClassList.reduce(

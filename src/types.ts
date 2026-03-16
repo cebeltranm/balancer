@@ -71,7 +71,6 @@ export enum StockApiType {
   RapidApi = "rapidapi",
   MarketStack = "marketstack",
   AlphaVantage = "alphavantage",
-  TwelveData = "twelvedata",
 }
 
 export interface Account {
@@ -79,22 +78,25 @@ export interface Account {
   name: string;
   type: AccountType;
   currency: string;
-  category: string[];
+  category?: string[];
   entity?: string;
   activeFrom?: Date;
   hideSince?: Date;
   symbol?: string;
-  yahoo_symbol?: string;
-  exchange?: string;
+  logo?: string;
+  risk?: number;
+  class?: Record<string, Record<string, number>>;
 }
 
 export enum AssetClass {
   Equities = "Equities",
-  FixedIncome = "Fixed-Income",
+  FixedIncome = "FixedIncome",
   Cash = "Cash",
-  RealEstate = "Real-Estate",
+  RealEstate = "RealEstate",
   Alternative = "Alternative",
 }
+
+export const ASSET_CLASS_OPTIONS = Object.values(AssetClass);
 
 export enum GeographicExposure {
   US = "US",
@@ -102,6 +104,8 @@ export enum GeographicExposure {
   Asia = "Asia",
   Latam = "Latam",
 }
+
+export const GEOGRAPHIC_EXPOSURE_OPTIONS = Object.values(GeographicExposure);
 
 export interface BalanceEntry {
   value: number;

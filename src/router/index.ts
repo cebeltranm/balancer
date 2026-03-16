@@ -43,6 +43,7 @@ const router = createRouter({
       path: "/investments",
       name: "investments",
       component: Portafolio,
+      meta: { requiresLogin: true },
     },
     {
       path: "/settings/values",
@@ -58,16 +59,19 @@ const router = createRouter({
       path: "/settings/general",
       name: "settings",
       component: Settings,
+      meta: { requiresLogin: true },
     },
     {
       path: "/balance",
       name: "balance",
       component: Balance,
+      meta: { requiresLogin: true },
     },
     {
       path: "/settings/accounts",
       name: "accounts",
       component: Accounts,
+      meta: { requiresLogin: true },
     },
   ],
 });

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, type Ref } from "vue";
-import { readJsonFile } from "@/helpers/files";
+import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import type { Account } from "@/types";
 import { AccountGroupType, AccountType, Period } from "@/types";
 
@@ -38,6 +38,60 @@ export const ACCOUNT_GROUP_TYPES: Record<AccountGroupType, AccountType[]> = {
 
 export const useAccountsStore = defineStore("accounts", () => {
   const accounts: Ref<Record<string, Account>> = ref({});
+
+  type StoredAccount = Omit<Account, "id" | "activeFrom" | "hideSince"> & {
+    activeFrom?: string;
+    hideSince?: string;
+  };
+
+  function serializeAccount(account: Account): StoredAccount {
+    const { id: _id, ...rest } = account;
+    const serialized: StoredAccount = {
+      ...rest,
+      activeFrom: account.activeFrom
+        ? account.activeFrom.toISOString().slice(0, 10)
+        : undefined,
+      hideSince: account.hideSince
+        ? account.hideSince.toISOString().slice(0, 10)
+        : undefined,
+      category:
+        account.category && account.category.length > 0
+          ? [...account.category]
+          : undefined,
+      class: account.class
+        ? Object.keys(account.class).reduce(
+            (grouped, assetClass) => ({
+              ...grouped,
+              [assetClass]: { ...account.class?.[assetClass] },
+            }),
+            {},
+          )
+        : undefined,
+    };
+
+    return Object.keys(serialized).reduce((cleaned, key) => {
+      const typedKey = key as keyof StoredAccount;
+      if (serialized[typedKey] !== undefined) {
+        cleaned[typedKey] = serialized[typedKey] as never;
+      }
+      return cleaned;
+    }, {} as StoredAccount);
+  }
+
+  async function persistAccounts(nextAccounts: Record<string, Account>) {
+    const serialized = Object.keys(nextAccounts).reduce(
+      (accumulated, id) => {
+        accumulated[id] = serializeAccount(nextAccounts[id]);
+        return accumulated;
+      },
+      {} as Record<string, StoredAccount>,
+    );
+    const saved = await writeJsonFile("accounts.json", serialized);
+    if (saved) {
+      accounts.value = nextAccounts;
+    }
+    return saved;
+  }
 
   // Getters
   const expensesByCategories = computed(() => {
@@ -201,6 +255,59 @@ export const useAccountsStore = defineStore("accounts", () => {
     return nAccounts;
   }
 
+  async function saveAccount(account: Account) {
+    const nextAccounts = {
+      ...accounts.value,
+      [account.id]: {
+        ...account,
+        category:
+          account.category && account.category.length > 0
+            ? [...account.category]
+            : undefined,
+        class: account.class
+          ? Object.keys(account.class).reduce(
+              (grouped, assetClass) => ({
+                ...grouped,
+                [assetClass]: { ...account.class?.[assetClass] },
+              }),
+              {},
+            )
+          : undefined,
+      },
+    };
+    return persistAccounts(nextAccounts);
+  }
+
+  async function removeAccountHideSince(id: string) {
+    if (!accounts.value[id]) {
+      return false;
+    }
+    const nextAccounts = {
+      ...accounts.value,
+      [id]: {
+        ...accounts.value[id],
+        hideSince: undefined,
+      },
+    };
+    return persistAccounts(nextAccounts);
+  }
+
+  async function deleteAccount(id: string) {
+    if (!accounts.value[id]) {
+      return false;
+    }
+    const nextAccounts = Object.keys(accounts.value).reduce(
+      (accumulated, accountId) => {
+        if (accountId !== id) {
+          accumulated[accountId] = accounts.value[accountId];
+        }
+        return accumulated;
+      },
+      {} as Record<string, Account>,
+    );
+    return persistAccounts(nextAccounts);
+  }
+
   return {
     accounts,
     loadAccounts,
@@ -210,5 +317,8 @@ export const useAccountsStore = defineStore("accounts", () => {
     accountsGroupByCategories,
     activeAccounts,
     getAccountFullName,
+    saveAccount,
+    removeAccountHideSince,
+    deleteAccount,
   };
 });

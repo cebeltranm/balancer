@@ -296,14 +296,6 @@ async function syncValues() {
               promises.push(syncAlphaVantage(config.key, symbols));
             }
             break;
-          case StockApiType.TwelveData:
-            if (
-              current.year === period.value.value.year &&
-              current.month === period.value.value.month
-            ) {
-              promises.push(syncTwelveData(config.key, symbols));
-            }
-            break;
           case StockApiType.MarketStack:
             if (
               current.year === period.value.value.year &&
@@ -426,39 +418,6 @@ async function syncAlphaVantage(key: string, accounts: Account[]) {
   }
 }
 
-// TwelveData https://twelvedata.com/
-async function syncTwelveData(key: string, accounts: Account[]) {
-  const current = getCurrentPeriod();
-  if (
-    period.value.value.month === current.month ||
-    period.value.value.year === current.year
-  ) {
-    for (const a of accounts) {
-      const url = `https://api.twelvedata.com/time_series?symbol=${a.symbol}&apikey=${key}&interval=1day&outputsize=1&format=JSON${a.exchange ? "&exchange=" + a.exchange : ""}`;
-      const res = await fetch(url);
-      if (res.status === 200) {
-        const data = await res.json();
-        if (
-          data &&
-          data.values &&
-          data.values.length > 0 &&
-          data.values[0].close &&
-          data.values[0].close !== "" &&
-          !Number.isNaN(Number(data.values[0].close))
-        ) {
-          const v = values.value.find((v) => v.id === a.id);
-          if (v) {
-            v.value = Number(data.values[0].close);
-            v.to_sync = true;
-            pendingToSave.value = true;
-          }
-        }
-      }
-      await new Promise((resolve) => setTimeout(resolve, 7500));
-    }
-  }
-}
-
 // Market Stack https://marketstack.com/
 async function syncMarketStack(key: string, accounts: Account[]) {
   const current = getCurrentPeriod();
@@ -522,48 +481,6 @@ async function syncRaidApi(key: string, host: string, accounts: Account[]) {
           }
         }
       });
-    }
-  }
-}
-
-// YAHOO Stock values
-async function _syncFromYahoo() {
-  const current = getCurrentPeriod();
-  if (
-    period.value.value.month === current.month &&
-    period.value.value.year === current.year
-  ) {
-    const accounts = accountsStore.activeAccounts(
-      getPeriodDate(period.value.type, period.value.value),
-    );
-    const yahoo_symbols = accounts
-      .filter((a) =>
-        [AccountGroupType.Investments, AccountGroupType.FixedAssets].includes(
-          accountsStore.getAccountGroupType(a.id),
-        ),
-      )
-      .filter((a) => a.yahoo_symbol);
-    if (yahoo_symbols.length > 0) {
-      const url = `http://query1.finance.yahoo.com/v7/finance/quote?fields=regularMarketPrice&symbols=${yahoo_symbols.map((a) => a.yahoo_symbol).join(",")}`;
-      // var proxyUrl = 'https://thingproxy.freeboard.io/fetch/'
-      // var proxyUrl = 'https://api.codetabs.com/v1/proxy/?quest=';
-      // var proxyUrl = 'https://api.codetabs.com/v1/tmp/?quest=';
-      // const res = await fetch(proxyUrl + encodeURIComponent(url))
-      const res = await fetch(url);
-      if (res.status === 200) {
-        const data = await res.json();
-        data.quoteResponse.result.forEach((s) => {
-          const a = yahoo_symbols.find((y) => y.yahoo_symbol === s.symbol);
-          if (a) {
-            const v = values.value.find((v) => v.id === a.id);
-            if (v) {
-              v.value = s.regularMarketPrice;
-              v.to_sync = true;
-              pendingToSave.value = true;
-            }
-          }
-        });
-      }
     }
   }
 }
