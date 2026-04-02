@@ -37,12 +37,12 @@ export const useValuesStore = defineStore("values", () => {
       const monthData = valuesForYear[currentPeriod.month];
       if (monthData) {
         const directRate = monthData[asset]?.[currency];
-        if (directRate && directRate > 0) {
+        if (directRate !== undefined) {
           return directRate;
         }
         const inverseRate = monthData[currency]?.[asset];
-        if (inverseRate && inverseRate > 0) {
-          return 1 / inverseRate;
+        if (inverseRate !== undefined) {
+          return inverseRate > 0 ? 1 / inverseRate : 0;
         }
       }
 

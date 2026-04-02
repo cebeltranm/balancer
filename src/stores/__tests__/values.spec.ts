@@ -36,6 +36,23 @@ describe("values store", () => {
     expect(store.getValue(date, "eur", "cop")).toBeCloseTo(1.1 * 4000);
   });
 
+  it("keeps explicit zero values instead of falling back to prior months", () => {
+    const store = useValuesStore();
+    store.values = {
+      2025: {
+        1: {
+          fund_a: { usd: 15 },
+        },
+        2: {
+          fund_a: { usd: 0 },
+        },
+      },
+    };
+
+    const date = new Date("2025-02-15T00:00:00.000Z");
+    expect(store.getValue(date, "fund_a", "usd")).toBe(0);
+  });
+
   it("loads values, saves month values, and joins values", async () => {
     vi.mocked(readJsonFile).mockResolvedValue({
       1: {
