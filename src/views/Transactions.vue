@@ -25,7 +25,10 @@
   </div>
   <div class="transacctions">
     <DataTable
+      v-model:selection="selectedTransactions"
       :value="list"
+      dataKey="selectionKey"
+      selectionMode="multiple"
       responsiveLayout="scroll"
       :resizableColumns="true"
       columnResizeMode="fit"
@@ -36,6 +39,7 @@
       scrollHeight="flex"
       scrollDirection="both"
     >
+      <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <Column header="Date" style="min-width: 70px; width: 80px">
         <template #body="slotProps">
           {{ $format.date(slotProps.data.date) }}
@@ -145,6 +149,7 @@ const transToEdit = ref();
 const transactionDialog = ref<InstanceType<
   typeof TransactionEditDialog
 > | null>(null);
+const selectedTransactions = ref<any[]>([]);
 
 watch(accounts, () =>
   router.push({ query: { accounts: [...accounts.value] } }),
@@ -164,8 +169,9 @@ const list = computed(() => {
         return ant.concat(
           t.values
             .filter((v: any) => accounts.value.includes(v.accountId))
-            .map((v: any) => ({
+            .map((v: any, index: number) => ({
               id: t.id,
+              selectionKey: `${t.id}-${v.accountId}-${index}`,
               date: t.date,
               description: t.description,
               tags: t.tags,
@@ -178,6 +184,10 @@ const list = computed(() => {
       }, [] as any[]);
   }
   return [];
+});
+
+watch(list, () => {
+  selectedTransactions.value = [];
 });
 
 const accountsBalance = computed(() => {
