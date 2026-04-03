@@ -4,6 +4,7 @@ import { readJsonFile } from "@/helpers/files";
 import * as idb from "../helpers/idb";
 import type { Transaction } from "@/types";
 import { useStorageStore } from "@/stores/storage";
+import { parseLocalDateString } from "@/helpers/date";
 
 type MontlyTransactionData = Transaction[];
 
@@ -55,8 +56,8 @@ export const useTransactionsStore = defineStore("transactions", () => {
       const filtered = pendingTransactions
         .filter(
           (t) =>
-            new Date(`${t.date}T00:00:00.00`).getFullYear() === year &&
-            new Date(`${t.date}T00:00:00.00`).getMonth() + 1 === month,
+            parseLocalDateString(t.date).getFullYear() === year &&
+            parseLocalDateString(t.date).getMonth() + 1 === month,
         )
         .map((t) => ({ ...t, to_sync: true }));
       if (values) {
@@ -85,9 +86,10 @@ export const useTransactionsStore = defineStore("transactions", () => {
         }, {}),
     );
     await storageStore.updatePendingToSync();
+    const transactionDate = parseLocalDateString(transaction.date);
     await loadTransactionsForMonth(
-      new Date(`${transaction.date}T00:00:00.00`).getFullYear(),
-      new Date(`${transaction.date}T00:00:00.00`).getMonth() + 1,
+      transactionDate.getFullYear(),
+      transactionDate.getMonth() + 1,
       true,
     );
   }

@@ -244,6 +244,15 @@ import { toRaw } from "vue";
 import { useAccountsStore } from "@/stores/accounts";
 import { useTransactionsStore } from "@/stores/transactions";
 import { useValuesStore } from "@/stores/values";
+import {
+  formatLocalDate,
+  isFutureLocalDate,
+  parseLocalDateString,
+} from "@/helpers/date";
+import {
+  buildAccountOptions,
+  collectRecentTransactions,
+} from "@/helpers/transactionForms";
 
 const accountsStore = useAccountsStore();
 const trxStore = useTransactionsStore();
@@ -295,7 +304,9 @@ const state = ref<EditorState>({
 });
 
 const zodSchema = z.object({
-  date: z.date().max(new Date(), { message: "Can not add future transaction" }),
+  date: z.date().refine((date) => !isFutureLocalDate(date), {
+    message: "Can not add future transaction",
+  }),
   description: z.string().min(5),
   tags: z.boolean().or(z.string().array().optional()),
   values: z
@@ -372,11 +383,7 @@ defineExpose({
 });
 
 const accountList = computed(() => {
-  return accountsStore.activeAccounts(state.value.date).map((a) => ({
-    id: a.id,
-    name: accountsStore.getAccountFullName(a.id),
-    currency: a.currency,
-  }));
+  return buildAccountOptions(accountsStore, state.value.date);
 });
 
 function searchAccounts(event: any, _index: number) {
@@ -397,31 +404,17 @@ function searchAccounts(event: any, _index: number) {
 }
 
 function searchTransaction(event: any) {
-  const newFiltered: any[] = [];
-  let year = new Date().getFullYear();
-  let month = new Date().getMonth() + 1;
-  let steps = 0;
-  const query = event.query.toLowerCase();
-
   setTimeout(() => {
-    while (newFiltered.length < 5 && steps < 6) {
-      if (trxStore.transactions[year]?.[month]) {
-        newFiltered.push(
-          ...trxStore.transactions[year][month]
-            .filter((t: any) => t.description.toLowerCase().indexOf(query) >= 0)
-            .map((t: any) => ({
-              id: t.id,
-              name: t.description,
-              tags: t.tags,
-              values: t.values,
-            })),
-        );
-      }
-      steps++;
-      year = month === 1 ? year - 1 : year;
-      month = month === 1 ? 12 : month - 1;
-    }
-    suggestedTransactions.value = newFiltered;
+    suggestedTransactions.value = collectRecentTransactions(
+      trxStore.transactions,
+      event.query,
+      (transaction) => ({
+        id: transaction.id,
+        name: transaction.description,
+        tags: transaction.tags,
+        values: transaction.values,
+      }),
+    );
   }, 50);
 }
 
@@ -531,7 +524,7 @@ async function handleSubmit(_event: any) {
   const trans = {
     ...props.transaction,
     id: Date.now(),
-    date: state.value.date.toISOString().split("T")[0],
+    date: formatLocalDate(state.value.date),
     description: state.value.description,
     tags:
       state.value.tags && state.value.tags.length > 0
@@ -562,7 +555,7 @@ async function handleSubmit(_event: any) {
 
 function updatePropTransaction() {
   if (props.transaction) {
-    state.value.date = new Date(`${props.transaction.date}T00:00:00.00`);
+    state.value.date = parseLocalDateString(props.transaction.date);
     state.value.description = props.transaction.description;
     state.value.tags = props.transaction.tags || [];
     state.value.values = props.transaction.values.map((v) => ({

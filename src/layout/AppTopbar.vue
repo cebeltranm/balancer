@@ -47,12 +47,12 @@
       </Button>
     </template>
   </Toolbar>
-  <TransactionEditDialog ref="transactionDialog" />
+  <TransactionTypeDialog ref="transactionDialog" />
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, inject, type Ref } from "vue";
-import TransactionEditDialog from "@/components/TransactionEditDialog.vue";
+import TransactionTypeDialog from "@/components/TransactionTypeDialog.vue";
 import { Currency } from "@/types";
 import { CURRENCY_ICONS } from "@/helpers/options";
 import { useStorageStore } from "@/stores/storage";
@@ -61,7 +61,7 @@ const storage = useStorageStore();
 
 const emit = defineEmits(["menu-toggle", "topbar-menu-toggle"]);
 const transactionDialog = ref<InstanceType<
-  typeof TransactionEditDialog
+  typeof TransactionTypeDialog
 > | null>(null);
 
 const CURRENCY = inject<Ref<Currency>>("CURRENCY", ref(Currency.COP));

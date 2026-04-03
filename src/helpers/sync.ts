@@ -1,12 +1,13 @@
 import * as idb from "./idb";
 import * as files from "./files";
 import { toRaw } from "vue";
+import { parseLocalDateString } from "./date";
 
 export async function syncTransactions() {
   const transactions = await idb.getAllTransactions();
   if (transactions.length > 0) {
     const byMonth = transactions.reduce((ant, v) => {
-      const date = new Date(`${v.date}T00:00:00.00`);
+      const date = parseLocalDateString(v.date);
       if (!ant[date.getFullYear()]) {
         ant[date.getFullYear()] = {};
       }

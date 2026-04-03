@@ -1,4 +1,5 @@
 import { Currency } from "./types";
+import { parseLocalDateString } from "./helpers/date";
 
 export default {
   number: (value: any, decimals: number = 10) => {
@@ -34,7 +35,7 @@ export default {
   date: (value: any) => {
     let date = value;
     if (typeof value === "string") {
-      date = new Date(`${value}T00:00:00.00`);
+      date = parseLocalDateString(value);
     }
     return new Intl.DateTimeFormat("en-US").format(date);
   },
