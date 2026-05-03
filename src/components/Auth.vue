@@ -301,14 +301,22 @@ async function syncCachedFiles() {
 }
 
 async function loadBasicFiles() {
-  accountsStore.loadAccounts(false);
-  configStore.loadConfig(false);
+  await Promise.all([
+    accountsStore.loadAccounts(false),
+    configStore.loadConfig(false),
+  ]);
+
   const date = new Date();
-  [date.getFullYear(), date.getFullYear() - 1].forEach((year) => {
-    valuesStore.loadValuesForYear(year, false);
-    balanceStore.loadBalanceForYear(year, false);
-    budgetStore.loadBudgetForYear(year, false);
-  });
+  await Promise.all(
+    [date.getFullYear(), date.getFullYear() - 1].flatMap((year) => [
+      valuesStore.loadValuesForYear(year, false),
+      balanceStore.loadBalanceForYear(year, false),
+      budgetStore.loadBudgetForYear(year, false),
+    ]),
+  );
+
+  await valuesStore.ensureCurrentMonthValues(true);
+  await balanceStore.ensureCurrentMonthBalance(true);
 
   for (let i = 0; i < 3; i++) {
     transactionsStore.loadTransactionsForMonth(

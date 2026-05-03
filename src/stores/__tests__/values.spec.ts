@@ -12,6 +12,15 @@ vi.mock("@/helpers/idb", () => ({
   saveJsonFile: vi.fn(),
 }));
 
+vi.mock("@/helpers/options", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/helpers/options")>();
+
+  return {
+    ...actual,
+    getCurrentPeriod: vi.fn(() => ({ year: 2026, month: 5, quarter: 2 })),
+  };
+});
+
 describe("values store", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -86,5 +95,66 @@ describe("values store", () => {
     );
 
     expect(total).toBe(9000);
+  });
+
+  it("copies previous month values when the current month does not exist", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      if (fileName === "values_2026.json") {
+        return {
+          4: {
+            usd: { cop: 4000 },
+            btc: { usd: 60000 },
+          },
+        };
+      }
+
+      return false;
+    });
+
+    const store = useValuesStore();
+    await store.ensureCurrentMonthValues(true);
+
+    expect(store.values[2026][5]).toEqual({
+      usd: { cop: 4000 },
+      btc: { usd: 60000 },
+    });
+    expect(store.values[2026][5]).not.toBe(store.values[2026][4]);
+    expect(idb.saveJsonFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "values_2026.json",
+        data: expect.objectContaining({
+          5: {
+            usd: { cop: 4000 },
+            btc: { usd: 60000 },
+          },
+        }),
+        to_sync: true,
+      }),
+    );
+  });
+
+  it("keeps current month values when they already exist", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      if (fileName === "values_2026.json") {
+        return {
+          4: {
+            usd: { cop: 4000 },
+          },
+          5: {
+            usd: { cop: 4100 },
+          },
+        };
+      }
+
+      return false;
+    });
+
+    const store = useValuesStore();
+    await store.ensureCurrentMonthValues(true);
+
+    expect(store.values[2026][5]).toEqual({
+      usd: { cop: 4100 },
+    });
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
   });
 });

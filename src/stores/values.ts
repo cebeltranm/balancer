@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref, type Ref, toRaw } from "vue";
 import { readJsonFile } from "@/helpers/files";
 import { Currency, Period, type PeriodParams } from "@/types";
-import { increasePeriod } from "@/helpers/options";
+import { getCurrentPeriod, increasePeriod } from "@/helpers/options";
 import * as idb from "@/helpers/idb";
 
 type valueData = Record<string, Record<string, number>>;
@@ -10,6 +10,13 @@ type YearlyValueData = Record<number, valueData>;
 
 export const useValuesStore = defineStore("values", () => {
   const values: Ref<Record<number, YearlyValueData>> = ref({});
+
+  function copyValueData(value: valueData = {}): valueData {
+    return Object.keys(value).reduce((copy, asset) => {
+      copy[asset] = { ...value[asset] };
+      return copy;
+    }, {} as valueData);
+  }
 
   function getValue(
     date: Date,
@@ -103,5 +110,42 @@ export const useValuesStore = defineStore("values", () => {
     return values.value[year];
   }
 
-  return { values, loadValuesForYear, getValue, setValuesForMonth, joinValues };
+  async function ensureCurrentMonthValues(save: boolean): Promise<void> {
+    const currentPeriod = getCurrentPeriod();
+    const currentYearData =
+      (await loadValuesForYear(currentPeriod.year, false)) || {};
+
+    if (currentYearData[currentPeriod.month]) {
+      return;
+    }
+
+    const previousPeriod = increasePeriod(Period.Month, currentPeriod, -1);
+    const previousYearData =
+      previousPeriod.year === currentPeriod.year
+        ? currentYearData
+        : (await loadValuesForYear(previousPeriod.year, false)) || {};
+
+    currentYearData[currentPeriod.month] = copyValueData(
+      previousYearData[previousPeriod.month],
+    );
+    values.value[currentPeriod.year] = currentYearData;
+
+    if (save) {
+      idb.saveJsonFile({
+        id: `values_${currentPeriod.year}.json`,
+        data: toRaw(currentYearData),
+        date_cached: Date.now(),
+        to_sync: true,
+      });
+    }
+  }
+
+  return {
+    values,
+    loadValuesForYear,
+    ensureCurrentMonthValues,
+    getValue,
+    setValuesForMonth,
+    joinValues,
+  };
 });

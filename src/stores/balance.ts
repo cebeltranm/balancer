@@ -127,6 +127,27 @@ export const useBalanceStore = defineStore("balance", () => {
     return yearlyData;
   }
 
+  function hasBalanceForMonth(
+    year: number,
+    month: number,
+    yearlyData: YearlyBalanceData | null = balance.value[year] || null,
+  ): boolean {
+    return yearlyData
+      ? Object.values(yearlyData).some((accountBalance) =>
+          Boolean(accountBalance?.[month]),
+        )
+      : false;
+  }
+
+  async function ensureCurrentMonthBalance(save: boolean): Promise<void> {
+    const { year, month } = getCurrentPeriod();
+    const yearlyData = await loadBalanceForYear(year, false);
+
+    if (!hasBalanceForMonth(year, month, yearlyData)) {
+      await recalculateBalance(year, month, save);
+    }
+  }
+
   async function recalculateBalance(
     year: number,
     month: number,
@@ -367,6 +388,7 @@ export const useBalanceStore = defineStore("balance", () => {
     balance,
     getBalanceGroupedByPeriods,
     loadBalanceForYear,
+    ensureCurrentMonthBalance,
     recalculateBalance,
   };
 });

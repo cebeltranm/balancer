@@ -1,13 +1,33 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useAccountsStore } from "@/stores/accounts";
 import { useBalanceStore } from "@/stores/balance";
+import { readJsonFile } from "@/helpers/files";
+import * as idb from "@/helpers/idb";
 import {
   AccountGroupType,
   AccountType,
   Period,
   type BalanceEntry,
 } from "@/types";
+
+vi.mock("@/helpers/files", () => ({
+  readJsonFile: vi.fn(),
+}));
+
+vi.mock("@/helpers/idb", () => ({
+  getAllTransactions: vi.fn(),
+  saveJsonFile: vi.fn(),
+}));
+
+vi.mock("@/helpers/options", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/helpers/options")>();
+
+  return {
+    ...actual,
+    getCurrentPeriod: vi.fn(() => ({ year: 2026, month: 5, quarter: 2 })),
+  };
+});
 
 function entry(partial: Partial<BalanceEntry>): BalanceEntry {
   return {
@@ -25,6 +45,9 @@ function entry(partial: Partial<BalanceEntry>): BalanceEntry {
 describe("balance store", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    vi.mocked(readJsonFile).mockReset();
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([]);
+    vi.mocked(idb.saveJsonFile).mockReset();
   });
 
   it("sums expense values and keeps latest cash value for quarter grouping", () => {
@@ -139,5 +162,60 @@ describe("balance store", () => {
     expect(grouped.etf_spy[0].in_local).toBe(3);
     expect(grouped.etf_spy[0].out_local).toBe(2);
     expect(grouped.etf_spy[0].expenses).toBeCloseTo(0.8);
+  });
+
+  it("recalculates the current month when its balance does not exist", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      switch (fileName) {
+        case "accounts.json":
+          return {
+            cash_wallet: {
+              name: "Wallet",
+              type: AccountType.Cash,
+              currency: "usd",
+              category: ["Cash"],
+            },
+          };
+        case "balance_2026.json":
+        case "values_2026.json":
+        case "transactions_2026_5.json":
+          return false;
+        default:
+          return false;
+      }
+    });
+
+    const balanceStore = useBalanceStore();
+    await balanceStore.ensureCurrentMonthBalance(true);
+
+    expect(balanceStore.balance[2026].cash_wallet[5]).toEqual(
+      entry({ value: 0 }),
+    );
+    expect(idb.saveJsonFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "balance_2026.json",
+        to_sync: true,
+      }),
+    );
+  });
+
+  it("keeps the current month balance when it already exists", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      if (fileName === "balance_2026.json") {
+        return {
+          cash_wallet: {
+            5: entry({ value: 125 }),
+          },
+        };
+      }
+
+      return false;
+    });
+
+    const balanceStore = useBalanceStore();
+    await balanceStore.ensureCurrentMonthBalance(true);
+
+    expect(balanceStore.balance[2026].cash_wallet[5].value).toBe(125);
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
   });
 });
