@@ -36,6 +36,20 @@ describe("config store", () => {
     expect(store.invCompositionByRegion.Europe.value).toBe(20);
   });
 
+  it("applies default data for missing additive config structures", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({});
+
+    const store = useConfigStore();
+    await store.loadConfig(true);
+
+    expect(store.config).toEqual({
+      stock_api: {},
+      inv_composition: {},
+    });
+    expect(store.invCompositionByAssetClass).toEqual({});
+    expect(store.invCompositionByRegion).toEqual({});
+  });
+
   it("saves config and updates local state", async () => {
     vi.mocked(writeJsonFile).mockResolvedValue(true);
 

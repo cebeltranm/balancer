@@ -4,9 +4,13 @@ import { readJsonFile } from "@/helpers/files";
 import { Currency, Period, type PeriodParams } from "@/types";
 import { getCurrentPeriod, increasePeriod } from "@/helpers/options";
 import * as idb from "@/helpers/idb";
+import {
+  normalizeValueData,
+  type ValueData,
+  type YearlyValueData,
+} from "@/helpers/persistedShapes";
 
-type valueData = Record<string, Record<string, number>>;
-type YearlyValueData = Record<number, valueData>;
+type valueData = ValueData;
 
 export const useValuesStore = defineStore("values", () => {
   const values: Ref<Record<number, YearlyValueData>> = ref({});
@@ -106,7 +110,9 @@ export const useValuesStore = defineStore("values", () => {
     if (!reload && values.value[year]) {
       return values.value[year];
     }
-    values.value[year] = await readJsonFile(`values_${year}.json`, !reload);
+    values.value[year] = normalizeValueData(
+      await readJsonFile(`values_${year}.json`, !reload),
+    );
     return values.value[year];
   }
 

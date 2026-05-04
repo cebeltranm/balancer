@@ -63,6 +63,7 @@
 - INFERRED: Missing exchange-rate impact in expenses/investments is inferred from conversion code paths.
 - UNCLEAR: Runtime service-worker behavior is weakly evidenced because generated service-worker output is not inspected or specified.
 - UNCLEAR: WebAuthn failure handling is weakly evidenced because no tests cover `navigator.credentials` failures.
+- INFERRED: Versionless JSON compatibility is only partially evidenced: current tests cover simple current shapes, but do not comprehensively cover additive defaults, ignored deprecated structures, or prohibiting file renames/top-level shape replacements.
 
 ## Spec Quality Review
 
@@ -119,7 +120,7 @@
 - CONFIRMED: `specs/features/transaction-dialogs.md` for transaction type-specific dialog components and expected flow, if those components are still intended to be active.
 - CONFIRMED: `specs/features/selectors-and-shared-components.md` for account selector, period selector, comments dialog, and account value cards.
 - CONFIRMED: `specs/validation-and-errors.md` consolidating visible validation rules and user-facing error expectations.
-- CONFIRMED: `specs/migrations.md` defining schema versioning, legacy account type handling, and account deletion/reference policy.
+- CONFIRMED: `specs/compatibility.md` defining the versionless JSON compatibility policy, additive default requirements, ignored deprecated structures, prohibited renames, legacy account type handling, and account deletion/reference policy.
 - CONFIRMED: `specs/sync-conflicts.md` defining conflict resolution for multi-device edits.
 - CONFIRMED: `specs/security.md` defining local credential, provider token, and PWA cache security expectations.
 - CONFIRMED: `specs/testing-strategy.md` for rendered component, integration, and service-worker coverage beyond current unit tests.

@@ -5,13 +5,25 @@
 - CONFIRMED: Cached file records in IndexedDB have at least `{ id, data, date_cached, to_sync }`.
 - CONFIRMED: File names are significant: stores construct names directly and `Auth.vue` parses file-name prefixes to refresh store state.
 - UNCLEAR: No formal runtime schema validation exists for JSON files.
-- UNCLEAR: No file-level schema version, migrations table, or compatibility manifest exists.
+- CONFIRMED: Persisted JSON files use a versionless compatibility policy. Existing file names and top-level structures are compatibility contracts and must not be renamed, wrapped, or replaced.
+- CONFIRMED: New persisted structures must be additive and must have default data when omitted from older files.
+- CONFIRMED: Removed or deprecated persisted structures must be ignored when present in older files.
+- INFERRED: Current code partially satisfies this policy because it reads and writes simple versionless shapes directly; default handling is implemented only in some stores and compatibility tests are incomplete.
 
 ## Data Model Acceptance Criteria
 - CONFIRMED: GIVEN any persisted domain file is read, WHEN the file exists and contains valid JSON in the expected shape, THEN the owning store can load it without mutating unrelated files.
 - CONFIRMED: GIVEN a domain file is staged in IndexedDB for upload, WHEN sync counters are recalculated, THEN its cached record has `to_sync: true` until upload succeeds.
 - CONFIRMED: GIVEN a domain file is read remotely through `readJsonFile()`, WHEN caching is enabled, THEN IndexedDB stores the file with `to_sync: false`.
+- CONFIRMED: GIVEN an existing persisted JSON file name or top-level structure, WHEN future changes are designed, THEN the existing name and structure must remain accepted and must not be renamed, wrapped, or replaced.
+- CONFIRMED: GIVEN an older file omits a newly added persisted structure, WHEN the owning store reads it, THEN the store must apply a documented default value and continue loading the file.
+- CONFIRMED: GIVEN an older file still contains a removed or deprecated structure, WHEN the owning store reads it, THEN the store must ignore that structure without failing the load.
 - UNCLEAR: The product has not defined whether invalid JSON should be repaired, ignored, rejected with an error, or backed up before replacement.
+
+## Versionless Compatibility Test Expectations
+- CONFIRMED: Store/helper tests must keep coverage for current file names and top-level structures: `accounts.json`, `config.json`, `transactions_<year>_<month>.json`, `values_<year>.json`, `budget_<year>.json`, and `balance_<year>.json`.
+- CONFIRMED: Tests for any newly added persisted structure must cover loading older files where that structure is absent and assert the documented default data.
+- CONFIRMED: Tests for removed or deprecated persisted structures must cover files that still contain those structures and assert they are ignored.
+- CONFIRMED: Tests must reject or flag changes that rename existing persisted files or replace their top-level structures.
 
 ## `accounts.json`
 - CONFIRMED: File name pattern is exactly `accounts.json`.
@@ -95,6 +107,6 @@
 - UNCLEAR: The product has not specified whether deleting or renaming an account should cascade, be blocked, create an archive state, or leave historical references intact.
 
 ## Product Questions
-- UNCLEAR: Should the app introduce explicit schema versions and migrations for JSON files?
+- CONFIRMED: The app must not introduce schema versions for the current persisted JSON files; compatibility is maintained by preserving names and top-level structures, adding defaulted structures only, and ignoring removed structures.
 - UNCLEAR: What should happen when a stored JSON file is missing required fields or contains unknown enum values?
 - UNCLEAR: Should derived `balance_<year>.json` be treated as disposable cache or user-visible durable history?

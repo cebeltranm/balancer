@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, type Ref } from "vue";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
+import { normalizeConfig } from "@/helpers/persistedShapes";
 
 function groupComposition(composition: any) {
   const data = Object.keys(composition).reduce((data: any, key) => {
@@ -28,15 +29,22 @@ export const useConfigStore = defineStore("config", () => {
   const config: Ref<any> = ref({});
 
   const invCompositionByAssetClass = computed(() => {
-    return (
+    if (
       config.value &&
       config.value.inv_composition &&
-      groupComposition(config.value.inv_composition)
-    );
+      Object.keys(config.value.inv_composition).length > 0
+    ) {
+      return groupComposition(config.value.inv_composition);
+    }
+    return {};
   });
 
   const invCompositionByRegion = computed(() => {
-    if (config.value && config.value.inv_composition) {
+    if (
+      config.value &&
+      config.value.inv_composition &&
+      Object.keys(config.value.inv_composition).length > 0
+    ) {
       const data: any = {};
       Object.keys(config.value.inv_composition).forEach((asset: any) => {
         Object.keys(config.value.inv_composition[asset]).forEach(
@@ -71,7 +79,7 @@ export const useConfigStore = defineStore("config", () => {
     if (!reload && Object.keys(config.value).length > 0) {
       return config.value;
     }
-    config.value = await readJsonFile("config.json", !reload);
+    config.value = normalizeConfig(await readJsonFile("config.json", !reload));
     return config.value;
   }
 

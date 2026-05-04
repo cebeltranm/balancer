@@ -13,6 +13,8 @@
 - CONFIRMED: Direct writes through `writeJsonFile()` upload to the provider and cache the successful write with `to_sync: false`.
 - CONFIRMED: Store writes for transactions, values, budget, and balance are usually staged into IndexedDB with `to_sync: true`; accounts and config write directly through `writeJsonFile()`.
 - CONFIRMED: IndexedDB database name is `balancer`, version `1`, with object stores `transactions` and `files`, both keyed by `id`.
+- CONFIRMED: Domain JSON files are versionless. Compatibility is maintained by preserving existing file names and top-level structures, defaulting additive structures when absent, and ignoring removed or deprecated structures when present.
+- INFERRED: Current code partially satisfies the versionless compatibility policy because stores already use fixed file names and raw shapes, but only some defaults and compatibility expectations are covered by tests.
 
 ## Offline / Cache / Sync Architecture
 - CONFIRMED: Pending transactions are stored in the IndexedDB `transactions` store and merged into monthly `transactions_<year>_<month>.json` files by `syncTransactions()`.
@@ -44,13 +46,14 @@
 - CONFIRMED: `balance_<year>.json` is calculated and persisted; stale balances are possible if source files change without recalculation.
 - INFERRED: The app assumes account ids are stable because transactions, budget, values, and balance files reference account ids.
 - INFERRED: The app assumes monthly transaction ids are unique enough to merge by `id`; new transaction ids are generated with `Date.now()`.
-- UNCLEAR: There is no explicit schema version or migration mechanism for JSON files.
+- CONFIRMED: There is intentionally no schema version or migration envelope for domain JSON files; renaming existing files or replacing existing top-level structures is prohibited.
 
 ## Architecture Acceptance Criteria
 - CONFIRMED: GIVEN the app starts, WHEN `src/main.ts` runs, THEN Vue Router, Pinia, PrimeVue, Google Charts, and the global formatter are installed before mounting.
 - CONFIRMED: GIVEN navigation targets a protected route while unauthenticated, WHEN the router emits `CHECK_AUTHENTICATE`, THEN `App.vue` can open the authentication dialog.
 - CONFIRMED: GIVEN forms report pending changes, WHEN navigation is attempted, THEN router navigation is blocked by the pending-change guard.
 - CONFIRMED: GIVEN cached file writes are marked `to_sync`, WHEN storage sync runs online, THEN cached files are uploaded through the selected provider and successful uploads clear pending state.
+- CONFIRMED: GIVEN a future storage change is proposed, WHEN it affects an existing persisted JSON file, THEN it must preserve the existing file name and top-level structure, provide defaults for any additive structures, and ignore removed structures.
 - UNCLEAR: The architecture does not specify a conflict-resolution boundary for multi-device edits.
 
 ## Cross-Spec Consistency Notes

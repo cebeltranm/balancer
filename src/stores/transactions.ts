@@ -5,6 +5,7 @@ import * as idb from "../helpers/idb";
 import type { Transaction } from "@/types";
 import { useStorageStore } from "@/stores/storage";
 import { parseLocalDateString } from "@/helpers/date";
+import { normalizeTransaction } from "@/helpers/persistedShapes";
 
 type MontlyTransactionData = Transaction[];
 
@@ -70,6 +71,7 @@ export const useTransactionsStore = defineStore("transactions", () => {
       }
     }
     if (values) {
+      values = values.map(normalizeTransaction);
       values.sort((a, b) => b.date.localeCompare(a.date));
       transactions.value[year] = transactions.value[year] || {};
       transactions.value[year][month] = values;

@@ -75,6 +75,7 @@ describe("values store", () => {
       usd: { cop: 4000 },
     } as any);
 
+    expect(readJsonFile).toHaveBeenCalledWith("values_2025.json", false);
     expect(idb.saveJsonFile).toHaveBeenCalledTimes(1);
 
     store.values = {
@@ -95,6 +96,27 @@ describe("values store", () => {
     );
 
     expect(total).toBe(9000);
+  });
+
+  it("ignores deprecated value structures when loading versionless files", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({
+      1: {
+        usd: { cop: 3900, legacySource: "old-api" },
+        legacyAsset: { usd: "invalid" },
+      },
+      old_metadata: {
+        provider: "legacy",
+      },
+    });
+
+    const store = useValuesStore();
+    const data = await store.loadValuesForYear(2025, true);
+
+    expect(data).toEqual({
+      1: {
+        usd: { cop: 3900 },
+      },
+    });
   });
 
   it("copies previous month values when the current month does not exist", async () => {

@@ -35,6 +35,27 @@ describe("accounts store", () => {
     expect(loaded.cash_1.activeFrom).toBeInstanceOf(Date);
   });
 
+  it("ignores deprecated account structures when loading versionless files", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({
+      cash_1: {
+        name: "Wallet",
+        type: AccountType.Cash,
+        currency: "usd",
+        legacyBalance: 100,
+      },
+    });
+
+    const store = useAccountsStore();
+    const loaded = await store.loadAccounts(true);
+
+    expect(loaded.cash_1).toEqual({
+      id: "cash_1",
+      name: "Wallet",
+      type: AccountType.Cash,
+      currency: "usd",
+    });
+  });
+
   it("returns proper group/type helpers and active accounts", () => {
     const store = useAccountsStore();
     store.accounts = {

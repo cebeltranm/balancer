@@ -164,6 +164,36 @@ describe("balance store", () => {
     expect(grouped.etf_spy[0].expenses).toBeCloseTo(0.8);
   });
 
+  it("defaults missing balance fields and ignores deprecated structures", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      if (fileName === "balance_2025.json") {
+        return {
+          cash_wallet: {
+            1: {
+              value: 125,
+              legacyValue: 100,
+            },
+          },
+          legacySummary: {
+            value: 999,
+          },
+        };
+      }
+
+      return false;
+    });
+
+    const balanceStore = useBalanceStore();
+    const data = await balanceStore.loadBalanceForYear(2025, true);
+
+    expect(readJsonFile).toHaveBeenCalledWith("balance_2025.json", false);
+    expect(data).toEqual({
+      cash_wallet: {
+        1: entry({ value: 125 }),
+      },
+    });
+  });
+
   it("recalculates the current month when its balance does not exist", async () => {
     vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
       switch (fileName) {

@@ -16,21 +16,13 @@ import { groupDataByPeriods } from "@/helpers/groupData";
 import * as idb from "../helpers/idb";
 import { toRaw } from "vue";
 import { getCurrentPeriod } from "@/helpers/options";
+import {
+  createEmptyBalanceEntry,
+  normalizeYearlyBalanceData,
+  type YearlyBalanceData,
+} from "@/helpers/persistedShapes";
 
-type YearlyBalanceData = Record<string, Record<number, BalanceEntry>>;
 type GroupedBalanceData = Record<string, BalanceEntry[]>;
-
-function createEmptyBalanceEntry(): BalanceEntry {
-  return {
-    value: 0,
-    expenses: 0,
-    in: 0,
-    out: 0,
-    in_local: 0,
-    out_local: 0,
-    units: 0,
-  };
-}
 
 export const useBalanceStore = defineStore("balance", () => {
   const balance: Ref<Record<number, YearlyBalanceData>> = ref({});
@@ -119,7 +111,9 @@ export const useBalanceStore = defineStore("balance", () => {
       return balance.value[year];
     }
 
-    const yearlyData = await readJsonFile(`balance_${year}.json`, !reload);
+    const yearlyData = normalizeYearlyBalanceData(
+      await readJsonFile(`balance_${year}.json`, !reload),
+    );
     if (yearlyData) {
       balance.value[year] = yearlyData;
     }

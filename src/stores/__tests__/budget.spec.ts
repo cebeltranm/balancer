@@ -41,6 +41,18 @@ describe("budget store", () => {
     expect(store.comments[2025].food[1]).toEqual(["note"]);
   });
 
+  it("uses default data for missing additive budget structures", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({
+      values: { food: { 1: 100 } },
+    });
+
+    const store = useBudgetStore();
+    const data = await store.loadBudgetForYear(2025, true);
+
+    expect(data).toEqual({ food: { 1: 100 } });
+    expect(store.comments[2025]).toEqual({});
+  });
+
   it("groups budget and comments by period", () => {
     const accountsStore = useAccountsStore();
     const budgetStore = useBudgetStore();
@@ -81,6 +93,12 @@ describe("budget store", () => {
     );
 
     expect(idb.saveJsonFile).toHaveBeenCalledTimes(1);
+    expect(idb.saveJsonFile).toHaveBeenCalledWith({
+      id: "budget_2025.json",
+      data: { values: { food: { 1: 90 } }, comments: { food: { 1: ["ok"] } } },
+      date_cached: expect.any(Number),
+      to_sync: true,
+    });
     expect(updatePendingToSync).toHaveBeenCalledTimes(1);
     expect(store.budget[2025].food[1]).toBe(90);
   });

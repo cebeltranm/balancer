@@ -55,8 +55,43 @@ describe("transactions store", () => {
     const store = useTransactionsStore();
     const data = await store.loadTransactionsForMonth(2025, 2, true);
 
+    expect(readJsonFile).toHaveBeenCalledWith(
+      "transactions_2025_2.json",
+      false,
+    );
     expect(data.map((t: any) => t.id)).toEqual([3, 1, 2]);
     expect(data.find((t: any) => t.id === 1)?.to_sync).toBe(true);
+  });
+
+  it("ignores deprecated transaction structures when loading versionless files", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([
+      {
+        id: 1,
+        date: "2025-02-15",
+        description: "A",
+        values: [
+          {
+            accountId: "cash",
+            value: 10,
+            legacyRate: 3900,
+          },
+        ],
+        legacyCategory: "old",
+      },
+    ]);
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([] as any);
+
+    const store = useTransactionsStore();
+    const data = await store.loadTransactionsForMonth(2025, 2, true);
+
+    expect(data).toEqual([
+      {
+        id: 1,
+        date: "2025-02-15",
+        description: "A",
+        values: [{ accountId: "cash", value: 10 }],
+      },
+    ]);
   });
 
   it("saves transaction without to_sync and triggers pending update", async () => {

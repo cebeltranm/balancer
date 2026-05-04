@@ -3,6 +3,10 @@ import { computed, ref, type Ref } from "vue";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import type { Account } from "@/types";
 import { AccountGroupType, AccountType, Period } from "@/types";
+import {
+  normalizeAccount,
+  type StoredAccount,
+} from "@/helpers/persistedShapes";
 
 function getCategoryEntry(group: any, category: string) {
   if (!group[category]) {
@@ -38,11 +42,6 @@ export const ACCOUNT_GROUP_TYPES: Record<AccountGroupType, AccountType[]> = {
 
 export const useAccountsStore = defineStore("accounts", () => {
   const accounts: Ref<Record<string, Account>> = ref({});
-
-  type StoredAccount = Omit<Account, "id" | "activeFrom" | "hideSince"> & {
-    activeFrom?: string;
-    hideSince?: string;
-  };
 
   function serializeAccount(account: Account): StoredAccount {
     const { id: _id, ...rest } = account;
@@ -235,20 +234,10 @@ export const useAccountsStore = defineStore("accounts", () => {
       return accounts.value;
     }
     const lAccounts = await readJsonFile("accounts.json");
-    Object.keys(lAccounts).forEach((id: string) => {
-      lAccounts[id].id = id;
-    });
     const nAccounts = Object.keys(lAccounts)
       .filter((id) => id != "default")
       .reduce((ant: any, id: string) => {
-        ant[id] = {
-          ...lAccounts[id],
-          activeFrom:
-            lAccounts[id].activeFrom && new Date(lAccounts[id].activeFrom),
-          hideSince:
-            lAccounts[id].hideSince && new Date(lAccounts[id].hideSince),
-          id,
-        };
+        ant[id] = normalizeAccount(id, lAccounts[id]);
         return ant;
       }, {});
     accounts.value = nAccounts;
