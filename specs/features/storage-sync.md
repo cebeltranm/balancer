@@ -11,6 +11,7 @@
 - CONFIRMED: Pending transaction changes are stored in IndexedDB `transactions`; pending JSON file changes are stored in IndexedDB `files` with `to_sync: true`.
 - CONFIRMED: Sync merges pending transactions by year/month, stages monthly transaction files, removes transaction queue entries, recalculates affected balances, and then uploads files marked `to_sync`.
 - CONFIRMED: Startup compares remote file modification timestamps with cached timestamps and reloads stale cached files by file prefix.
+- CONFIRMED: Code satisfies the RT-001 conflict policy: queued transaction rows merge by `id`, and whole-file conflicts use last writer wins with a visible warning.
 
 ## User Flows
 - CONFIRMED: App starts and refreshes store info.
@@ -40,7 +41,8 @@
 - CONFIRMED: Stored local HTTP provider selection is ignored outside `localhost:3000`.
 - CONFIRMED: Google Drive is listed as planned/unavailable and cannot be selected.
 - CONFIRMED: Dropbox expired access tokens can refresh from a refresh token.
-- INFERRED: Whole-file sync can overwrite remote changes when cached file writes race with another device.
+- CONFIRMED: Whole-file conflicts use last writer wins with a visible warning: if a cached `to_sync` file is uploaded after the remote file changed elsewhere, the local cached version still wins, and the user must be warned that the remote file was overwritten.
+- CONFIRMED: Queued transaction rows continue to use merge-by-id conflict handling until a richer conflict UI exists.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN queued IndexedDB transactions or files exist, WHEN pending counters are updated, THEN `pendingTransactions` and `pendingFiles` match the queue sizes.
@@ -48,7 +50,9 @@
 - CONFIRMED: GIVEN one explicit sync operation is running, WHEN another explicit sync operation is requested, THEN the later operation waits until the current operation finishes.
 - CONFIRMED: GIVEN pending transaction changes exist, WHEN sync succeeds, THEN affected monthly transaction files are staged, transaction queue entries are removed, and balance recalculation starts from the earliest changed month.
 - CONFIRMED: GIVEN logout succeeds, WHEN state reset completes, THEN provider credentials, IndexedDB, store info, pending counters, and authentication flags are cleared.
-- UNCLEAR: The intended conflict policy for concurrent multi-device edits is not specified.
+- CONFIRMED: GIVEN a remote monthly transaction file and queued local transaction rows for the same month, WHEN sync stages the monthly transaction file, THEN remote rows with the same ids as queued rows are replaced, queued rows marked `deleted` are omitted, and other remote rows are preserved.
+- CONFIRMED: GIVEN a cached whole JSON file marked `to_sync` and the remote file has changed since the local cache timestamp, WHEN sync uploads the cached file, THEN the cached local file is written as the winning version and the user sees a visible warning naming the conflicted file.
+- CONFIRMED: GIVEN a cached whole JSON file marked `to_sync` and no newer remote version exists, WHEN sync uploads the cached file, THEN the file is written without a conflict warning.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers pending counters, serialized sync, info refresh, provider selection effects, and logout.
@@ -60,8 +64,9 @@
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No Dropbox helper tests.
 - CONFIRMED: No integration tests across Auth startup refresh, sync, balance recalculation, and store reloads.
-- CONFIRMED: No conflict-resolution tests for concurrent edits.
+- CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts the exact staged transaction merge payload for same-id replacement, deleted queued rows, and preserved remote rows.
+- CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts whole-file conflict detection, last-writer-wins upload, and visible warning state.
 
 ## Product Questions
-- UNCLEAR: Should file conflicts use last-write-wins, merge with warnings, or block sync until user review?
+- RESOLVED: File conflicts use last writer wins with a visible warning; transaction queue conflicts merge by id until a richer conflict UI exists.
 - UNCLEAR: What user-visible state should remain after a sync upload fails?

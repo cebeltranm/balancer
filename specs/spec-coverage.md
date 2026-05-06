@@ -57,7 +57,7 @@
 - CONFIRMED: Public icons, favicon, and robots/static HTML are not specified beyond PWA manifest/icon references.
 
 ## Specs With Weak Evidence
-- INFERRED: Storage conflict behavior in `architecture.md` and `storage-sync.md` is based on merge/overwrite code paths, not explicit product tests.
+- CONFIRMED: Storage conflict behavior is specified and implemented for the current scope: transaction merge-by-id and whole-file last writer wins with a visible warning.
 - INFERRED: Dashboard startup dependencies are inferred from `Auth.vue` loading behavior rather than a rendered dashboard test.
 - INFERRED: Account legacy/migration concerns are inferred from `public/accounts.json` and enum mismatches.
 - INFERRED: Missing exchange-rate impact in expenses/investments is inferred from conversion code paths.
@@ -92,7 +92,7 @@
 ### Missing Product Flows
 - UNCLEAR: First-run onboarding, including missing `accounts.json` seeding and what the user sees before setup completes.
 - UNCLEAR: Failed sync and retry recovery after local writes have been accepted.
-- UNCLEAR: Multi-device conflict review or conflict recovery.
+- CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
 - UNCLEAR: Lost local WebAuthn credential recovery when provider credentials still exist.
 - UNCLEAR: Missing/stale exchange-rate handling in expenses, investments, values, and balance recalculation.
 - UNCLEAR: Account deletion when historical files reference the account.
@@ -108,7 +108,7 @@
 - UNCLEAR: Google Drive is listed as planned/unavailable; no feature spec should treat it as an implemented provider until product scope changes.
 
 ## Highest-Priority Product Owner Questions
-- UNCLEAR: What is the required conflict-resolution policy when two devices edit the same transaction month or whole JSON file before syncing?
+- RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
 - UNCLEAR: Should account deletion be blocked, archived, cascaded, or allowed to leave historical references intact?
 - UNCLEAR: What user-visible error and retry model should be used for failed sync, provider login, WebAuthn, external value providers, and missing conversion rates?
 - UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?

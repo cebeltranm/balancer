@@ -22,8 +22,8 @@
 - CONFIRMED: `useStorageStore().updatePendingToSync()` counts queued transactions and files; when counts become non-zero it starts sync if not offline.
 - CONFIRMED: `useStorageStore().executeInSync()` serializes explicit sync-like operations so a later operation waits for the current one to finish.
 - CONFIRMED: After transaction sync, storage sync reloads affected transaction months and recalculates balance from the earliest changed month.
-- INFERRED: Conflict resolution is last-write/merge-by-id for transactions and overwrite for whole JSON files; no revision-based conflict handling is visible.
-- UNCLEAR: The intended behavior when two devices edit the same cached file before syncing is not specified.
+- CONFIRMED: Conflict resolution uses merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
+- CONFIRMED: Current code implements transaction merge-by-id, detects whole-file conflicts from remote modification time, uploads the local cached file as the winning version, and emits the required warning.
 
 ## PWA Behavior
 - CONFIRMED: `vite-plugin-pwa` is configured in `vite.config.ts` with `registerType: "autoUpdate"`, app manifest metadata, icons, dev service-worker support, outdated-cache cleanup, and Workbox glob patterns for JS/CSS/HTML/WOFF.
@@ -54,7 +54,8 @@
 - CONFIRMED: GIVEN forms report pending changes, WHEN navigation is attempted, THEN router navigation is blocked by the pending-change guard.
 - CONFIRMED: GIVEN cached file writes are marked `to_sync`, WHEN storage sync runs online, THEN cached files are uploaded through the selected provider and successful uploads clear pending state.
 - CONFIRMED: GIVEN a future storage change is proposed, WHEN it affects an existing persisted JSON file, THEN it must preserve the existing file name and top-level structure, provide defaults for any additive structures, and ignore removed structures.
-- UNCLEAR: The architecture does not specify a conflict-resolution boundary for multi-device edits.
+- CONFIRMED: GIVEN concurrent edits affect queued transaction rows, WHEN sync stages the affected monthly transaction file, THEN transaction rows are merged by id.
+- CONFIRMED: GIVEN concurrent edits affect a whole JSON file, WHEN the local cached file is uploaded after a newer remote write, THEN the local file wins and the app shows a visible conflict warning.
 
 ## Cross-Spec Consistency Notes
 - CONFIRMED: `product-overview.md`, `architecture.md`, and `storage-sync.md` consistently describe Dropbox as the normal provider and the local HTTP provider as development-only.

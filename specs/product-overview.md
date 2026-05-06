@@ -172,11 +172,12 @@ Validation scripts defined in `package.json` are:
 - CONFIRMED: Specs identify current automated coverage for stores/helpers and call out missing rendered component and integration tests.
 - INFERRED: End-to-end user journeys are described across feature specs but not yet consolidated into a single happy-path onboarding-to-first-transaction scenario.
 - UNCLEAR: First-run onboarding after a missing `accounts.json` seed is not specified as a user-facing product flow.
-- UNCLEAR: Recovery flows for failed sync, lost WebAuthn credentials, missing exchange rates, stale balances, and conflicting multi-device edits are not specified.
+- UNCLEAR: Recovery flows for failed sync, lost WebAuthn credentials, missing exchange rates, and stale balances are not specified.
+- CONFIRMED: Multi-device sync conflicts are specified as transaction merge-by-id and whole-file last writer wins with a visible warning.
 
 ## Highest-Risk Product Decisions
 
-- UNCLEAR: Conflict resolution for concurrent edits across devices is the largest unresolved cross-feature behavior.
+- CONFIRMED: Conflict resolution for concurrent edits is implemented for the current scope: transaction merge-by-id exists, and whole-file conflicts use last writer wins with a visible warning.
 - UNCLEAR: Account deletion/reference policy affects transactions, budgets, values, balances, dashboard, expenses, and investments.
 - UNCLEAR: Error UX for sync, provider login, WebAuthn, external value providers, and missing conversion rates is not specified consistently.
 - UNCLEAR: Offline behavior needs a product-level promise separating offline app-shell availability from offline finance-data availability.

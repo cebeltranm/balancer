@@ -2,6 +2,8 @@ import * as idb from "./idb";
 import * as files from "./files";
 import { toRaw } from "vue";
 import { parseLocalDateString } from "./date";
+import { EVENTS } from "./events";
+import { getStorage } from "./storage";
 
 export async function syncTransactions() {
   const transactions = await idb.getAllTransactions();
@@ -75,13 +77,42 @@ export async function syncFiles() {
       fileKeys.map(async (fileName) => {
         const file = await idb.getJsonFile(fileName);
         if (file.to_sync) {
+          const remoteModified =
+            typeof file.remote_modified === "number"
+              ? file.remote_modified
+              : await getRemoteFileModified(String(fileName));
+          const conflict =
+            typeof remoteModified === "number" &&
+            remoteModified > file.date_cached;
+          const warning = conflict
+            ? `Remote file ${fileName} changed before sync. Local cached file was uploaded as the latest version.`
+            : undefined;
           return {
             stored: await files.writeJsonFile(fileName, file.data),
             fileName: fileName,
+            ...(conflict ? { conflict, warning } : {}),
           };
         }
       }),
     );
+    data.forEach((result) => {
+      if (result?.conflict && result.warning) {
+        EVENTS.emit("message", {
+          severity: "warn",
+          summary: "Sync conflict",
+          message: result.warning,
+        });
+      }
+    });
     return data;
+  }
+}
+
+async function getRemoteFileModified(fileName: string) {
+  try {
+    const lastModified = await getStorage().getLastModification(fileName);
+    return lastModified?.getTime();
+  } catch {
+    return undefined;
   }
 }
