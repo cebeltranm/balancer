@@ -14,7 +14,7 @@
 - CONFIRMED: Store writes for transactions, values, budget, and balance are usually staged into IndexedDB with `to_sync: true`; accounts and config write directly through `writeJsonFile()`.
 - CONFIRMED: IndexedDB database name is `balancer`, version `1`, with object stores `transactions` and `files`, both keyed by `id`.
 - CONFIRMED: Domain JSON files are versionless. Compatibility is maintained by preserving existing file names and top-level structures, defaulting additive structures when absent, and ignoring removed or deprecated structures when present.
-- INFERRED: Current code partially satisfies the versionless compatibility policy because stores already use fixed file names and raw shapes, but only some defaults and compatibility expectations are covered by tests.
+- CONFIRMED: Store loaders satisfy the versionless compatibility policy through shared normalizers in `src/helpers/persistedShapes.ts`, with helper tests and persisted-family store tests covering defaults and ignored deprecated structures.
 
 ## Offline / Cache / Sync Architecture
 - CONFIRMED: Pending transactions are stored in the IndexedDB `transactions` store and merged into monthly `transactions_<year>_<month>.json` files by `syncTransactions()`.

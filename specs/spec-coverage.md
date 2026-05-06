@@ -63,7 +63,7 @@
 - INFERRED: Missing exchange-rate impact in expenses/investments is inferred from conversion code paths.
 - UNCLEAR: Runtime service-worker behavior is weakly evidenced because generated service-worker output is not inspected or specified.
 - UNCLEAR: WebAuthn failure handling is weakly evidenced because no tests cover `navigator.credentials` failures.
-- INFERRED: Versionless JSON compatibility is only partially evidenced: current tests cover simple current shapes, but do not comprehensively cover additive defaults, ignored deprecated structures, or prohibiting file renames/top-level shape replacements.
+- CONFIRMED: Versionless JSON compatibility is covered by `src/helpers/__tests__/persistedShapes.spec.ts` and persisted-family store tests for current names, additive defaults, and ignored deprecated structures.
 
 ## Spec Quality Review
 

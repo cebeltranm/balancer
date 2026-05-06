@@ -8,7 +8,7 @@
 - CONFIRMED: Persisted JSON files use a versionless compatibility policy. Existing file names and top-level structures are compatibility contracts and must not be renamed, wrapped, or replaced.
 - CONFIRMED: New persisted structures must be additive and must have default data when omitted from older files.
 - CONFIRMED: Removed or deprecated persisted structures must be ignored when present in older files.
-- INFERRED: Current code partially satisfies this policy because it reads and writes simple versionless shapes directly; default handling is implemented only in some stores and compatibility tests are incomplete.
+- CONFIRMED: Current code satisfies this policy at the store/helper level through `src/helpers/persistedShapes.ts`, `src/helpers/__tests__/persistedShapes.spec.ts`, and persisted-family store tests under `src/stores/__tests__/`.
 
 ## Data Model Acceptance Criteria
 - CONFIRMED: GIVEN any persisted domain file is read, WHEN the file exists and contains valid JSON in the expected shape, THEN the owning store can load it without mutating unrelated files.
