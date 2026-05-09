@@ -23,7 +23,7 @@
 - CONFIRMED: Dashboard maps to `src/views/HomeView.vue`, `src/components/AccountValueCard.vue`, `useBalanceStore`, `useAccountsStore`, `useStorageStore`.
 - CONFIRMED: Transactions maps to `src/views/Transactions.vue`, `src/components/TransactionEditDialog.vue`, `src/helpers/transactionForms.ts`, `useTransactionsStore`, `syncTransactions()`.
 - CONFIRMED: Expenses maps to `src/views/Expenses.vue`, `useBudgetStore().getBudgetGrupedByPeriod()`, `useBalanceStore().getBalanceGroupedByPeriods()`, `useValuesStore().getValue()`.
-- CONFIRMED: Accounts maps to `src/views/Accounts.vue`, `ACCOUNT_GROUP_TYPES`, `loadAccounts()`, `saveAccount()`, `activeAccounts()`, `accountsGroupByCategories()`, `deleteAccount()`.
+- CONFIRMED: Accounts maps to `src/views/Accounts.vue`, `ACCOUNT_GROUP_TYPES`, `loadAccounts()`, `saveAccount()`, `activeAccounts()`, `accountsGroupByCategories()`, and blocked `deleteAccount()`.
 - CONFIRMED: Values maps to `src/views/Values.vue`, `useValuesStore().getValue()`, `joinValues()`, `setValuesForMonth()`, `ensureCurrentMonthValues()`, stock/currency sync functions in the view.
 - CONFIRMED: Budget maps to `src/views/Budget.vue`, `useBudgetStore().loadBudgetForYear()`, `getBudgetGrupedByPeriod()`, `setBudgetForYear()`.
 - CONFIRMED: Balance maps to `src/views/Balance.vue`, `useBalanceStore().loadBalanceForYear()`, `getBalanceGroupedByPeriods()`, `ensureCurrentMonthBalance()`, `recalculateBalance()`.
@@ -95,7 +95,7 @@
 - CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
 - UNCLEAR: Lost local WebAuthn credential recovery when provider credentials still exist.
 - UNCLEAR: Missing/stale exchange-rate handling in expenses, investments, values, and balance recalculation.
-- UNCLEAR: Account deletion when historical files reference the account.
+- RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
 - UNCLEAR: Manual or user-triggered balance recalculation when stored balances appear stale.
 - UNCLEAR: Offline usage contract beyond cached app shell and already-cached IndexedDB data.
 
@@ -103,13 +103,13 @@
 - CONFIRMED: No direct route-access contradiction was found; `/` and `/expenses` are consistently described as unprotected, while `/balance`, `/investments`, `/settings/general`, and `/settings/accounts` require authentication.
 - CONFIRMED: No direct data-file naming contradiction was found across product overview, data model, and feature specs.
 - INFERRED: There is a product tension between PWA "offline-ready assets" and storage sync requirements; app shell can be offline-ready while fresh remote JSON data cannot be guaranteed offline.
-- INFERRED: There is a product tension between allowing account deletion and treating account ids as durable references across historical files.
+- RESOLVED: Account ids are durable references across historical files; archive/hide replaces hard deletion.
 - INFERRED: There is a product tension between edit-as-delete-plus-new-transaction-id and any future requirement for stable transaction identity or audit history.
 - UNCLEAR: Google Drive is listed as planned/unavailable; no feature spec should treat it as an implemented provider until product scope changes.
 
 ## Highest-Priority Product Owner Questions
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
-- UNCLEAR: Should account deletion be blocked, archived, cascaded, or allowed to leave historical references intact?
+- RESOLVED: Account lifecycle uses archive/hide as the normal path; hard deletion is blocked in all cases.
 - UNCLEAR: What user-visible error and retry model should be used for failed sync, provider login, WebAuthn, external value providers, and missing conversion rates?
 - UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?
 - UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?

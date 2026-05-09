@@ -282,19 +282,8 @@ export const useAccountsStore = defineStore("accounts", () => {
   }
 
   async function deleteAccount(id: string) {
-    if (!accounts.value[id]) {
-      return false;
-    }
-    const nextAccounts = Object.keys(accounts.value).reduce(
-      (accumulated, accountId) => {
-        if (accountId !== id) {
-          accumulated[accountId] = accounts.value[accountId];
-        }
-        return accumulated;
-      },
-      {} as Record<string, Account>,
-    );
-    return persistAccounts(nextAccounts);
+    void id;
+    return false;
   }
 
   return {

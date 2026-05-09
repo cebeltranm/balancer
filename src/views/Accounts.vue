@@ -310,15 +310,7 @@
       </Message>
 
       <template #footer>
-        <div class="flex justify-content-between gap-2 flex-wrap">
-          <Button
-            v-if="editingId"
-            label="Delete account"
-            icon="pi pi-trash"
-            severity="danger"
-            outlined
-            @click="confirmDeleteAccount"
-          />
+        <div class="flex justify-content-end gap-2 flex-wrap">
           <Button
             label="Cancel"
             severity="secondary"
@@ -689,39 +681,6 @@ function closeDialog() {
   dialogVisible.value = false;
   resetForm();
   editingId.value = null;
-}
-
-function confirmDeleteAccount() {
-  if (!editingId.value) {
-    return;
-  }
-
-  const account = accountsStore.accounts[editingId.value];
-  if (!account) {
-    return;
-  }
-
-  confirm.require({
-    target: document.body,
-    message: `Delete ${account.name}? This can generate errors if transactions, balances, budgets, or other saved data still reference this account.`,
-    icon: "pi pi-exclamation-triangle",
-    acceptClass: "p-button-danger",
-    accept: async () => {
-      const deleted = await accountsStore.deleteAccount(account.id);
-      if (!deleted) {
-        saveError.value = "The account could not be deleted.";
-        return;
-      }
-
-      toast.add({
-        severity: "warn",
-        summary: "Account deleted",
-        detail: `${account.name} was removed.`,
-        life: 2500,
-      });
-      closeDialog();
-    },
-  });
 }
 
 function normalizeDate(value: Date | null) {

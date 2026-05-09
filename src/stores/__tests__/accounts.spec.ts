@@ -169,7 +169,35 @@ describe("accounts store", () => {
     });
   });
 
-  it("can delete an existing account", async () => {
+  it("archives an existing account by preserving it with hideSince", async () => {
+    vi.mocked(writeJsonFile).mockResolvedValue(true);
+    const store = useAccountsStore();
+    store.accounts = {
+      keep_me: {
+        id: "keep_me",
+        name: "Keep",
+        type: AccountType.Cash,
+        currency: "cop",
+      },
+    };
+
+    const saved = await store.saveAccount({
+      ...store.accounts.keep_me,
+      hideSince: new Date("2025-03-01T00:00:00.000Z"),
+    });
+
+    expect(saved).toBe(true);
+    expect(writeJsonFile).toHaveBeenCalledWith("accounts.json", {
+      keep_me: {
+        name: "Keep",
+        type: AccountType.Cash,
+        currency: "cop",
+        hideSince: "2025-03-01",
+      },
+    });
+  });
+
+  it("blocks hard deletion and keeps the account payload available", async () => {
     vi.mocked(writeJsonFile).mockResolvedValue(true);
     const store = useAccountsStore();
     store.accounts = {
@@ -189,13 +217,13 @@ describe("accounts store", () => {
 
     const saved = await store.deleteAccount("remove_me");
 
-    expect(saved).toBe(true);
-    expect(writeJsonFile).toHaveBeenCalledWith("accounts.json", {
-      keep_me: {
-        name: "Keep",
-        type: AccountType.Cash,
-        currency: "cop",
-      },
+    expect(saved).toBe(false);
+    expect(store.accounts.remove_me).toEqual({
+      id: "remove_me",
+      name: "Remove",
+      type: AccountType.Income,
+      currency: "cop",
     });
+    expect(writeJsonFile).not.toHaveBeenCalled();
   });
 });

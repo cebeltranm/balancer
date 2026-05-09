@@ -178,6 +178,6 @@ Validation scripts defined in `package.json` are:
 ## Highest-Risk Product Decisions
 
 - CONFIRMED: Conflict resolution for concurrent edits is implemented for the current scope: transaction merge-by-id exists, and whole-file conflicts use last writer wins with a visible warning.
-- UNCLEAR: Account deletion/reference policy affects transactions, budgets, values, balances, dashboard, expenses, and investments.
+- CONFIRMED: Account deletion/reference policy is archive/hide only; hard deletion is blocked so transactions, budgets, values, balances, dashboard, expenses, and investments can continue resolving historical account ids.
 - UNCLEAR: Error UX for sync, provider login, WebAuthn, external value providers, and missing conversion rates is not specified consistently.
 - UNCLEAR: Offline behavior needs a product-level promise separating offline app-shell availability from offline finance-data availability.

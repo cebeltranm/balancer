@@ -36,7 +36,9 @@
 - CONFIRMED: A top-level `default` entry is ignored during load.
 - CONFIRMED: Account ids are referenced by transactions, values, budget, and balance files.
 - CONFIRMED: Account UI validates new ids as required, unique, and matching `/^[a-z0-9_]+$/i`; name, type, currency, and active-from are required; expense accounts require at least one category; investment accounts require entity, risk from 1 to 5, and class allocation totaling 100%.
-- CONFIRMED: Deleting an account is allowed but warns that saved data may still reference it.
+- REQUIRED: Archive/hide is the only supported normal account-removal path. Hiding sets `hideSince` and preserves the account id and payload in `accounts.json`.
+- REQUIRED: Hard deletion of account keys is blocked in all cases from normal app code, regardless of whether references are currently known.
+- CONFIRMED: Current code blocks store-level hard deletion and does not expose a hard-delete action in account management.
 - INFERRED: Existing invalid account type strings may load but fail grouping because `ACCOUNT_GROUP_TYPES` uses enum values.
 - UNCLEAR: No authoritative migration rule exists for legacy account type strings.
 
@@ -104,7 +106,9 @@
 - CONFIRMED: Transactions, budget, values, and balance files reference account ids from `accounts.json`.
 - CONFIRMED: Values and balance calculations depend on currency codes and account types being stable across files.
 - INFERRED: Account ids act as durable foreign keys even though no schema or referential-integrity check enforces that relationship.
-- UNCLEAR: The product has not specified whether deleting or renaming an account should cascade, be blocked, create an archive state, or leave historical references intact.
+- REQUIRED: Account ids are durable historical references. Account lifecycle must preserve ids by hiding/archiving accounts instead of deleting them.
+- REQUIRED: Hard deletion must not cascade, orphan, or remove referenced account ids from `accounts.json` in normal app flows.
+- REQUIRED: Tests for account lifecycle must verify that hiding preserves lookup data for transactions, budgets, values, and balances that reference the account id.
 
 ## Product Questions
 - CONFIRMED: The app must not introduce schema versions for the current persisted JSON files; compatibility is maintained by preserving names and top-level structures, adding defaulted structures only, and ignoring removed structures.
