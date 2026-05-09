@@ -87,9 +87,15 @@ export async function syncFiles() {
           const warning = conflict
             ? `Remote file ${fileName} changed before sync. Local cached file was uploaded as the latest version.`
             : undefined;
+          const stored = await files.writeJsonFile(fileName, file.data);
           return {
-            stored: await files.writeJsonFile(fileName, file.data),
             fileName: fileName,
+            stored,
+            ...(!stored
+              ? {
+                  error: `Sync failed for ${fileName}.`,
+                }
+              : {}),
             ...(conflict ? { conflict, warning } : {}),
           };
         }

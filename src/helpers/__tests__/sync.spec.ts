@@ -131,4 +131,26 @@ describe("sync helper", () => {
       message: expect.stringContaining("budget_2025.json"),
     });
   });
+
+  it("reports failed uploads and leaves cached files queued for retry", async () => {
+    vi.mocked(idb.getAllFilesInCache).mockResolvedValue(["values_2025.json"]);
+    vi.mocked(idb.getJsonFile).mockResolvedValue({
+      date_cached: 100,
+      to_sync: true,
+      data: { 1: { cash: 10 } },
+    } as any);
+    vi.mocked(files.writeJsonFile).mockResolvedValue(false);
+
+    const synced = await syncFiles();
+
+    expect(synced).toEqual([
+      {
+        fileName: "values_2025.json",
+        stored: false,
+        error: expect.stringContaining("values_2025.json"),
+      },
+    ]);
+    expect(idb.getJsonFile).toHaveBeenCalledWith("values_2025.json");
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
 });

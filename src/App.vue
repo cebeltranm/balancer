@@ -118,7 +118,8 @@ EVENTS.on("message", (msg: any) => {
     severity: msg.severity || "info",
     summary: msg.summary || "",
     detail: msg.message || "",
-    life: 3000,
+    life: msg.life ?? 3000,
+    closable: msg.closable,
   });
 });
 

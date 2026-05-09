@@ -42,7 +42,16 @@ vi.mock("@/helpers/storage", () => ({
 }));
 
 import * as idb from "@/helpers/idb";
+import * as syncHelpers from "@/helpers/sync";
+import { EVENTS } from "@/helpers/events";
 import { useStorageStore } from "@/stores/storage";
+
+async function flushPromises() {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 describe("storage store", () => {
   beforeEach(() => {
@@ -60,6 +69,7 @@ describe("storage store", () => {
   it("updates pending counters from idb", async () => {
     const store = useStorageStore();
     await store.updatePendingToSync();
+    await flushPromises();
 
     expect(store.pendingToSync).toEqual({ transactions: 2, files: 1 });
   });
@@ -130,5 +140,67 @@ describe("storage store", () => {
     expect(store.status.authenticated).toBe(false);
     expect(store.status.offline).toBe(true);
     expect(store.pendingToSync).toEqual({ transactions: 0, files: 0 });
+  });
+
+  it("sets persistent sync-failed status and keeps pending counters when sync upload fails", async () => {
+    const emit = vi.spyOn(EVENTS, "emit");
+    vi.mocked(syncHelpers.syncTransactions).mockResolvedValue(undefined);
+    vi.mocked(syncHelpers.syncFiles).mockResolvedValue([
+      {
+        fileName: "values_2025.json",
+        stored: false,
+        error: "values_2025.json could not be uploaded",
+      },
+    ] as any);
+    vi.mocked(idb.countTransactions).mockResolvedValue(0);
+    vi.mocked(idb.countFilesToSync).mockResolvedValue(1);
+
+    const store = useStorageStore();
+    store.pendingToSync = { transactions: 0, files: 1 };
+    store.sync();
+    await flushPromises();
+
+    expect(store.status.inSync).toBe(false);
+    expect(store.pendingToSync).toEqual({ transactions: 0, files: 1 });
+    expect((store.status as any).syncFailed).toBe(true);
+    expect((store.status as any).lastSyncError).toContain("values_2025.json");
+    expect(emit).toHaveBeenCalledWith("message", {
+      severity: "error",
+      summary: "Sync failed",
+      message: expect.stringContaining("queued locally"),
+      life: 0,
+      closable: false,
+    });
+  });
+
+  it("clears sync-failed status after retry succeeds", async () => {
+    vi.mocked(syncHelpers.syncTransactions).mockResolvedValue(undefined);
+    vi.mocked(syncHelpers.syncFiles)
+      .mockResolvedValueOnce([
+        {
+          fileName: "budget_2025.json",
+          stored: false,
+          error: "budget_2025.json could not be uploaded",
+        },
+      ] as any)
+      .mockResolvedValueOnce([{ fileName: "budget_2025.json", stored: true }]);
+    vi.mocked(idb.countTransactions).mockResolvedValue(0);
+    vi.mocked(idb.countFilesToSync)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0);
+
+    const store = useStorageStore();
+    store.pendingToSync = { transactions: 0, files: 1 };
+    store.sync();
+    await flushPromises();
+    expect((store.status as any).syncFailed).toBe(true);
+
+    store.sync();
+    await flushPromises();
+
+    expect(store.status.inSync).toBe(false);
+    expect(store.pendingToSync).toEqual({ transactions: 0, files: 0 });
+    expect((store.status as any).syncFailed).toBe(false);
+    expect((store.status as any).lastSyncError).toBe("");
   });
 });

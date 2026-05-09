@@ -41,7 +41,8 @@
         variant="outlined"
         rounded
         raised
-        aria-label="Add transaction"
+        :aria-label="syncLabel"
+        :title="syncLabel"
         @click="() => storage.sync()"
       >
       </Button>
@@ -93,13 +94,29 @@ const isPendingToSync = computed(
   () =>
     storage.pendingToSync.transactions > 0 || storage.pendingToSync.files > 0,
 );
-const syncIcon = computed(() =>
-  storage.status.inSync ? "pi pi-spinner pi-spin" : "pi pi-circle-fill",
-);
+const syncIcon = computed(() => {
+  if (storage.status.inSync) {
+    return "pi pi-spinner pi-spin";
+  }
+  if (storage.status.syncFailed) {
+    return "pi pi-exclamation-circle";
+  }
+  return "pi pi-circle-fill";
+});
 const syncButtonClass = computed(() => ({
   "text-green-500": !isPendingToSync.value,
-  "text-red-500": isPendingToSync.value,
+  "text-red-500": storage.status.syncFailed,
+  "text-orange-500": isPendingToSync.value && !storage.status.syncFailed,
 }));
+const syncLabel = computed(() => {
+  if (storage.status.syncFailed) {
+    return "Retry sync";
+  }
+  if (isPendingToSync.value) {
+    return "Sync pending changes";
+  }
+  return "Sync status";
+});
 
 function currencyToIcon(currency: Currency) {
   const iconMap = CURRENCY_ICONS[currency];

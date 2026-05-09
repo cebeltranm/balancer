@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import bounced from "lodash-es/debounce";
-import * as syncHelpers from "../helpers/sync";
-import * as idb from "../helpers/idb";
+import * as syncHelpers from "@/helpers/sync";
+import * as idb from "@/helpers/idb";
+import { EVENTS } from "@/helpers/events";
 import {
   getAvailableStorageProviders,
   getSelectedStorageProvider,
@@ -21,11 +22,14 @@ export const useStorageStore = defineStore("storage", () => {
     offline: false,
     loggedIn: false,
     authenticated: false,
+    syncFailed: false,
+    lastSyncError: "",
   });
   const selectedProvider = ref<StorageProviderId>(getSelectedStorageProvider());
   const providerOptions = computed(() => getAvailableStorageProviders());
 
   const syncAll = bounced(async () => {
+    let failureMessage = "";
     try {
       status.value.inSync = true;
       const trans = await syncHelpers.syncTransactions();
@@ -57,10 +61,41 @@ export const useStorageStore = defineStore("storage", () => {
           true,
         );
       }
-      await syncHelpers.syncFiles();
+      const files = await syncHelpers.syncFiles();
+      const failedFiles = (files || []).filter(
+        (file) => file?.stored === false,
+      );
+      if (failedFiles.length > 0) {
+        failureMessage = failedFiles
+          .map(
+            (file) =>
+              file.error ||
+              `Sync failed for ${file.fileName}. Changes are still queued locally.`,
+          )
+          .join(" ");
+      } else {
+        status.value.syncFailed = false;
+        status.value.lastSyncError = "";
+      }
+    } catch (error) {
+      failureMessage =
+        error instanceof Error
+          ? error.message
+          : "Sync failed. Changes are still queued locally.";
     } finally {
       status.value.inSync = false;
       await updatePendingToSync();
+      if (failureMessage) {
+        status.value.syncFailed = true;
+        status.value.lastSyncError = failureMessage;
+        EVENTS.emit("message", {
+          severity: "error",
+          summary: "Sync failed",
+          message: `${failureMessage} Changes are still queued locally. Use sync status to retry.`,
+          life: 0,
+          closable: false,
+        });
+      }
     }
   }, 1000);
 
@@ -138,6 +173,8 @@ export const useStorageStore = defineStore("storage", () => {
     status.value.loggedIn = false;
     status.value.offline = true;
     status.value.authenticated = false;
+    status.value.syncFailed = false;
+    status.value.lastSyncError = "";
   }
 
   async function selectProvider(provider: StorageProviderId) {
