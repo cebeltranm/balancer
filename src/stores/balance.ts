@@ -111,8 +111,10 @@ export const useBalanceStore = defineStore("balance", () => {
       return balance.value[year];
     }
 
+    const fileName = `balance_${year}.json`;
     const yearlyData = normalizeYearlyBalanceData(
-      await readJsonFile(`balance_${year}.json`, !reload),
+      await readJsonFile(fileName, !reload),
+      fileName,
     );
     if (yearlyData) {
       balance.value[year] = yearlyData;

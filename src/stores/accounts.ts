@@ -3,6 +3,7 @@ import { computed, ref, type Ref } from "vue";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import type { Account } from "@/types";
 import { AccountGroupType, AccountType, Period } from "@/types";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 import {
   normalizeAccount,
   type StoredAccount,
@@ -39,6 +40,25 @@ export const ACCOUNT_GROUP_TYPES: Record<AccountGroupType, AccountType[]> = {
   [AccountGroupType.Incomes]: [AccountType.Income],
   [AccountGroupType.Expenses]: [AccountType.Expense],
 };
+
+const VALID_ACCOUNT_TYPES = new Set(Object.values(AccountType));
+
+function validateStoredAccount(id: string, account: StoredAccount) {
+  if (
+    !account ||
+    typeof account.name !== "string" ||
+    account.name.trim() === "" ||
+    !VALID_ACCOUNT_TYPES.has(account.type) ||
+    typeof account.currency !== "string" ||
+    account.currency.trim() === ""
+  ) {
+    throw new PersistedFileError(
+      "malformed_file",
+      "accounts.json",
+      `accounts.json contains an invalid account entry: ${id}.`,
+    );
+  }
+}
 
 export const useAccountsStore = defineStore("accounts", () => {
   const accounts: Ref<Record<string, Account>> = ref({});
@@ -237,6 +257,7 @@ export const useAccountsStore = defineStore("accounts", () => {
     const nAccounts = Object.keys(lAccounts)
       .filter((id) => id != "default")
       .reduce((ant: any, id: string) => {
+        validateStoredAccount(id, lAccounts[id]);
         ant[id] = normalizeAccount(id, lAccounts[id]);
         return ant;
       }, {});

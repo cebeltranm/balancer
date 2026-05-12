@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, type Ref } from "vue";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
-import { normalizeConfig } from "@/helpers/persistedShapes";
+import { assertRecordFile, normalizeConfig } from "@/helpers/persistedShapes";
 
 function groupComposition(composition: any) {
   const data = Object.keys(composition).reduce((data: any, key) => {
@@ -79,7 +79,9 @@ export const useConfigStore = defineStore("config", () => {
     if (!reload && Object.keys(config.value).length > 0) {
       return config.value;
     }
-    config.value = normalizeConfig(await readJsonFile("config.json", !reload));
+    const loadedConfig = (await readJsonFile("config.json", !reload)) || {};
+    assertRecordFile("config.json", loadedConfig);
+    config.value = normalizeConfig(loadedConfig);
     return config.value;
   }
 

@@ -1,3 +1,5 @@
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
+
 const SERVER_URL = "http://localhost:8181/";
 const TOKEN_KEY = "http_server_token";
 
@@ -78,6 +80,11 @@ export default class HttpServerStore {
         return await res.json();
       } catch (e) {
         console.error(`loading file ${SERVER_URL}${fileName}`, e);
+        throw new PersistedFileError(
+          "invalid_file",
+          fileName,
+          `${fileName} contains invalid JSON.`,
+        );
       }
     }
   }

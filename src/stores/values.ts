@@ -110,8 +110,10 @@ export const useValuesStore = defineStore("values", () => {
     if (!reload && values.value[year]) {
       return values.value[year];
     }
+    const fileName = `values_${year}.json`;
     values.value[year] = normalizeValueData(
-      await readJsonFile(`values_${year}.json`, !reload),
+      await readJsonFile(fileName, !reload),
+      fileName,
     );
     return values.value[year];
   }

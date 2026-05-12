@@ -1,4 +1,5 @@
 import { Dropbox, DropboxAuth, DropboxResponseError } from "dropbox";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 const CLIENT_ID = "odmed9kdyvxuszo";
 const REDIRECT_URI = `${window.location.protocol}//${window.location.host}${window.location.pathname.includes("balancer") ? "/balancer/" : "/"}`;
@@ -127,7 +128,13 @@ export default class DropboxStore {
         const data = await blob.text();
         try {
           return JSON.parse(data);
-        } catch {}
+        } catch {
+          throw new PersistedFileError(
+            "invalid_file",
+            fileName,
+            `${fileName} contains invalid JSON.`,
+          );
+        }
       }
     } catch (e) {
       if (

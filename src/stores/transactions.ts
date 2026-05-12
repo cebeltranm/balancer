@@ -6,8 +6,38 @@ import type { Transaction } from "@/types";
 import { useStorageStore } from "@/stores/storage";
 import { parseLocalDateString } from "@/helpers/date";
 import { normalizeTransaction } from "@/helpers/persistedShapes";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 type MontlyTransactionData = Transaction[];
+
+function validateTransactionFile(fileName: string, values: unknown) {
+  if (values === false || values === undefined) {
+    return;
+  }
+  if (!Array.isArray(values)) {
+    throw new PersistedFileError(
+      "malformed_file",
+      fileName,
+      `${fileName} has an invalid persisted shape.`,
+    );
+  }
+  values.forEach((transaction) => {
+    if (
+      !transaction ||
+      typeof transaction.description !== "string" ||
+      !Array.isArray(transaction.values) ||
+      transaction.values.some(
+        (value: any) => typeof value.accountId !== "string",
+      )
+    ) {
+      throw new PersistedFileError(
+        "malformed_file",
+        fileName,
+        `${fileName} contains an invalid transaction entry.`,
+      );
+    }
+  });
+}
 
 export const useTransactionsStore = defineStore("transactions", () => {
   const transactions: Ref<
@@ -48,10 +78,9 @@ export const useTransactionsStore = defineStore("transactions", () => {
     ) {
       return transactions.value[year][month];
     }
-    let values = await readJsonFile(
-      `transactions_${year}_${month}.json`,
-      !reload,
-    );
+    const fileName = `transactions_${year}_${month}.json`;
+    let values = await readJsonFile(fileName, !reload);
+    validateTransactionFile(fileName, values);
     const pendingTransactions = await idb.getAllTransactions();
     if (pendingTransactions.length > 0) {
       const filtered = pendingTransactions

@@ -6,6 +6,7 @@ import { useAccountsStore } from "@/stores/accounts";
 import { useStorageStore } from "@/stores/storage";
 import { groupDataByPeriods } from "@/helpers/groupData";
 import * as idb from "@/helpers/idb";
+import { assertRecordFile } from "@/helpers/persistedShapes";
 
 type YearlyBudgetData = Record<string, Record<number, number>>;
 type GroupedBudgetData = Record<string, number[]>;
@@ -55,7 +56,8 @@ export const useBudgetStore = defineStore("budget", () => {
     if (!reload && budget.value[year]) {
       return budget.value[year];
     }
-    const data = await readJsonFile(`budget_${year}.json`, !reload);
+    const data = (await readJsonFile(`budget_${year}.json`, !reload)) || {};
+    assertRecordFile(`budget_${year}.json`, data);
     budget.value[year] = data.values || {};
     comments.value[year] = data.comments || {};
     return budget.value[year] || {};

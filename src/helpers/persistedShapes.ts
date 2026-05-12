@@ -1,4 +1,5 @@
 import type { Account, BalanceEntry, Transaction } from "@/types";
+import { PersistedFileError } from "./persistedFileErrors";
 
 export type StoredAccount = Omit<Account, "id" | "activeFrom" | "hideSince"> & {
   activeFrom?: string;
@@ -12,6 +13,23 @@ export type YearlyBalanceData = Record<string, Record<number, BalanceEntry>>;
 function isMonthKey(key: string): boolean {
   const month = Number(key);
   return Number.isInteger(month) && month >= 1 && month <= 12;
+}
+
+export function isRecord(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function assertRecordFile(
+  fileName: string,
+  value: unknown,
+): asserts value is Record<string, any> {
+  if (!isRecord(value)) {
+    throw new PersistedFileError(
+      "malformed_file",
+      fileName,
+      `${fileName} has an invalid persisted shape.`,
+    );
+  }
 }
 
 export function createEmptyBalanceEntry(): BalanceEntry {
@@ -110,17 +128,23 @@ export function normalizeConfig(config: any): Record<string, any> {
   };
 }
 
-export function normalizeValueData(yearlyData: any): YearlyValueData {
+export function normalizeValueData(
+  yearlyData: any,
+  fileName = "values file",
+): YearlyValueData {
   if (!yearlyData) {
     return {};
   }
+  assertRecordFile(fileName, yearlyData);
 
   return Object.keys(yearlyData)
     .filter(isMonthKey)
     .reduce((yearData, month) => {
       const monthData = yearlyData[month] || {};
+      assertRecordFile(fileName, monthData);
       const normalizedMonth = Object.keys(monthData).reduce((assets, asset) => {
         const assetData = monthData[asset] || {};
+        assertRecordFile(fileName, assetData);
         const rates = Object.keys(assetData).reduce(
           (currencies, currency) => {
             if (typeof assetData[currency] === "number") {
@@ -159,17 +183,21 @@ export function normalizeBalanceEntry(
 
 export function normalizeYearlyBalanceData(
   yearlyData: any,
+  fileName = "balance file",
 ): YearlyBalanceData | null {
   if (!yearlyData) {
     return null;
   }
+  assertRecordFile(fileName, yearlyData);
 
   return Object.keys(yearlyData).reduce((yearBalance, accountId) => {
     const accountBalance = yearlyData[accountId] || {};
+    assertRecordFile(fileName, accountBalance);
     const normalizedAccountBalance = Object.keys(accountBalance)
       .filter(isMonthKey)
       .reduce(
         (months, month) => {
+          assertRecordFile(fileName, accountBalance[month]);
           months[Number(month)] = normalizeBalanceEntry(accountBalance[month]);
           return months;
         },

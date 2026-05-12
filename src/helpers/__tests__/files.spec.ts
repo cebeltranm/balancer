@@ -16,7 +16,9 @@ vi.mock("@/helpers/storage", () => ({
 }));
 
 import * as idb from "@/helpers/idb";
+import { EVENTS } from "@/helpers/events";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 describe("files helper", () => {
   beforeEach(() => {
@@ -40,6 +42,36 @@ describe("files helper", () => {
     expect(idb.saveJsonFile).toHaveBeenCalledWith(
       expect.objectContaining({ id: "config.json", to_sync: false }),
     );
+  });
+
+  it("does not cache invalid remote JSON or overwrite it automatically", async () => {
+    const emit = vi.spyOn(EVENTS, "emit");
+    vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
+    readJsonFileMock.mockRejectedValueOnce(
+      new PersistedFileError(
+        "invalid_file",
+        "accounts.json",
+        "accounts.json contains invalid JSON.",
+      ),
+    );
+
+    await expect(readJsonFile("accounts.json", true)).rejects.toMatchObject({
+      code: "invalid_file",
+      fileName: "accounts.json",
+      recoverable: true,
+    });
+
+    const saved = await writeJsonFile("accounts.json", { accounts: {} });
+
+    expect(saved).toBe(false);
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+    expect(writeJsonFileMock).not.toHaveBeenCalled();
+    expect(emit).toHaveBeenCalledWith("message", {
+      severity: "error",
+      summary: "Invalid file",
+      message: expect.stringContaining("accounts.json"),
+      life: 0,
+    });
   });
 
   it("writes through storage and caches on success", async () => {

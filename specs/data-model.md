@@ -4,7 +4,9 @@
 - CONFIRMED: JSON files are read and written by file name through `src/helpers/files.ts` and provider helpers under `src/helpers/storage/`.
 - CONFIRMED: Cached file records in IndexedDB have at least `{ id, data, date_cached, to_sync }`.
 - CONFIRMED: File names are significant: stores construct names directly and `Auth.vue` parses file-name prefixes to refresh store state.
-- UNCLEAR: No formal runtime schema validation exists for JSON files.
+- REQUIRED: Persisted JSON reads must distinguish missing files from invalid files. Invalid files include unparseable JSON, files missing required fields, and files containing values that cannot be accepted by the current compatibility rules.
+- REQUIRED: Invalid persisted files must not be overwritten automatically. The app must show a recoverable error and keep the raw remote file intact until the user explicitly chooses a recovery action.
+- CONFIRMED: Current code represents invalid persisted-file failures with recoverable `PersistedFileError` metadata, rejects unparseable provider JSON, blocks automatic writes after invalid remote reads, and validates malformed `accounts.json` entries before replacing account store state.
 - CONFIRMED: Persisted JSON files use a versionless compatibility policy. Existing file names and top-level structures are compatibility contracts and must not be renamed, wrapped, or replaced.
 - CONFIRMED: New persisted structures must be additive and must have default data when omitted from older files.
 - CONFIRMED: Removed or deprecated persisted structures must be ignored when present in older files.
@@ -17,13 +19,22 @@
 - CONFIRMED: GIVEN an existing persisted JSON file name or top-level structure, WHEN future changes are designed, THEN the existing name and structure must remain accepted and must not be renamed, wrapped, or replaced.
 - CONFIRMED: GIVEN an older file omits a newly added persisted structure, WHEN the owning store reads it, THEN the store must apply a documented default value and continue loading the file.
 - CONFIRMED: GIVEN an older file still contains a removed or deprecated structure, WHEN the owning store reads it, THEN the store must ignore that structure without failing the load.
-- UNCLEAR: The product has not defined whether invalid JSON should be repaired, ignored, rejected with an error, or backed up before replacement.
+- REQUIRED: GIVEN a persisted JSON file exists remotely but cannot be parsed as JSON, WHEN the app attempts to load that file, THEN the app must report a recoverable invalid-file error, must not cache the file as valid domain data, and must not write a replacement file automatically.
+- REQUIRED: GIVEN a persisted JSON file parses but is missing fields required by its file family, WHEN the owning store validates the file, THEN the app must report a recoverable malformed-file error and keep the raw remote file intact until user action.
+- REQUIRED: GIVEN a persisted JSON file contains an enum value that is not accepted by the current data model or a documented compatibility migration, WHEN the owning store validates the file, THEN the app must report a recoverable malformed-file error and must not silently load the value into grouping, reporting, or write paths.
+- REQUIRED: GIVEN cached valid data exists locally and the remote file is invalid, WHEN the app detects the invalid remote file, THEN the app may continue displaying clearly stale cached data only if the invalid-file error remains visible and no automatic write attempts to replace the invalid remote file.
+- REQUIRED: GIVEN the user has not selected a recovery action, WHEN startup, sync refresh, derived value bootstrapping, balance recalculation, or first-run seeding would write the same file family, THEN that write must be blocked for the invalid file.
 
 ## Versionless Compatibility Test Expectations
 - CONFIRMED: Store/helper tests must keep coverage for current file names and top-level structures: `accounts.json`, `config.json`, `transactions_<year>_<month>.json`, `values_<year>.json`, `budget_<year>.json`, and `balance_<year>.json`.
 - CONFIRMED: Tests for any newly added persisted structure must cover loading older files where that structure is absent and assert the documented default data.
 - CONFIRMED: Tests for removed or deprecated persisted structures must cover files that still contain those structures and assert they are ignored.
 - CONFIRMED: Tests must reject or flag changes that rename existing persisted files or replace their top-level structures.
+- REQUIRED: Provider/helper tests must cover unparseable remote JSON and assert that invalid content is surfaced as an invalid-file condition instead of a missing file.
+- REQUIRED: Store tests for each persisted file family must cover required-field and invalid-enum failures where applicable, and assert that invalid data is not accepted into normal store state.
+- REQUIRED: Startup/bootstrap tests must cover invalid `accounts.json`, `config.json`, values, budget, balance, and transaction files and assert that no automatic seed, default, derived, or sync write overwrites the invalid remote file.
+- REQUIRED: UI or storage-state tests must assert that invalid-file failures produce a recoverable user-visible error with enough file context for the user to choose a recovery action.
+- CONFIRMED: Current tests cover HTTP provider invalid JSON, helper-level invalid-read write blocking, and account required-field/unsupported-type rejection.
 
 ## `accounts.json`
 - CONFIRMED: File name pattern is exactly `accounts.json`.
@@ -112,5 +123,6 @@
 
 ## Product Questions
 - CONFIRMED: The app must not introduce schema versions for the current persisted JSON files; compatibility is maintained by preserving names and top-level structures, adding defaulted structures only, and ignoring removed structures.
-- UNCLEAR: What should happen when a stored JSON file is missing required fields or contains unknown enum values?
+- RESOLVED: Invalid persisted files, including unparseable JSON, missing required fields, and unsupported enum values, must not be overwritten automatically. The app must show a recoverable error and keep the raw remote file intact until user action.
+- CONFIRMED: RT-005 is implemented for the current persisted-file read/write path and `accounts.json` malformed-entry validation. Broader recovery UI polish remains part of future error-handling work.
 - UNCLEAR: Should derived `balance_<year>.json` be treated as disposable cache or user-visible durable history?

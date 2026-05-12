@@ -79,6 +79,24 @@ describe("http server storage helper", () => {
     );
   });
 
+  it("surfaces invalid remote JSON as a recoverable file error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce({
+        status: 200,
+        json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+      }),
+    );
+
+    const store = new HttpServerStore();
+
+    await expect(store.readJsonFile("accounts.json")).rejects.toMatchObject({
+      code: "invalid_file",
+      fileName: "accounts.json",
+      recoverable: true,
+    });
+  });
+
   it("removes the token on logout", async () => {
     window.localStorage.setItem("http_server_token", "fake-token");
 

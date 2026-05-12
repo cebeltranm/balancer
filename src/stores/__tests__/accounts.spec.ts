@@ -56,6 +56,59 @@ describe("accounts store", () => {
     });
   });
 
+  it("rejects accounts missing required fields without replacing current state", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({
+      cash_1: {
+        type: AccountType.Cash,
+        currency: "usd",
+      },
+    });
+
+    const store = useAccountsStore();
+    store.accounts = {
+      existing: {
+        id: "existing",
+        name: "Existing",
+        type: AccountType.Cash,
+        currency: "usd",
+      },
+    };
+
+    await expect(store.loadAccounts(true)).rejects.toMatchObject({
+      code: "malformed_file",
+      fileName: "accounts.json",
+      recoverable: true,
+    });
+    expect(store.accounts).toEqual({
+      existing: {
+        id: "existing",
+        name: "Existing",
+        type: AccountType.Cash,
+        currency: "usd",
+      },
+    });
+  });
+
+  it("rejects unsupported account type values without loading them into grouping state", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({
+      legacy_cash: {
+        name: "Legacy Wallet",
+        type: "Cash Account",
+        currency: "usd",
+      },
+    });
+
+    const store = useAccountsStore();
+
+    await expect(store.loadAccounts(true)).rejects.toMatchObject({
+      code: "malformed_file",
+      fileName: "accounts.json",
+      recoverable: true,
+    });
+    expect(store.accounts).toEqual({});
+    expect(store.getAccountGroupType("legacy_cash")).toBeNull();
+  });
+
   it("returns proper group/type helpers and active accounts", () => {
     const store = useAccountsStore();
     store.accounts = {

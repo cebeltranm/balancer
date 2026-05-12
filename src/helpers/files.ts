@@ -1,5 +1,9 @@
 import * as idb from "./idb";
+import { EVENTS } from "./events";
+import { isPersistedFileError } from "./persistedFileErrors";
 import { getStorage } from "./storage";
+
+const invalidRemoteFiles = new Set<string>();
 
 export async function readJsonFile(fileName: any, cache: boolean = true) {
   if (cache) {
@@ -16,8 +20,23 @@ export async function readJsonFile(fileName: any, cache: boolean = true) {
   //         return file.data;
   //     }
   // }
-  const data = await storage.readJsonFile(fileName);
+  let data;
+  try {
+    data = await storage.readJsonFile(fileName);
+  } catch (error) {
+    if (isPersistedFileError(error)) {
+      invalidRemoteFiles.add(fileName);
+      EVENTS.emit("message", {
+        severity: "error",
+        summary: "Invalid file",
+        message: `${error.fileName} could not be loaded. The remote file was not overwritten and needs recovery before saving.`,
+        life: 0,
+      });
+    }
+    throw error;
+  }
   if (data) {
+    invalidRemoteFiles.delete(fileName);
     idb.saveJsonFile({
       id: fileName,
       data,
@@ -31,6 +50,9 @@ export async function readJsonFile(fileName: any, cache: boolean = true) {
 
 export async function writeJsonFile(fileName: any, data: object) {
   try {
+    if (invalidRemoteFiles.has(fileName)) {
+      return false;
+    }
     const storage = getStorage();
     if (await storage.writeJsonFile(fileName, data)) {
       idb.saveJsonFile({
