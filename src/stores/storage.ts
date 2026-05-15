@@ -4,6 +4,7 @@ import bounced from "lodash-es/debounce";
 import * as syncHelpers from "@/helpers/sync";
 import * as idb from "@/helpers/idb";
 import { EVENTS } from "@/helpers/events";
+import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import {
   getAvailableStorageProviders,
   getSelectedStorageProvider,
@@ -13,6 +14,14 @@ import {
 } from "@/helpers/storage";
 
 let currentSyncPromise: Promise<any> | null = null;
+const MINIMUM_CONFIG = { stock_api: {}, inv_composition: {} };
+
+async function ensureMinimumConfigFile() {
+  const config = await readJsonFile("config.json", false);
+  if (!config) {
+    await writeJsonFile("config.json", MINIMUM_CONFIG);
+  }
+}
 
 export const useStorageStore = defineStore("storage", () => {
   const storeInfo = ref<any>(null);
@@ -159,7 +168,10 @@ export const useStorageStore = defineStore("storage", () => {
   async function login(code?: string) {
     const authenticated = await getStorage().doAuth(code);
     if (authenticated) {
-      await refreshStoreInfo();
+      const info = await refreshStoreInfo();
+      if (info.loggedIn && !info.offline) {
+        await ensureMinimumConfigFile();
+      }
     }
     return authenticated;
   }

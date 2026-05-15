@@ -226,8 +226,7 @@ async function authenticate() {
 
 async function doLoginStore() {
   await storageStore.selectProvider(selectedProvider.value);
-  const storage = getStorage();
-  const success = await storage.doAuth(toQueryString(route.query.code));
+  const success = await storageStore.login(toQueryString(route.query.code));
   if (route.query.code) {
     router.replace({ query: null });
   }

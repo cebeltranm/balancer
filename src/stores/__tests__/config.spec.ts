@@ -50,6 +50,15 @@ describe("config store", () => {
     expect(store.invCompositionByRegion).toEqual({});
   });
 
+  it("does not rewrite older valid config files just to add default structures", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue({});
+
+    const store = useConfigStore();
+    await store.loadConfig(true);
+
+    expect(writeJsonFile).not.toHaveBeenCalled();
+  });
+
   it("saves config and updates local state", async () => {
     vi.mocked(writeJsonFile).mockResolvedValue(true);
 

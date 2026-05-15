@@ -62,8 +62,23 @@
 - CONFIRMED: Settings UI edits composition as percentages and saves normalized decimal values by dividing by 100.
 - CONFIRMED: Settings UI rejects negative/non-numeric weights and total allocation not equal to 100%.
 - CONFIRMED: Config composition is transformed by `useConfigStore()` into grouped composition by asset class and by region for portfolio views.
-- UNCLEAR: Missing `config.json` handling is weak; callers generally expect an object.
-- UNCLEAR: No default `config.json` seed file or required minimum config shape is specified.
+- REQUIRED: The minimum persisted `config.json` shape is `{ "stock_api": {}, "inv_composition": {} }`.
+- REQUIRED: On first successful storage initialization, when `config.json` is missing, the app must create `config.json` with the minimum persisted shape.
+- REQUIRED: Existing valid `config.json` files must not be overwritten during first-run seeding, including files that omit one or both additive config structures.
+- REQUIRED: If remote `config.json` exists but is invalid or malformed, first-run seeding must not replace it automatically; invalid-file recovery rules apply.
+- CONFIRMED: Current code satisfies this requirement: config loading normalizes missing additive structures to empty `stock_api` and `inv_composition` in memory, and first successful storage initialization creates a missing `config.json` with the minimum persisted shape without overwriting existing or invalid config files.
+
+## `config.json` Acceptance Criteria
+- REQUIRED: GIVEN storage initialization succeeds and `config.json` is missing, WHEN the app performs first-run storage checks, THEN it writes `config.json` as `{ "stock_api": {}, "inv_composition": {} }`.
+- REQUIRED: GIVEN storage initialization succeeds and `config.json` already exists as valid JSON, WHEN the app performs first-run storage checks, THEN it does not overwrite the existing remote config file.
+- REQUIRED: GIVEN an older valid `config.json` omits `stock_api` or `inv_composition`, WHEN the config store loads it, THEN the store exposes those omitted structures as empty objects without rewriting the remote file solely for normalization.
+- REQUIRED: GIVEN `config.json` exists remotely but is invalid JSON or malformed, WHEN first-run storage checks or config loading run, THEN the app reports the recoverable invalid-file condition and does not write the minimum config over the remote file.
+
+## `config.json` Test Expectations
+- REQUIRED: Store/helper tests must keep asserting that omitted `stock_api` and `inv_composition` are normalized to empty objects on load.
+- REQUIRED: Startup/bootstrap tests must assert that missing `config.json` is seeded with `{ "stock_api": {}, "inv_composition": {} }` after successful storage initialization.
+- REQUIRED: Startup/bootstrap tests must assert that an existing valid `config.json` is not overwritten by the default seed.
+- REQUIRED: Startup/bootstrap or file-helper tests must assert that invalid or malformed remote `config.json` blocks automatic default seeding and preserves the remote file for recovery.
 
 ## `transactions_<year>_<month>.json`
 - CONFIRMED: File name pattern is `transactions_<year>_<month>.json`, where month is a 1-based number without visible zero-padding.

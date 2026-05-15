@@ -16,6 +16,11 @@ vi.mock("@/helpers/idb", () => ({
   clearDatabase: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/helpers/files", () => ({
+  readJsonFile: vi.fn(),
+  writeJsonFile: vi.fn(),
+}));
+
 const storageMocks = vi.hoisted(() => ({
   getInfoMock: vi.fn(),
   doAuthMock: vi.fn(),
@@ -44,6 +49,7 @@ vi.mock("@/helpers/storage", () => ({
 import * as idb from "@/helpers/idb";
 import * as syncHelpers from "@/helpers/sync";
 import { EVENTS } from "@/helpers/events";
+import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import { useStorageStore } from "@/stores/storage";
 
 async function flushPromises() {
@@ -112,6 +118,44 @@ describe("storage store", () => {
     expect(store.status.loggedIn).toBe(true);
     expect(store.status.offline).toBe(false);
     expect(store.storeInfo).toEqual(info);
+  });
+
+  it("seeds a missing config file after successful storage initialization", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue(false);
+    vi.mocked(writeJsonFile).mockResolvedValue(true);
+    const store = useStorageStore();
+
+    const authenticated = await store.login();
+
+    expect(authenticated).toBe(true);
+    expect(readJsonFile).toHaveBeenCalledWith("config.json", false);
+    expect(writeJsonFile).toHaveBeenCalledWith("config.json", {
+      stock_api: {},
+      inv_composition: {},
+    });
+  });
+
+  it("does not overwrite an existing config file after successful storage initialization", async () => {
+    const existingConfig = { stock_api: { key: "k" } };
+    vi.mocked(readJsonFile).mockResolvedValue(existingConfig);
+    const store = useStorageStore();
+
+    const authenticated = await store.login();
+
+    expect(authenticated).toBe(true);
+    expect(readJsonFile).toHaveBeenCalledWith("config.json", false);
+    expect(writeJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("does not seed over an invalid config file after successful storage initialization", async () => {
+    const error = new Error("config.json could not be loaded");
+    vi.mocked(readJsonFile).mockRejectedValue(error);
+    const store = useStorageStore();
+
+    await expect(store.login()).rejects.toBe(error);
+
+    expect(readJsonFile).toHaveBeenCalledWith("config.json", false);
+    expect(writeJsonFile).not.toHaveBeenCalled();
   });
 
   it("changes provider and resets authentication", async () => {
