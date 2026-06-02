@@ -36,7 +36,7 @@
 - CONFIRMED: Form errors are stored in `formErrors` and displayed next to fields.
 - CONFIRMED: Delete requires PrimeVue confirmation.
 - CONFIRMED: Future dates, short descriptions, invalid expense sign, missing units, and non-zero transaction sums are rejected.
-- UNCLEAR: Failed IndexedDB saves are not surfaced in the UI.
+- CONFIRMED: Local IndexedDB queue write failures are blocking save failures: the transaction form shows an error toast message, remains open with the current user-entered values, and does not emit the edit as saved or reset the form.
 
 ## Edge Cases
 - CONFIRMED: Cross-currency transaction values store both `value` and `accountValue`.
@@ -55,7 +55,9 @@
 - REQUIRED: GIVEN an existing transaction with id `oldId`, WHEN the user saves edits, THEN `deleteTransaction()` is called for the original transaction before the edited replacement is queued.
 - REQUIRED: GIVEN an existing transaction with id `oldId`, WHEN the edited replacement is queued, THEN the replacement id is a fresh `Date.now()` id and is not required to equal `oldId`.
 - REQUIRED: GIVEN an edited transaction has both original deletion and replacement records pending, WHEN transactions sync, THEN the durable monthly file omits the deleted original id and includes the replacement transaction unless another queued row with the replacement id supersedes it.
-- UNCLEAR: The product response for an IndexedDB write failure is not specified beyond the current lack of visible UI feedback.
+- CONFIRMED: GIVEN a transaction create/save queue write fails, WHEN the user submits the form, THEN the app shows a local save failure error, keeps the dialog open, preserves the entered values, and does not emit `update:transaction`.
+- CONFIRMED: GIVEN an existing transaction edit queue write fails, WHEN either the original delete queue write or replacement save queue write fails, THEN the app shows a local save failure error and does not present the edit as saved.
+- CONFIRMED: GIVEN a transaction local queue write fails, WHEN the failure is handled, THEN pending sync counters are not updated for that failed write and the transaction list is not reloaded as if the edit were queued.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/transactions.spec.ts` covers monthly load/merge, save queueing, and delete queueing.
@@ -63,12 +65,15 @@
 - CONFIRMED: `src/helpers/__tests__/groupData.spec.ts` and `options.spec.ts` cover period mechanics used by related reporting.
 - REQUIRED: Transaction dialog tests should cover edit submit as delete-plus-new-id by asserting the original id is queued deleted and the replacement save uses a fresh id.
 - REQUIRED: Sync tests should continue to assert that deleted queued transaction ids are omitted from staged monthly files and non-deleted queued replacement transactions are appended.
+- CONFIRMED: Transaction store tests assert that rejected `idb.saveTransaction()` calls propagate failure and do not call `updatePendingToSync()` or reload the month.
+- CONFIRMED: Transaction dialog tests assert that a rejected local queue write shows an error message and does not emit `update:transaction`.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No rendered tests for `Transactions.vue` or `TransactionEditDialog.vue`.
 - CONFIRMED: No direct tests for Zod validation rules in the transaction dialog.
 - CONFIRMED: No integration test covers edit-as-delete-plus-new-save and subsequent balance recalculation.
+- CONFIRMED: Transaction edit dialog local queue failure UX is covered; transaction create, transfer, and expense dialog failure UX are not directly rendered in tests.
 
 ## Product Questions
 - RESOLVED: Editing continues to use delete-plus-new-id; preserving original transaction ids for audit/history is out of scope for the current product model.
-- UNCLEAR: What user-visible message or retry option should appear when local queue writes fail?
+- RESOLVED: Local queue write failure is blocking. Show an error toast or dialog, keep the transaction form open with entered values, and do not mark or emit the edit as saved.

@@ -322,19 +322,27 @@ function getRowClass(data: any) {
 }
 
 async function save() {
-  await budgetStore.setBudgetForYear(
-    period.value.value.year,
-    values.value.reduce((ant: any, v: any) => {
-      if (v.type !== AccountType.Category) {
-        ant[v.id] = months.reduce((ant2, m) => {
-          ant2[m] = v[m];
-          return ant2;
-        }, {});
-      }
-      return ant;
-    }, {}),
-    comments.value,
-  );
+  try {
+    await budgetStore.setBudgetForYear(
+      period.value.value.year,
+      values.value.reduce((ant: any, v: any) => {
+        if (v.type !== AccountType.Category) {
+          ant[v.id] = months.reduce((ant2, m) => {
+            ant2[m] = v[m];
+            return ant2;
+          }, {});
+        }
+        return ant;
+      }, {}),
+      comments.value,
+    );
+  } catch {
+    EVENTS.emit("message", {
+      severity: "error",
+      summary: "Budget not saved",
+      message: "The budget could not be saved locally. Please try again.",
+    });
+  }
 }
 
 const onShowContextMenu = (event: any, data: any, m: any) => {

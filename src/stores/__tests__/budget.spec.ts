@@ -102,4 +102,27 @@ describe("budget store", () => {
     expect(updatePendingToSync).toHaveBeenCalledTimes(1);
     expect(store.budget[2025].food[1]).toBe(90);
   });
+
+  it("treats failed local budget queue writes as blocking", async () => {
+    const error = new Error("IndexedDB unavailable");
+    const rejectedWrite = Promise.reject(error);
+    rejectedWrite.catch(() => undefined);
+    vi.mocked(idb.saveJsonFile).mockReturnValue(rejectedWrite as any);
+
+    const store = useBudgetStore();
+    store.budget = { 2025: { food: { 1: 100 } } };
+    store.comments = { 2025: { food: { 1: ["existing"] } } };
+
+    await expect(
+      store.setBudgetForYear(
+        2025,
+        { food: { 1: 90 } },
+        { food: { 1: ["new"] } },
+      ),
+    ).rejects.toBe(error);
+
+    expect(updatePendingToSync).not.toHaveBeenCalled();
+    expect(store.budget[2025].food[1]).toBe(100);
+    expect(store.comments[2025].food[1]).toEqual(["existing"]);
+  });
 });

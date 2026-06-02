@@ -31,7 +31,7 @@
 ## Error Handling
 - CONFIRMED: Inline budget edits are accepted only when new values are non-negative and changed.
 - CONFIRMED: Empty comments remove the month comment entry.
-- UNCLEAR: Failed IndexedDB save or later sync failure is not surfaced by the view.
+- CONFIRMED: Local IndexedDB queue write failures are blocking save failures: the budget view shows an error toast message, keeps pending edits pending, keeps the pending-change navigation guard active, and does not update budget store state as if the save succeeded.
 
 ## Edge Cases
 - CONFIRMED: Category rows are not directly editable.
@@ -45,15 +45,21 @@
 - CONFIRMED: GIVEN comments exist across months in a grouped period, WHEN grouped comments are requested, THEN the result concatenates the included month comment arrays.
 - CONFIRMED: GIVEN pending budget edits exist, WHEN the user saves, THEN `budget_<year>.json` is staged in IndexedDB with `to_sync: true` and pending sync counters are updated.
 - CONFIRMED: GIVEN unsaved budget edits exist, WHEN the user navigates away, THEN the pending-form route guard blocks navigation.
-- UNCLEAR: The product response for failed local save or later sync failure is not specified.
+- CONFIRMED: GIVEN pending budget edits exist, WHEN the local IndexedDB queue write fails, THEN the app shows a local save failure error and keeps the edits pending.
+- CONFIRMED: GIVEN the local budget queue write fails, WHEN failure handling completes, THEN `budgetStore.budget[year]` and `budgetStore.comments[year]` are not replaced with the failed values.
+- CONFIRMED: GIVEN the local budget queue write fails, WHEN failure handling completes, THEN `FORM_WITH_PENDING_EVENTS` remains true and the Save action remains available.
+- CONFIRMED: GIVEN the local budget queue write fails, WHEN failure handling completes, THEN pending sync counters are not updated for that failed write.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/budget.spec.ts` covers load, grouping, comments, persistence, and pending sync update.
+- CONFIRMED: Budget store tests assert that rejected `idb.saveJsonFile()` calls propagate failure and do not update `budget`, `comments`, or pending sync counters.
+- REQUIRED: Budget view tests should assert that a rejected local queue write shows an error message, keeps `pendingToSave` true, keeps the navigation guard pending, and leaves Save available.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No rendered `Budget.vue` tests for editing, context menu, comments dialog, or navigation blocking.
 - CONFIRMED: No tests for currency-converted budget totals.
+- CONFIRMED: Budget store tests cover local queue write failure state preservation; no rendered `Budget.vue` test covers the failure toast and pending UI.
 
 ## Product Questions
-- UNCLEAR: Should budget edits autosave, warn, or discard when a later sync upload fails?
+- RESOLVED: Local queue write failure is blocking. Show an error toast or dialog, keep budget edits pending, and do not mark the edit as saved.
 - UNCLEAR: Should comment history preserve author/time metadata, or are plain strings sufficient?

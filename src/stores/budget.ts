@@ -68,7 +68,7 @@ export const useBudgetStore = defineStore("budget", () => {
     values: YearlyBudgetData,
     commentValues: YearlyCommentsData,
   ) {
-    idb.saveJsonFile({
+    await idb.saveJsonFile({
       id: `budget_${year}.json`,
       data: { values: toRaw(values), comments: toRaw(commentValues) },
       date_cached: Date.now(),
@@ -76,7 +76,7 @@ export const useBudgetStore = defineStore("budget", () => {
     });
     budget.value[year] = values;
     comments.value[year] = commentValues;
-    storageStore.updatePendingToSync();
+    await storageStore.updatePendingToSync();
   }
 
   return {

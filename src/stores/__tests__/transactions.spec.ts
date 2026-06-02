@@ -25,6 +25,7 @@ describe("transactions store", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    vi.mocked(idb.saveTransaction).mockResolvedValue(undefined as any);
     updatePendingToSync.mockResolvedValue(undefined);
   });
 
@@ -116,6 +117,25 @@ describe("transactions store", () => {
     expect(updatePendingToSync).toHaveBeenCalled();
   });
 
+  it("treats failed local transaction queue writes as blocking", async () => {
+    const error = new Error("IndexedDB unavailable");
+    vi.mocked(idb.saveTransaction).mockRejectedValue(error);
+
+    const store = useTransactionsStore();
+    await expect(
+      store.saveTransaction({
+        id: 11,
+        date: "2025-02-20",
+        description: "new",
+        values: [{ accountId: "a", accountValue: 10 }],
+      } as any),
+    ).rejects.toBe(error);
+
+    expect(updatePendingToSync).not.toHaveBeenCalled();
+    expect(readJsonFile).not.toHaveBeenCalled();
+    expect(idb.getAllTransactions).not.toHaveBeenCalled();
+  });
+
   it("marks transaction as deleted when deleting", async () => {
     const store = useTransactionsStore();
     await store.deleteTransaction({
@@ -129,5 +149,22 @@ describe("transactions store", () => {
       expect.objectContaining({ id: 99, deleted: true }),
     );
     expect(updatePendingToSync).toHaveBeenCalled();
+  });
+
+  it("treats failed local transaction delete queue writes as blocking", async () => {
+    const error = new Error("IndexedDB unavailable");
+    vi.mocked(idb.saveTransaction).mockRejectedValue(error);
+
+    const store = useTransactionsStore();
+    await expect(
+      store.deleteTransaction({
+        id: 99,
+        date: "2025-02-20",
+        description: "x",
+        values: [],
+      } as any),
+    ).rejects.toBe(error);
+
+    expect(updatePendingToSync).not.toHaveBeenCalled();
   });
 });

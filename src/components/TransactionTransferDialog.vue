@@ -121,6 +121,7 @@ import {
   buildAccountOptions,
   flattenFieldErrors,
 } from "@/helpers/transactionForms";
+import { EVENTS } from "@/helpers/events";
 
 interface FormState {
   date: Date;
@@ -275,9 +276,17 @@ async function handleSubmit() {
     ],
   };
 
-  await transactionsStore.saveTransaction(transaction);
-  close();
-  resetState();
+  try {
+    await transactionsStore.saveTransaction(transaction);
+    close();
+    resetState();
+  } catch {
+    EVENTS.emit("message", {
+      severity: "error",
+      summary: "Transaction not saved",
+      message: "The transaction could not be saved locally. Please try again.",
+    });
+  }
 }
 
 watch(

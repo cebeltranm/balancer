@@ -253,6 +253,7 @@ import {
   buildAccountOptions,
   collectRecentTransactions,
 } from "@/helpers/transactionForms";
+import { EVENTS } from "@/helpers/events";
 
 const accountsStore = useAccountsStore();
 const trxStore = useTransactionsStore();
@@ -517,40 +518,48 @@ async function handleSubmit(_event: any) {
     return;
   }
 
-  if (props.transaction?.id) {
-    await trxStore.deleteTransaction(toRaw(props.transaction));
-  }
+  try {
+    if (props.transaction?.id) {
+      await trxStore.deleteTransaction(toRaw(props.transaction));
+    }
 
-  const trans = {
-    ...props.transaction,
-    id: Date.now(),
-    date: formatLocalDate(state.value.date),
-    description: state.value.description,
-    tags:
-      state.value.tags && state.value.tags.length > 0
-        ? ([...state.value.tags] as string[])
-        : undefined,
-    values: state.value.values
-      .filter((v) => v.account?.id && v.value !== null)
-      .map((v) => ({
-        accountId: v.account!.id!,
-        value: v.value as number,
-        units: v.units === null ? undefined : v.units,
-        accountValue:
-          v.account?.currency !== state.value.values[0]?.account?.currency
-            ? (v.accountValue ?? undefined)
-            : (v.value as number),
-      })),
-  };
-  await trxStore.saveTransaction(toRaw(trans));
-  close();
-  emit("update:transaction", trans);
-  state.value.values = [
-    { value: null, account: null, accountValue: null, units: null },
-    { value: null, account: null, accountValue: null, units: null },
-  ];
-  state.value.description = "";
-  state.value.tags = [];
+    const trans = {
+      ...props.transaction,
+      id: Date.now(),
+      date: formatLocalDate(state.value.date),
+      description: state.value.description,
+      tags:
+        state.value.tags && state.value.tags.length > 0
+          ? ([...state.value.tags] as string[])
+          : undefined,
+      values: state.value.values
+        .filter((v) => v.account?.id && v.value !== null)
+        .map((v) => ({
+          accountId: v.account!.id!,
+          value: v.value as number,
+          units: v.units === null ? undefined : v.units,
+          accountValue:
+            v.account?.currency !== state.value.values[0]?.account?.currency
+              ? (v.accountValue ?? undefined)
+              : (v.value as number),
+        })),
+    };
+    await trxStore.saveTransaction(toRaw(trans));
+    close();
+    emit("update:transaction", trans);
+    state.value.values = [
+      { value: null, account: null, accountValue: null, units: null },
+      { value: null, account: null, accountValue: null, units: null },
+    ];
+    state.value.description = "";
+    state.value.tags = [];
+  } catch {
+    EVENTS.emit("message", {
+      severity: "error",
+      summary: "Transaction not saved",
+      message: "The transaction could not be saved locally. Please try again.",
+    });
+  }
 }
 
 function updatePropTransaction() {
