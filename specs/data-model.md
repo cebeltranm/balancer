@@ -92,7 +92,9 @@
 - CONFIRMED: Sync merges pending transactions into the month file by removing same ids from the remote file and appending non-deleted pending transactions.
 - INFERRED: `deleted` is a queue marker for sync, not intended to remain in durable monthly files after successful sync.
 - INFERRED: Id generation with `Date.now()` is collision-prone only in extreme same-millisecond cases.
-- UNCLEAR: No global uniqueness or audit-history requirement is specified for transaction ids.
+- CONFIRMED: Transaction ids are row identity for monthly merge behavior, not stable audit identity across edits.
+- CONFIRMED: Editing a transaction continues to use delete-plus-new-id: the original id is queued with `deleted: true`, and the edited replacement is queued with a fresh `Date.now()` id. Code currently satisfies this requirement.
+- REQUIRED: Tests for transaction edit identity should assert the original id is deleted, the replacement id is freshly generated, and sync omits the deleted original while keeping the replacement.
 
 ## `values_<year>.json`
 - CONFIRMED: File name pattern is `values_<year>.json`.

@@ -66,6 +66,55 @@ describe("sync helper", () => {
     expect(idb.removeTransactions).toHaveBeenCalledWith([1, 2, 3]);
   });
 
+  it("syncs edited transactions as deleted original id plus fresh replacement id", async () => {
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([
+      { id: 42, date: "2025-02-20", deleted: true },
+      {
+        id: 123456789,
+        date: "2025-02-20",
+        description: "Edited payment",
+        values: [],
+      },
+    ] as any);
+    vi.mocked(files.readJsonFile).mockResolvedValue([
+      {
+        id: 42,
+        date: "2025-02-20",
+        description: "Original payment",
+        values: [],
+      },
+      {
+        id: 7,
+        date: "2025-02-18",
+        description: "Unrelated remote transaction",
+        values: [],
+      },
+    ]);
+
+    await syncTransactions();
+
+    expect(idb.saveJsonFile).toHaveBeenCalledWith({
+      id: "transactions_2025_2.json",
+      data: [
+        {
+          id: 7,
+          date: "2025-02-18",
+          description: "Unrelated remote transaction",
+          values: [],
+        },
+        {
+          id: 123456789,
+          date: "2025-02-20",
+          description: "Edited payment",
+          values: [],
+        },
+      ],
+      date_cached: expect.any(Number),
+      to_sync: true,
+    });
+    expect(idb.removeTransactions).toHaveBeenCalledWith([42, 123456789]);
+  });
+
   it("lists cached file timestamps and syncs files marked to_sync", async () => {
     vi.mocked(idb.getAllFilesInCache).mockResolvedValue([
       "a.json",

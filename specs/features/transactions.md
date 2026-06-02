@@ -10,6 +10,7 @@
 - CONFIRMED: Pending rows with `to_sync` are styled via `rowClass`.
 - CONFIRMED: `TransactionEditDialog.vue` creates or edits transactions and validates with Zod.
 - CONFIRMED: Editing an existing transaction first queues deletion of the original transaction, then saves a new transaction with a fresh `Date.now()` id.
+- CONFIRMED: The product decision for transaction edit identity is to continue using delete-plus-new-id. Code currently satisfies this requirement.
 - CONFIRMED: Deleting a transaction queues it in IndexedDB with `deleted: true`.
 - CONFIRMED: The store merges pending IndexedDB transactions over the remote monthly file on load.
 
@@ -43,6 +44,7 @@
 - CONFIRMED: Recent transaction suggestions search up to 6 months and 5 results.
 - CONFIRMED: `getLastTags()` scans up to the last 3 loaded months.
 - INFERRED: If transaction ids collide, merge-by-id can replace unintended rows.
+- CONFIRMED: Transaction ids are not stable audit identities across edits; an edit is represented as a deleted original transaction plus a newly-created replacement transaction.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN a remote monthly file and pending IndexedDB transactions for the same month, WHEN the month is loaded, THEN visible rows include non-deleted pending rows and remote rows not replaced by the same pending ids.
@@ -50,12 +52,17 @@
 - CONFIRMED: GIVEN a valid transaction form, WHEN the user saves, THEN the queued IndexedDB record does not persist a local `to_sync` property on the transaction payload.
 - CONFIRMED: GIVEN transaction values whose sum is not approximately zero, WHEN the user attempts to save, THEN the form rejects the save and displays a validation error.
 - CONFIRMED: GIVEN an existing transaction is edited, WHEN save succeeds, THEN the original id is queued as deleted and the edited transaction is queued with a new id.
+- REQUIRED: GIVEN an existing transaction with id `oldId`, WHEN the user saves edits, THEN `deleteTransaction()` is called for the original transaction before the edited replacement is queued.
+- REQUIRED: GIVEN an existing transaction with id `oldId`, WHEN the edited replacement is queued, THEN the replacement id is a fresh `Date.now()` id and is not required to equal `oldId`.
+- REQUIRED: GIVEN an edited transaction has both original deletion and replacement records pending, WHEN transactions sync, THEN the durable monthly file omits the deleted original id and includes the replacement transaction unless another queued row with the replacement id supersedes it.
 - UNCLEAR: The product response for an IndexedDB write failure is not specified beyond the current lack of visible UI feedback.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/transactions.spec.ts` covers monthly load/merge, save queueing, and delete queueing.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` covers monthly merge and queue cleanup.
 - CONFIRMED: `src/helpers/__tests__/groupData.spec.ts` and `options.spec.ts` cover period mechanics used by related reporting.
+- REQUIRED: Transaction dialog tests should cover edit submit as delete-plus-new-id by asserting the original id is queued deleted and the replacement save uses a fresh id.
+- REQUIRED: Sync tests should continue to assert that deleted queued transaction ids are omitted from staged monthly files and non-deleted queued replacement transactions are appended.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No rendered tests for `Transactions.vue` or `TransactionEditDialog.vue`.
@@ -63,5 +70,5 @@
 - CONFIRMED: No integration test covers edit-as-delete-plus-new-save and subsequent balance recalculation.
 
 ## Product Questions
-- UNCLEAR: Should editing preserve the original transaction id, or is delete-plus-new-id the intended audit/history behavior?
+- RESOLVED: Editing continues to use delete-plus-new-id; preserving original transaction ids for audit/history is out of scope for the current product model.
 - UNCLEAR: What user-visible message or retry option should appear when local queue writes fail?

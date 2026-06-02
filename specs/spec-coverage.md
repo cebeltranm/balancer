@@ -104,7 +104,7 @@
 - CONFIRMED: No direct data-file naming contradiction was found across product overview, data model, and feature specs.
 - INFERRED: There is a product tension between PWA "offline-ready assets" and storage sync requirements; app shell can be offline-ready while fresh remote JSON data cannot be guaranteed offline.
 - RESOLVED: Account ids are durable references across historical files; archive/hide replaces hard deletion.
-- INFERRED: There is a product tension between edit-as-delete-plus-new-transaction-id and any future requirement for stable transaction identity or audit history.
+- RESOLVED: Transaction edits intentionally continue to use delete-plus-new-id; stable audit identity across edits is out of scope unless a future audit/reconciliation feature changes the model.
 - UNCLEAR: Google Drive is listed as planned/unavailable; no feature spec should treat it as an implemented provider until product scope changes.
 
 ## Highest-Priority Product Owner Questions
@@ -114,7 +114,7 @@
 - UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?
 - UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?
 - UNCLEAR: Should balance snapshots be treated as rebuildable cache with a force-recalculate action, or as durable financial records?
-- UNCLEAR: Should transaction edits preserve ids for history/audit purposes or continue using delete-plus-new-id?
+- RESOLVED: Transaction edits continue using delete-plus-new-id. Current code satisfies this behavior; add dialog-level coverage to lock it down.
 
 ## Recommended Next Specs To Write
 - CONFIRMED: `specs/features/transaction-dialogs.md` for transaction type-specific dialog components and expected flow, if those components are still intended to be active.
