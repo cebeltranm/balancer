@@ -70,6 +70,13 @@
                 )
               }}
             </div>
+            <small
+              class="text-orange-300 text-right"
+              style="width: 100%"
+              v-if="node.data.missingRates?.length"
+            >
+              {{ node.data.missingRateLabel }}
+            </small>
             <div
               style="width: 100%"
               :class="{
@@ -136,6 +143,13 @@
             <div class="text-right" style="width: 100%">
               {{ $format.currency(getTotal(index), CURRENCY) }}
             </div>
+            <small
+              class="text-orange-300 text-right"
+              style="width: 100%"
+              v-if="missingRates.length"
+            >
+              {{ missingRateLabel(missingRates) }}
+            </small>
             <div
               style="width: 100%"
               :class="{
@@ -157,6 +171,10 @@
       </Column>
     </template>
   </TreeTable>
+
+  <small class="block text-orange-300 text-right" v-if="missingRates.length">
+    {{ missingRateLabel(missingRates) }}
+  </small>
 
   <GChart
     v-if="displayType === 'pie'"
@@ -238,6 +256,32 @@ const budgetStore = useBudgetStore();
 
 const categorySelected = ref("All");
 
+interface MissingRate {
+  accountId: string;
+  accountName: string;
+  asset: string;
+  currency: string;
+}
+
+function addMissingRate(missingRates: MissingRate[], missingRate: MissingRate) {
+  if (
+    !missingRates.some(
+      (m) =>
+        m.accountId === missingRate.accountId &&
+        m.asset === missingRate.asset &&
+        m.currency === missingRate.currency,
+    )
+  ) {
+    missingRates.push(missingRate);
+  }
+}
+
+function missingRateLabel(missingRates: MissingRate[]) {
+  return `Missing rate: ${missingRates
+    .map((rate) => `${rate.asset}->${rate.currency} (${rate.accountId})`)
+    .join(", ")}`;
+}
+
 function getTotalByCategory(
   category: any,
   balance: any,
@@ -245,6 +289,7 @@ function getTotalByCategory(
   comments?: any,
 ) {
   let children = undefined;
+  const missingRates: MissingRate[] = [];
   let values =
     category.type === "Category"
       ? []
@@ -261,6 +306,11 @@ function getTotalByCategory(
     children = Object.keys(category.children).map((key) =>
       getTotalByCategory(category.children[key], balance, budget, comments),
     );
+    children.forEach((child) =>
+      child.data.missingRates?.forEach((missingRate) =>
+        addMissingRate(missingRates, missingRate),
+      ),
+    );
     positive = children[0].data.positive;
     values = children.reduce((ant, child) => {
       if (!ant) {
@@ -271,15 +321,31 @@ function getTotalByCategory(
           child.data.currency !== CURRENCY?.value &&
           child.data.values[index]
         ) {
-          return (
-            v +
-            child.data.values[index] *
-              valuesStore.getValue(
-                getPeriodDate(period.value.type, period.value.value),
-                child.data.currency,
-                CURRENCY?.value,
-              )
+          const conversionDate = getPeriodDate(
+            period.value.type,
+            period.value.value,
           );
+          const conv = valuesStore.getValue(
+            conversionDate,
+            child.data.currency,
+            CURRENCY?.value,
+          );
+          if (
+            conv === 0 &&
+            !valuesStore.hasValue(
+              conversionDate,
+              child.data.currency,
+              CURRENCY?.value,
+            )
+          ) {
+            addMissingRate(missingRates, {
+              accountId: child.key,
+              accountName: child.data.name,
+              asset: child.data.currency,
+              currency: CURRENCY?.value,
+            });
+          }
+          return v + child.data.values[index] * conv;
         }
         return v + child.data.values[index];
       });
@@ -295,15 +361,31 @@ function getTotalByCategory(
             child.data.currency !== CURRENCY?.value &&
             child.data.budget[index]
           ) {
-            return (
-              v +
-              child.data.budget[index] *
-                valuesStore.getValue(
-                  getPeriodDate(period.value.type, period.value.value),
-                  child.data.currency,
-                  CURRENCY?.value,
-                )
+            const conversionDate = getPeriodDate(
+              period.value.type,
+              period.value.value,
             );
+            const conv = valuesStore.getValue(
+              conversionDate,
+              child.data.currency,
+              CURRENCY?.value,
+            );
+            if (
+              conv === 0 &&
+              !valuesStore.hasValue(
+                conversionDate,
+                child.data.currency,
+                CURRENCY?.value,
+              )
+            ) {
+              addMissingRate(missingRates, {
+                accountId: child.key,
+                accountName: child.data.name,
+                asset: child.data.currency,
+                currency: CURRENCY?.value,
+              });
+            }
+            return v + child.data.budget[index] * conv;
           }
           return v + child.data.budget[index];
         });
@@ -330,6 +412,10 @@ function getTotalByCategory(
       comments: vComments,
       currency: category.currency || CURRENCY?.value,
       positive,
+      missingRates: missingRates.length ? missingRates : undefined,
+      missingRateLabel: missingRates.length
+        ? missingRateLabel(missingRates)
+        : undefined,
     },
     children,
   };
@@ -367,6 +453,15 @@ const byCategory = computed(() => {
     ),
   );
 });
+
+const missingRates = computed(() =>
+  byCategory.value.reduce((rates: MissingRate[], category: any) => {
+    category.data.missingRates?.forEach((missingRate) =>
+      addMissingRate(rates, missingRate),
+    );
+    return rates;
+  }, []),
+);
 
 const treeMap = computed(() => {
   const groupElements = (group: any, parent: string) =>

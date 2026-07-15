@@ -73,6 +73,37 @@ export const useValuesStore = defineStore("values", () => {
     return 0;
   }
 
+  function hasValue(
+    date: Date,
+    asset: string,
+    currency: string,
+    maxLevels: number = 3,
+  ): boolean {
+    if (asset === currency) {
+      return true;
+    }
+
+    let currentPeriod: PeriodParams = {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      quarter: 1,
+    };
+
+    for (let level = 0; level < maxLevels; level++) {
+      const monthData = values.value[currentPeriod.year]?.[currentPeriod.month];
+      if (
+        monthData &&
+        (monthData[asset]?.[currency] !== undefined ||
+          monthData[currency]?.[asset] !== undefined)
+      ) {
+        return true;
+      }
+      currentPeriod = increasePeriod(Period.Month, currentPeriod, -1);
+    }
+
+    return false;
+  }
+
   function joinValues(
     date: Date,
     currency: string,
@@ -153,6 +184,7 @@ export const useValuesStore = defineStore("values", () => {
     loadValuesForYear,
     ensureCurrentMonthValues,
     getValue,
+    hasValue,
     setValuesForMonth,
     joinValues,
   };

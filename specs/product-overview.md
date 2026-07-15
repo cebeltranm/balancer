@@ -172,12 +172,13 @@ Validation scripts defined in `package.json` are:
 - CONFIRMED: Specs identify current automated coverage for stores/helpers and call out missing rendered component and integration tests.
 - INFERRED: End-to-end user journeys are described across feature specs but not yet consolidated into a single happy-path onboarding-to-first-transaction scenario.
 - UNCLEAR: First-run onboarding after a missing `accounts.json` seed is not specified as a user-facing product flow.
-- RESOLVED: Stale balance recovery is specified by RT-010: balance snapshots are derived cache, authenticated users must be able to force recalculation, and recalculation must warn when required source data is missing. Recovery flows for failed sync, lost WebAuthn credentials, and missing exchange rates remain unspecified.
+- RESOLVED: Stale balance recovery is specified by RT-010: balance snapshots are derived cache, authenticated users must be able to force recalculation, and recalculation must warn when required source data is missing. RT-011 specifies that missing exchange rates in UI summaries must produce partial totals with visible affected currency/account indicators. Recovery flows for failed sync and lost WebAuthn credentials remain unspecified.
 - CONFIRMED: Multi-device sync conflicts are specified as transaction merge-by-id and whole-file last writer wins with a visible warning.
 
 ## Highest-Risk Product Decisions
 
 - CONFIRMED: Conflict resolution for concurrent edits is implemented for the current scope: transaction merge-by-id exists, and whole-file conflicts use last writer wins with a visible warning.
 - CONFIRMED: Account deletion/reference policy is archive/hide only; hard deletion is blocked so transactions, budgets, values, balances, dashboard, expenses, and investments can continue resolving historical account ids.
-- UNCLEAR: Error UX for sync, provider login, WebAuthn, external value providers, and missing conversion rates is not specified consistently.
+- UNCLEAR: Error UX for sync, provider login, WebAuthn, and external value providers is not specified consistently.
+- RESOLVED: Missing conversion rates in expense and investment UI summaries show partial totals with a visible missing-rate indicator listing affected currencies/accounts.
 - UNCLEAR: Offline behavior needs a product-level promise separating offline app-shell availability from offline finance-data availability.

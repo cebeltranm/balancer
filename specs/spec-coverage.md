@@ -60,7 +60,7 @@
 - CONFIRMED: Storage conflict behavior is specified and implemented for the current scope: transaction merge-by-id and whole-file last writer wins with a visible warning.
 - INFERRED: Dashboard startup dependencies are inferred from `Auth.vue` loading behavior rather than a rendered dashboard test.
 - INFERRED: Account legacy/migration concerns are inferred from `public/accounts.json` and enum mismatches.
-- INFERRED: Missing exchange-rate impact in expenses/investments is inferred from conversion code paths.
+- CONFIRMED: Missing exchange-rate behavior is specified by RT-011: expense and investment UI summaries must show partial totals with a visible missing-rate indicator listing affected currencies/accounts, and must not silently coerce missing rates to zero.
 - UNCLEAR: Runtime service-worker behavior is weakly evidenced because generated service-worker output is not inspected or specified.
 - UNCLEAR: WebAuthn failure handling is weakly evidenced because no tests cover `navigator.credentials` failures.
 - CONFIRMED: Versionless JSON compatibility is covered by `src/helpers/__tests__/persistedShapes.spec.ts` and persisted-family store tests for current names, additive defaults, and ignored deprecated structures.
@@ -94,7 +94,7 @@
 - UNCLEAR: Failed sync and retry recovery after local writes have been accepted.
 - CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
 - UNCLEAR: Lost local WebAuthn credential recovery when provider credentials still exist.
-- UNCLEAR: Missing/stale exchange-rate handling in expenses, investments, values, and balance recalculation.
+- RESOLVED: Missing exchange rates in expense and investment UI summaries require partial totals plus affected currency/account indicators. Current expense and investment code satisfies this with missing-rate metadata and visible indicators; balance recalculation separately warns about missing source data.
 - RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
 - RESOLVED: Manual balance recalculation is required for authenticated users. Balance snapshots are derived cache, and the app must warn when source data needed for recalculation is missing.
 - UNCLEAR: Offline usage contract beyond cached app shell and already-cached IndexedDB data.
@@ -110,7 +110,7 @@
 ## Highest-Priority Product Owner Questions
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
 - RESOLVED: Account lifecycle uses archive/hide as the normal path; hard deletion is blocked in all cases.
-- UNCLEAR: What user-visible error and retry model should be used for failed sync, provider login, WebAuthn, external value providers, and missing conversion rates?
+- UNCLEAR: What user-visible error and retry model should be used for failed sync, provider login, WebAuthn, and external value providers?
 - UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?
 - UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?
 - RESOLVED: Balance snapshots are rebuildable cache and require an authenticated force-recalculate action with missing-source warnings. Current code satisfies this with store and rendered view coverage.

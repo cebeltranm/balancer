@@ -174,6 +174,12 @@
                 )
               }}
             </div>
+            <small
+              class="text-orange-300"
+              v-if="node.data.missingRates?.length"
+            >
+              {{ missingRateLabel(node.data.missingRates) }}
+            </small>
             <div v-if="node.data.values[0].units" class="text-sm">
               ({{ $format.number(node.data.values[0].units) }} und)
             </div>
@@ -185,6 +191,10 @@
             v-if="total && total.length > 0"
           >
             {{ $format.currency(total[0].value, CURRENCY) }}
+            <br v-if="total[0].missingRates?.length" />
+            <small class="text-orange-300" v-if="total[0].missingRates?.length">
+              {{ missingRateLabel(total[0].missingRates) }}
+            </small>
           </div>
         </template>
       </Column>
@@ -209,6 +219,12 @@ function getInOut(val: any, isCategory?: boolean) {
   return val
     ? val.in + (val.in_local || 0) - val.out - (val.out_local || 0)
     : 0;
+}
+
+function missingRateLabel(missingRates: any[]) {
+  return `Missing rate: ${missingRates
+    .map((rate) => `${rate.asset}->${rate.currency} (${rate.accountId})`)
+    .join(", ")}`;
 }
 </script>
 <style lang="scss" scoped>

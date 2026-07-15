@@ -30,12 +30,13 @@
 
 ## Error Handling
 - CONFIRMED: Missing values generally collapse to empty arrays or zero totals through store/helper defaults.
-- UNCLEAR: There is no explicit user-facing error when chart data is incomplete or a conversion rate is missing.
+- REQUIRED: When an expense or income summary cannot convert a child currency because an exchange rate is missing, the UI must display a partial total and a visible missing-rate indicator listing the affected currencies/accounts.
+- IMPLEMENTED: Expense summaries preserve partial totals and display a missing-rate indicator when conversion rates are unavailable.
 
 ## Edge Cases
 - CONFIRMED: Budget progress only renders when a budget value exists for the row/period.
 - CONFIRMED: Category totals aggregate children and convert currencies into the global currency.
-- INFERRED: A missing exchange rate causes converted child amounts to contribute zero or be underrepresented depending on path.
+- CONFIRMED: Missing exchange rates must not be silently coerced to zero in UI summaries; unconverted child amounts are omitted from the displayed partial converted total and identified by the missing-rate indicator.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN the user opens `/expenses` without authentication, WHEN the route renders, THEN the router does not require authentication.
@@ -43,19 +44,22 @@
 - CONFIRMED: GIVEN the user is authenticated, WHEN expenses render, THEN both income and expense groups are shown.
 - CONFIRMED: GIVEN budget comments exist in months included by the selected grouped period, WHEN the table renders, THEN read-only comment badges expose the concatenated comments.
 - CONFIRMED: GIVEN category children use different currencies, WHEN totals are rendered, THEN child values are converted into the global currency using available values rates.
-- UNCLEAR: The expected UI behavior for missing conversion rates or incomplete chart data is not specified.
+- REQUIRED: GIVEN an expense or income child account uses a non-global currency and no exchange rate is available for the displayed period, WHEN the table, treemap, or bar summary renders, THEN the converted total is shown as a partial total and the UI displays a missing-rate indicator naming the affected currency and account.
+- REQUIRED: GIVEN a conversion rate is explicitly stored as `0`, WHEN expense summaries are rendered, THEN the zero value is treated as present data and is not reported as missing.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers grouped balance period logic.
 - CONFIRMED: `src/stores/__tests__/budget.spec.ts` covers budget/comment grouping.
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` covers conversion lookup and joining values.
 - CONFIRMED: `src/helpers/__tests__/groupData.spec.ts` covers period grouping.
+- CONFIRMED: `src/views/__tests__/ExpensesMissingRates.spec.ts` covers partial totals with a visible missing-rate indicator for affected currencies/accounts.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No rendered tests for table, treemap, or bar displays.
 - CONFIRMED: No tests for unauthenticated vs authenticated expenses visibility.
 - CONFIRMED: No tests for budget progress rendering or comment dialog behavior.
+- CONFIRMED: Rendered expense summary coverage verifies missing conversion rates produce partial totals plus a visible missing-rate indicator with affected currencies/accounts.
+- CONFIRMED: Rendered expense summary coverage verifies explicit zero rates/values are not flagged as missing.
 
 ## Product Questions
-- UNCLEAR: Should missing exchange rates display a warning, exclude the row, or display a partial total?
 - UNCLEAR: Should income be hidden from unauthenticated users because it is sensitive, or because the current data-loading flow requires authentication?

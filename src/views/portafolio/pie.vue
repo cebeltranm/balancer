@@ -1,4 +1,7 @@
 <template>
+  <small class="block text-orange-300 text-right" v-if="missingRates.length">
+    {{ missingRateLabel(missingRates) }}
+  </small>
   <GChart
     :settings="{ packages: ['corechart', 'treemap'] }"
     type="TreeMap"
@@ -45,6 +48,9 @@
               )
             }}
           </div>
+          <small class="text-orange-300" v-if="node.data.missingRates?.length">
+            {{ missingRateLabel(node.data.missingRates) }}
+          </small>
         </div>
       </template>
     </Column>
@@ -114,6 +120,30 @@ const props = defineProps<{
 const onChartReady = ref(false);
 
 const valuesStore = useValuesStore();
+
+const missingRates = computed(() =>
+  (props.accountsGrouped || []).reduce((rates: any[], group: any) => {
+    group.data.missingRates?.forEach((missingRate: any) => {
+      if (
+        !rates.some(
+          (rate) =>
+            rate.accountId === missingRate.accountId &&
+            rate.asset === missingRate.asset &&
+            rate.currency === missingRate.currency,
+        )
+      ) {
+        rates.push(missingRate);
+      }
+    });
+    return rates;
+  }, []),
+);
+
+function missingRateLabel(rates: any[]) {
+  return `Missing rate: ${rates
+    .map((rate) => `${rate.asset}->${rate.currency} (${rate.accountId})`)
+    .join(", ")}`;
+}
 
 const treeMap = computed(() => {
   const groupElements = (group: any, parent: string, parentArr: any[]) => {

@@ -11,6 +11,9 @@
       },
     }"
   />
+  <small class="block text-orange-300 text-right" v-if="missingRates.length">
+    {{ missingRateLabel(missingRates) }}
+  </small>
 </template>
 <script lang="ts" setup>
 import { type Ref, inject, computed } from "vue";
@@ -27,6 +30,14 @@ const props = defineProps<{
   total: any[];
   period: PeriodOption;
 }>();
+
+const missingRates = computed(() => props.total?.[0]?.missingRates || []);
+
+function missingRateLabel(rates: any[]) {
+  return `Missing rate: ${rates
+    .map((rate) => `${rate.asset}->${rate.currency} (${rate.accountId})`)
+    .join(", ")}`;
+}
 
 const barData = computed(() => {
   const data = props.total;

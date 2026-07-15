@@ -273,6 +273,21 @@ const getTotal = computed(() => {
     out: number;
     expenses: number;
   };
+  const missingRates = accountsGroupBy.value.reduce((rates: any[], child) => {
+    child.data.missingRates?.forEach((missingRate: any) => {
+      if (
+        !rates.some(
+          (rate) =>
+            rate.accountId === missingRate.accountId &&
+            rate.asset === missingRate.asset &&
+            rate.currency === missingRate.currency,
+        )
+      ) {
+        rates.push(missingRate);
+      }
+    });
+    return rates;
+  }, []);
   const val1 = accountsGroupBy.value.reduce<TotalEntry[] | undefined>(
     (ant, child) => {
       if (!ant) {
@@ -285,8 +300,14 @@ const getTotal = computed(() => {
       }
       return ant.map((v, index) => ({
         value: v.value + child.data.values[index].value,
-        in: v.in + child.data.values[index].in + child.data.values[index].in_local,
-        out: v.out + child.data.values[index].out + child.data.values[index].out_local,
+        in:
+          v.in +
+          child.data.values[index].in +
+          child.data.values[index].in_local,
+        out:
+          v.out +
+          child.data.values[index].out +
+          child.data.values[index].out_local,
         expenses: v.expenses + child.data.values[index].expenses,
       }));
     },
@@ -301,6 +322,7 @@ const getTotal = computed(() => {
           ...v,
           gp: div2 > 0 ? (div1 - div2) / div2 : 0,
           gp_value: div2 > 0 ? div1 - div2 : 0,
+          missingRates,
         };
       })
     : [];

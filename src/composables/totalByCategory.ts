@@ -23,6 +23,7 @@ interface CategoryData {
   currency: string;
   isCategory: boolean;
   expected?: any;
+  missingRates?: MissingRate[];
 }
 
 interface CategoryResult {
@@ -31,9 +32,32 @@ interface CategoryResult {
   children?: CategoryResult[];
 }
 
+interface MissingRate {
+  accountId: string;
+  accountName: string;
+  asset: string;
+  currency: string;
+}
+
 export function useTotalByCategory() {
   const CURRENCY: Ref | undefined = inject("CURRENCY");
   const valuesStore = useValuesStore();
+
+  function addMissingRate(
+    missingRates: MissingRate[],
+    missingRate: MissingRate,
+  ) {
+    if (
+      !missingRates.some(
+        (m) =>
+          m.accountId === missingRate.accountId &&
+          m.asset === missingRate.asset &&
+          m.currency === missingRate.currency,
+      )
+    ) {
+      missingRates.push(missingRate);
+    }
+  }
 
   function get(
     category: any,
@@ -42,6 +66,7 @@ export function useTotalByCategory() {
     displayType: string,
   ): CategoryResult {
     let children: CategoryResult[] = [];
+    const missingRates: MissingRate[] = [];
     let values =
       category.type === AccountType.Category ? [] : balance[category.id];
     if (category.percentage) {
@@ -58,6 +83,11 @@ export function useTotalByCategory() {
       children = Object.keys(category.children).map((key) =>
         get(category.children[key], balance, period, displayType),
       );
+      children.forEach((child) =>
+        child.data.missingRates?.forEach((missingRate) =>
+          addMissingRate(missingRates, missingRate),
+        ),
+      );
       values = children.reduce(
         (ant, child) => {
           return ant.map((v, index) => {
@@ -66,16 +96,32 @@ export function useTotalByCategory() {
               child.data.currency !== CURRENCY.value &&
               child.data.values[index]
             ) {
+              const conversionDate = getPeriodDate(
+                period.type,
+                index > 0
+                  ? increasePeriod(period.type, period.value, -index)
+                  : period.value,
+              );
               const conv = valuesStore.getValue(
-                getPeriodDate(
-                  period.type,
-                  index > 0
-                    ? increasePeriod(period.type, period.value, -index)
-                    : period.value,
-                ),
+                conversionDate,
                 child.data.currency,
                 CURRENCY.value,
               );
+              if (
+                conv === 0 &&
+                !valuesStore.hasValue(
+                  conversionDate,
+                  child.data.currency,
+                  CURRENCY.value,
+                )
+              ) {
+                addMissingRate(missingRates, {
+                  accountId: child.key,
+                  accountName: child.data.fullName || child.data.name,
+                  asset: child.data.currency,
+                  currency: CURRENCY.value,
+                });
+              }
               return {
                 value: v.value + child.data.values[index].value * conv,
                 in: v.in + child.data.values[index].in * conv,
@@ -141,6 +187,7 @@ export function useTotalByCategory() {
         currency: category.currency || CURRENCY?.value,
         isCategory: category.type === AccountType.Category,
         expected: category.expected,
+        missingRates: missingRates.length ? missingRates : undefined,
       },
       children: children.length > 0 ? children : undefined,
     };
