@@ -5,6 +5,7 @@ import {
   Period,
   type PeriodParams,
   type BalanceEntry,
+  type Account,
   AccountGroupType,
   AccountType,
   type Transaction,
@@ -15,7 +16,7 @@ import { useTransactionsStore } from "@/stores/transactions";
 import { groupDataByPeriods } from "@/helpers/groupData";
 import * as idb from "../helpers/idb";
 import { toRaw } from "vue";
-import { getCurrentPeriod } from "@/helpers/options";
+import { getCurrentPeriod, increasePeriod } from "@/helpers/options";
 import {
   createEmptyBalanceEntry,
   normalizeYearlyBalanceData,
@@ -23,12 +24,87 @@ import {
 } from "@/helpers/persistedShapes";
 
 type GroupedBalanceData = Record<string, BalanceEntry[]>;
+type BalanceRecalculationWarning = {
+  type: "missing-source-data" | "missing-rate-or-value";
+  source?: string;
+  accountId?: string;
+  message: string;
+};
+
+type BalanceRecalculationResult = YearlyBalanceData & {
+  warnings?: BalanceRecalculationWarning[];
+};
+
+function addWarning(
+  warnings: BalanceRecalculationWarning[],
+  warning: BalanceRecalculationWarning,
+) {
+  const alreadyAdded = warnings.some(
+    (existing) =>
+      existing.type === warning.type &&
+      existing.source === warning.source &&
+      existing.accountId === warning.accountId,
+  );
+  if (!alreadyAdded) {
+    warnings.push(warning);
+  }
+}
+
+function attachWarnings(
+  yearlyData: YearlyBalanceData,
+  warnings: BalanceRecalculationWarning[],
+): BalanceRecalculationResult {
+  Object.defineProperty(yearlyData, "warnings", {
+    value: warnings,
+    enumerable: false,
+    configurable: true,
+  });
+  return yearlyData as BalanceRecalculationResult;
+}
+
+function isHiddenForMonth(account: Account, monthDate: Date): boolean {
+  return Boolean(
+    account.hideSince &&
+      new Date(
+        account.hideSince.getFullYear(),
+        account.hideSince.getMonth(),
+        1,
+      ) <= monthDate,
+  );
+}
 
 export const useBalanceStore = defineStore("balance", () => {
   const balance: Ref<Record<number, YearlyBalanceData>> = ref({});
   const accountsStore = useAccountsStore();
   const valuesStore = useValuesStore();
   const transactionsStore = useTransactionsStore();
+
+  function hasValueEntry(date: Date, asset: string, currency: string): boolean {
+    if (asset === currency) {
+      return true;
+    }
+
+    let currentPeriod: PeriodParams = {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      quarter: 1,
+    };
+
+    for (let level = 0; level < 3; level++) {
+      const monthData =
+        valuesStore.values[currentPeriod.year]?.[currentPeriod.month];
+      if (
+        monthData &&
+        (monthData[asset]?.[currency] !== undefined ||
+          monthData[currency]?.[asset] !== undefined)
+      ) {
+        return true;
+      }
+      currentPeriod = increasePeriod(Period.Month, currentPeriod, -1);
+    }
+
+    return false;
+  }
 
   /**
    * Gets balance data grouped by periods
@@ -148,13 +224,17 @@ export const useBalanceStore = defineStore("balance", () => {
     year: number,
     month: number,
     save: boolean,
-  ): Promise<YearlyBalanceData> {
+    warnings: BalanceRecalculationWarning[] = [],
+  ): Promise<BalanceRecalculationResult> {
     const JANUARY = 1;
     const DECEMBER = 12;
     const currentPeriod = getCurrentPeriod();
 
-    await valuesStore.loadValuesForYear(year, false);
-    const accounts = await accountsStore.loadAccounts(false);
+    const valuesData = await valuesStore.loadValuesForYear(year, false);
+    const accounts = (await accountsStore.loadAccounts(false)) as Record<
+      string,
+      Account
+    >;
     const yearBalance = (await loadBalanceForYear(year, false)) || {};
     const prevBalance =
       month === JANUARY
@@ -167,6 +247,39 @@ export const useBalanceStore = defineStore("balance", () => {
       year,
       month,
     );
+    if (!transactions) {
+      const source = `transactions_${year}_${month}.json`;
+      addWarning(warnings, {
+        type: "missing-source-data",
+        source,
+        message: `${source} is missing. Recalculated balances may be incomplete.`,
+      });
+    }
+
+    const accountsRequiringValues = Object.values(accounts).filter(
+      (account) =>
+        !isHiddenForMonth(account, monthDate) &&
+        [
+          AccountType.Investment,
+          AccountType.CD,
+          AccountType.Property,
+          AccountType.MutualFund,
+          AccountType.ETF,
+          AccountType.Stock,
+          AccountType.Crypto,
+        ].includes(account.type),
+    );
+    if (
+      accountsRequiringValues.length > 0 &&
+      Object.keys(valuesData).length === 0
+    ) {
+      const source = `values_${year}.json`;
+      addWarning(warnings, {
+        type: "missing-source-data",
+        source,
+        message: `${source} is missing. Recalculated balances may be incomplete.`,
+      });
+    }
 
     // Calculate account value changes from transactions
     const accountValueChanges: Record<string, number> = {};
@@ -320,8 +433,24 @@ export const useBalanceStore = defineStore("balance", () => {
             monthlyBalance.expenses = investment.expenses;
             monthlyBalance.units = investment.units;
           }
-          monthlyBalance.value =
-            valuesStore.getValue(monthDate, accountId, account.currency) || 0;
+          {
+            const accountValue = valuesStore.getValue(
+              monthDate,
+              accountId,
+              account.currency,
+            );
+            if (
+              !hasValueEntry(monthDate, accountId, account.currency) &&
+              !isHiddenForMonth(account, monthDate)
+            ) {
+              addWarning(warnings, {
+                type: "missing-rate-or-value",
+                accountId,
+                message: `${accountId} is missing a value for ${year}-${month}. Recalculated balances may be incomplete.`,
+              });
+            }
+            monthlyBalance.value = accountValue || 0;
+          }
           break;
 
         case AccountType.ETF:
@@ -341,10 +470,24 @@ export const useBalanceStore = defineStore("balance", () => {
               monthlyBalance.expenses = investment.expenses;
             }
             monthlyBalance.units = totalUnits;
-            monthlyBalance.value =
-              totalUnits *
-              (valuesStore.getValue(monthDate, accountId, account.currency) ||
-                0);
+            {
+              const accountValue = valuesStore.getValue(
+                monthDate,
+                accountId,
+                account.currency,
+              );
+              if (
+                !hasValueEntry(monthDate, accountId, account.currency) &&
+                !isHiddenForMonth(account, monthDate)
+              ) {
+                addWarning(warnings, {
+                  type: "missing-rate-or-value",
+                  accountId,
+                  message: `${accountId} is missing a value for ${year}-${month}. Recalculated balances may be incomplete.`,
+                });
+              }
+              monthlyBalance.value = totalUnits * (accountValue || 0);
+            }
           }
           break;
       }
@@ -360,7 +503,7 @@ export const useBalanceStore = defineStore("balance", () => {
     if (shouldRecalculateNext) {
       const nextYear = month === DECEMBER ? year + 1 : year;
       const nextMonth = month === DECEMBER ? JANUARY : month + 1;
-      await recalculateBalance(nextYear, nextMonth, save);
+      await recalculateBalance(nextYear, nextMonth, save, warnings);
     }
 
     // Save data if required
@@ -377,7 +520,14 @@ export const useBalanceStore = defineStore("balance", () => {
       });
     }
 
-    return yearBalance;
+    return attachWarnings(yearBalance, warnings);
+  }
+
+  async function forceRecalculateBalance(
+    year: number,
+    month: number,
+  ): Promise<BalanceRecalculationResult> {
+    return recalculateBalance(year, month, true);
   }
 
   return {
@@ -386,5 +536,6 @@ export const useBalanceStore = defineStore("balance", () => {
     loadBalanceForYear,
     ensureCurrentMonthBalance,
     recalculateBalance,
+    forceRecalculateBalance,
   };
 });

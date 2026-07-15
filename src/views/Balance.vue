@@ -8,18 +8,41 @@
       />
     </template>
     <template #end>
-      <SelectButton
-        v-model="displayType"
-        :options="displayOptions"
-        optionValue="id"
-      >
-        <template #option="{ option }">
-          <i :class="option.icon"></i>
-        </template>
-      </SelectButton>
+      <div class="flex align-items-center gap-2">
+        <Button
+          v-if="storageStore.status.authenticated"
+          label="Recalculate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          :loading="recalculating"
+          @click="forceRecalculate"
+        />
+        <SelectButton
+          v-model="displayType"
+          :options="displayOptions"
+          optionValue="id"
+        >
+          <template #option="{ option }">
+            <i :class="option.icon"></i>
+          </template>
+        </SelectButton>
+      </div>
     </template>
   </Toolbar>
   <template v-if="storageStore.status.authenticated">
+    <Message
+      v-if="recalculateWarnings.length"
+      severity="warn"
+      :closable="false"
+      class="mt-2"
+    >
+      <div>Recalculated balances may be incomplete.</div>
+      <ul class="m-0 pl-3">
+        <li v-for="warning in recalculateWarnings" :key="warning.message">
+          {{ warning.message }}
+        </li>
+      </ul>
+    </Message>
     <div class="balance">
       <DataTable
         :value="values"
@@ -110,6 +133,7 @@ import { useBalanceStore } from "@/stores/balance";
 import { useValuesStore } from "@/stores/values";
 
 const CURRENCY: Ref | undefined = inject("CURRENCY");
+type BalanceWarning = { message: string };
 
 const storageStore = useStorageStore();
 const accountsStore = useAccountsStore();
@@ -128,6 +152,8 @@ const displayOptions = [
 ];
 const values = ref([]);
 const total = ref([]);
+const recalculating = ref(false);
+const recalculateWarnings = ref<BalanceWarning[]>([]);
 
 const periodTitles = ref(["Period1", "Period2", "Period3", "Period4"]);
 
@@ -148,6 +174,20 @@ async function onChangePeriod() {
     balanceStore.loadBalanceForYear(period.value.value.year - 4),
   ]);
   recalculateValues();
+}
+
+async function forceRecalculate() {
+  recalculating.value = true;
+  try {
+    const result = await balanceStore.forceRecalculateBalance(
+      period.value.value.year,
+      period.value.value.month,
+    );
+    recalculateWarnings.value = result.warnings || [];
+    recalculateValues();
+  } finally {
+    recalculating.value = false;
+  }
 }
 
 async function recalculateValues() {

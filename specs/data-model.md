@@ -128,7 +128,10 @@
 - CONFIRMED: Investment/fixed asset/property/mutual fund-like balances use values file prices and transaction-derived flow fields.
 - CONFIRMED: ETF, stock, and crypto balances carry units from previous month plus transaction units and value them by current asset value.
 - CONFIRMED: Recalculation recursively updates future months until current month and stages the year file for sync only for December or the current month.
-- INFERRED: Balance is derived and can be regenerated, but it is persisted for performance and reporting.
+- REQUIRED: Balance is a derived cache, not a durable financial record. It can be regenerated from accounts, transactions, values, and prior balances, and is persisted for performance, reporting, and sync.
+- CONFIRMED: Current code recalculates and persists balances, exposes user-triggered force recalculation, and returns warning metadata for missing source data without changing the persisted balance file shape.
+- CONFIRMED: Missing value/rate warning metadata excludes accounts whose `hideSince` date makes them inactive for the recalculated month.
+- CONFIRMED: Explicit `0` value/rate entries are valid data and do not produce missing-source warning metadata.
 
 ## Cross-File Reference Rules
 - CONFIRMED: Transactions, budget, values, and balance files reference account ids from `accounts.json`.
@@ -142,4 +145,4 @@
 - CONFIRMED: The app must not introduce schema versions for the current persisted JSON files; compatibility is maintained by preserving names and top-level structures, adding defaulted structures only, and ignoring removed structures.
 - RESOLVED: Invalid persisted files, including unparseable JSON, missing required fields, and unsupported enum values, must not be overwritten automatically. The app must show a recoverable error and keep the raw remote file intact until user action.
 - CONFIRMED: RT-005 is implemented for the current persisted-file read/write path and `accounts.json` malformed-entry validation. Broader recovery UI polish remains part of future error-handling work.
-- UNCLEAR: Should derived `balance_<year>.json` be treated as disposable cache or user-visible durable history?
+- RESOLVED: Derived `balance_<year>.json` files are rebuildable cache. Users should not be required to edit them directly, and authenticated users must have a force-recalculate action with warnings when source data needed for a trustworthy rebuild is missing.

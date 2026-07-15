@@ -248,4 +248,204 @@ describe("balance store", () => {
     expect(balanceStore.balance[2026].cash_wallet[5].value).toBe(125);
     expect(idb.saveJsonFile).not.toHaveBeenCalled();
   });
+
+  it("replaces an existing month when recalculation is explicitly requested", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      switch (fileName) {
+        case "accounts.json":
+          return {
+            cash_wallet: {
+              name: "Wallet",
+              type: AccountType.Cash,
+              currency: "usd",
+              category: ["Cash"],
+            },
+          };
+        case "balance_2026.json":
+          return {
+            cash_wallet: {
+              4: entry({ value: 100 }),
+              5: entry({ value: 999 }),
+            },
+          };
+        case "transactions_2026_5.json":
+          return [
+            {
+              description: "Cash deposit",
+              values: [{ accountId: "cash_wallet", accountValue: 50 }],
+            },
+          ];
+        default:
+          return false;
+      }
+    });
+
+    const balanceStore = useBalanceStore();
+    await balanceStore.recalculateBalance(2026, 5, true);
+
+    expect(balanceStore.balance[2026].cash_wallet[5]).toEqual(
+      entry({ value: 150 }),
+    );
+    expect(idb.saveJsonFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "balance_2026.json",
+        to_sync: true,
+      }),
+    );
+  });
+
+  it("exposes a force recalculation action for authenticated balance rebuilds", () => {
+    const balanceStore = useBalanceStore();
+
+    expect(typeof (balanceStore as any).forceRecalculateBalance).toBe(
+      "function",
+    );
+  });
+
+  it("returns warning metadata when source data required for recalculation is missing", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      switch (fileName) {
+        case "accounts.json":
+          return {
+            brokerage: {
+              name: "Brokerage",
+              type: AccountType.Stock,
+              currency: "usd",
+              category: ["Investments"],
+            },
+            old_brokerage: {
+              name: "Old Brokerage",
+              type: AccountType.Stock,
+              currency: "usd",
+              category: ["Investments"],
+              hideSince: "2026-01-01",
+            },
+          };
+        case "balance_2026.json":
+        case "values_2026.json":
+        case "transactions_2026_5.json":
+          return false;
+        default:
+          return false;
+      }
+    });
+
+    const balanceStore = useBalanceStore();
+    const result = (await balanceStore.recalculateBalance(
+      2026,
+      5,
+      true,
+    )) as any;
+
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "transactions_2026_5.json",
+          type: "missing-source-data",
+        }),
+        expect.objectContaining({
+          source: "values_2026.json",
+          type: "missing-source-data",
+        }),
+        expect.objectContaining({
+          accountId: "brokerage",
+          type: "missing-rate-or-value",
+        }),
+      ]),
+    );
+    expect(result.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          accountId: "old_brokerage",
+        }),
+      ]),
+    );
+  });
+
+  it("does not warn about missing values when only hidden accounts require values", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      switch (fileName) {
+        case "accounts.json":
+          return {
+            old_brokerage: {
+              name: "Old Brokerage",
+              type: AccountType.Stock,
+              currency: "usd",
+              category: ["Investments"],
+              hideSince: "2026-01-01",
+            },
+          };
+        case "balance_2026.json":
+        case "values_2026.json":
+        case "transactions_2026_5.json":
+          return false;
+        default:
+          return false;
+      }
+    });
+
+    const balanceStore = useBalanceStore();
+    const result = (await balanceStore.recalculateBalance(
+      2026,
+      5,
+      true,
+    )) as any;
+
+    expect(result.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "values_2026.json",
+        }),
+        expect.objectContaining({
+          accountId: "old_brokerage",
+        }),
+      ]),
+    );
+  });
+
+  it("does not warn when an account has an explicit zero value", async () => {
+    vi.mocked(readJsonFile).mockImplementation(async (fileName) => {
+      switch (fileName) {
+        case "accounts.json":
+          return {
+            brokerage: {
+              name: "Brokerage",
+              type: AccountType.Stock,
+              currency: "usd",
+              category: ["Investments"],
+            },
+          };
+        case "values_2026.json":
+          return {
+            5: {
+              brokerage: {
+                usd: 0,
+              },
+            },
+          };
+        case "balance_2026.json":
+        case "transactions_2026_5.json":
+          return false;
+        default:
+          return false;
+      }
+    });
+
+    const balanceStore = useBalanceStore();
+    const result = (await balanceStore.recalculateBalance(
+      2026,
+      5,
+      true,
+    )) as any;
+
+    expect(balanceStore.balance[2026].brokerage[5].value).toBe(0);
+    expect(result.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          accountId: "brokerage",
+          type: "missing-rate-or-value",
+        }),
+      ]),
+    );
+  });
 });

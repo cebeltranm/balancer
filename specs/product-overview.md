@@ -172,7 +172,7 @@ Validation scripts defined in `package.json` are:
 - CONFIRMED: Specs identify current automated coverage for stores/helpers and call out missing rendered component and integration tests.
 - INFERRED: End-to-end user journeys are described across feature specs but not yet consolidated into a single happy-path onboarding-to-first-transaction scenario.
 - UNCLEAR: First-run onboarding after a missing `accounts.json` seed is not specified as a user-facing product flow.
-- UNCLEAR: Recovery flows for failed sync, lost WebAuthn credentials, missing exchange rates, and stale balances are not specified.
+- RESOLVED: Stale balance recovery is specified by RT-010: balance snapshots are derived cache, authenticated users must be able to force recalculation, and recalculation must warn when required source data is missing. Recovery flows for failed sync, lost WebAuthn credentials, and missing exchange rates remain unspecified.
 - CONFIRMED: Multi-device sync conflicts are specified as transaction merge-by-id and whole-file last writer wins with a visible warning.
 
 ## Highest-Risk Product Decisions

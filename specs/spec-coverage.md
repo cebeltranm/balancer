@@ -96,7 +96,7 @@
 - UNCLEAR: Lost local WebAuthn credential recovery when provider credentials still exist.
 - UNCLEAR: Missing/stale exchange-rate handling in expenses, investments, values, and balance recalculation.
 - RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
-- UNCLEAR: Manual or user-triggered balance recalculation when stored balances appear stale.
+- RESOLVED: Manual balance recalculation is required for authenticated users. Balance snapshots are derived cache, and the app must warn when source data needed for recalculation is missing.
 - UNCLEAR: Offline usage contract beyond cached app shell and already-cached IndexedDB data.
 
 ### Cross-Spec Contradictions / Tensions
@@ -113,7 +113,7 @@
 - UNCLEAR: What user-visible error and retry model should be used for failed sync, provider login, WebAuthn, external value providers, and missing conversion rates?
 - UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?
 - UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?
-- UNCLEAR: Should balance snapshots be treated as rebuildable cache with a force-recalculate action, or as durable financial records?
+- RESOLVED: Balance snapshots are rebuildable cache and require an authenticated force-recalculate action with missing-source warnings. Current code satisfies this with store and rendered view coverage.
 - RESOLVED: Transaction edits continue using delete-plus-new-id. Current code satisfies this behavior; add dialog-level coverage to lock it down.
 
 ## Recommended Next Specs To Write
