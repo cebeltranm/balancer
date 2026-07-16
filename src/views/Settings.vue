@@ -289,9 +289,7 @@ function normalizeComposition(composition: Record<string, any>) {
   const assetClassList = [
     ...new Set([...defaultAssetClasses, ...Object.keys(composition)]),
   ];
-  const regionList = [
-    ...new Set([...GEOGRAPHIC_EXPOSURE_OPTIONS, "Global"]),
-  ];
+  const regionList = [...new Set([...GEOGRAPHIC_EXPOSURE_OPTIONS, "Global"])];
 
   const types = assetClassList.reduce(
     (acc, assetClass) => {

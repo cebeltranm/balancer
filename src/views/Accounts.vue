@@ -232,7 +232,9 @@
 
         <template v-if="showInvestmentFields">
           <div class="col-12 md:col-4">
-            <label class="block mb-2 font-medium" for="account-risk">Risk</label>
+            <label class="block mb-2 font-medium" for="account-risk"
+              >Risk</label
+            >
             <Select
               id="account-risk"
               v-model="form.risk"
@@ -593,7 +595,8 @@ function buildClassAllocation(
   const rows = createDefaultClassRows();
   rows.forEach((row) => {
     regions.forEach((region) => {
-      row.weights[region] = Number(source?.[row.assetClass]?.[region] || 0) * 100;
+      row.weights[region] =
+        Number(source?.[row.assetClass]?.[region] || 0) * 100;
     });
   });
   return rows;
