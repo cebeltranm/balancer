@@ -148,6 +148,7 @@ import { useAccountsStore } from "@/stores/accounts";
 import { useConfigStore } from "@/stores/config";
 import { useStorageStore } from "@/stores/storage";
 import { useBalanceStore } from "@/stores/balance";
+import { EVENTS } from "@/helpers/events";
 
 const valuesStore = useValuesStore();
 const accountsStore = useAccountsStore();
@@ -315,7 +316,19 @@ async function syncValues() {
         }
       }
     }
-    return Promise.all(promises);
+    const results = await Promise.allSettled(promises);
+    if (
+      results.some(
+        (result) => result.status === "rejected" || result.value === false,
+      )
+    ) {
+      EVENTS.emit("message", {
+        severity: "error",
+        summary: "Value sync failed",
+        message:
+          "Value sync failed. Some prices or exchange rates may be stale. Try again later.",
+      });
+    }
   }
 
   return storageStore.executeInSync(process());
@@ -323,32 +336,37 @@ async function syncValues() {
 
 async function syncCruptoInBTC() {
   const res = await getCurrencyValues("btc");
-  if (res.status === 200) {
-    const data = await res.json();
-    values.value.forEach((v: any) => {
-      if (
-        v.type === "Crypto" &&
-        v.currency === "btc" &&
-        data.btc[v.name.toLowerCase()] &&
-        1 / Number(data.btc[v.name.toLowerCase()]) !== v.value
-      ) {
-        v.value = 1 / Number(data.btc[v.name.toLowerCase()]);
-        v.to_sync = true;
-        pendingToSave.value = true;
-      }
-      if (
-        v.type === "Crypto" &&
-        v.currency === "usd" &&
-        v.name.toLowerCase() === "btc" &&
-        data.btc["usd"] &&
-        data.btc["usd"] !== v.value
-      ) {
-        v.value = data.btc["usd"];
-        v.to_sync = true;
-        pendingToSave.value = true;
-      }
-    });
+  if (res.status !== 200) {
+    return false;
   }
+  const data = await res.json();
+  if (!data?.btc) {
+    return false;
+  }
+  values.value.forEach((v: any) => {
+    if (
+      v.type === "Crypto" &&
+      v.currency === "btc" &&
+      data.btc[v.name.toLowerCase()] &&
+      1 / Number(data.btc[v.name.toLowerCase()]) !== v.value
+    ) {
+      v.value = 1 / Number(data.btc[v.name.toLowerCase()]);
+      v.to_sync = true;
+      pendingToSave.value = true;
+    }
+    if (
+      v.type === "Crypto" &&
+      v.currency === "usd" &&
+      v.name.toLowerCase() === "btc" &&
+      data.btc["usd"] &&
+      data.btc["usd"] !== v.value
+    ) {
+      v.value = data.btc["usd"];
+      v.to_sync = true;
+      pendingToSave.value = true;
+    }
+  });
+  return true;
 }
 
 async function getCurrencyValues(currency: string) {
@@ -376,20 +394,25 @@ async function getCurrencyValues(currency: string) {
 
 async function syncCurrencies() {
   const res = await getCurrencyValues("usd");
-  if (res.status === 200) {
-    const data = await res.json();
-    values.value.forEach((v: any) => {
-      if (
-        v.type === "Currency" &&
-        data.usd[v.currency] &&
-        Number(data.usd[v.currency]) !== v.value
-      ) {
-        v.value = Number(data.usd[v.currency]);
-        v.to_sync = true;
-        pendingToSave.value = true;
-      }
-    });
+  if (res.status !== 200) {
+    return false;
   }
+  const data = await res.json();
+  if (!data?.usd) {
+    return false;
+  }
+  values.value.forEach((v: any) => {
+    if (
+      v.type === "Currency" &&
+      data.usd[v.currency] &&
+      Number(data.usd[v.currency]) !== v.value
+    ) {
+      v.value = Number(data.usd[v.currency]);
+      v.to_sync = true;
+      pendingToSave.value = true;
+    }
+  });
+  return true;
 }
 
 // AlphaVantage https://www.alphavantage.co
@@ -402,20 +425,27 @@ async function syncAlphaVantage(key: string, accounts: Account[]) {
     for (const a of accounts) {
       const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&datatype=json&symbol=${a.symbol}&apikey=${key}`;
       const res = await fetch(url);
-      if (res.status === 200) {
-        const data = await res.json();
-        if (data && data["Global Quote"]["05. price"]) {
-          const v = values.value.find((v) => v.id === a.id);
-          if (v) {
-            v.value = data["Global Quote"]["05. price"];
-            v.to_sync = true;
-            pendingToSave.value = true;
-          }
-        }
+      if (res.status !== 200) {
+        return false;
+      }
+      const data = await res.json();
+      if (!data?.["Global Quote"]?.["05. price"]) {
+        return false;
+      }
+      const v = values.value.find((v) => v.id === a.id);
+      if (v) {
+        v.value = data["Global Quote"]["05. price"];
+        v.to_sync = true;
+        pendingToSave.value = true;
       }
       // return;
     }
   }
+  return true;
+}
+
+function isRecordArray(data: any): data is any[] {
+  return Array.isArray(data) && data.length > 0;
 }
 
 // Market Stack https://marketstack.com/
@@ -431,22 +461,25 @@ async function syncMarketStack(key: string, accounts: Account[]) {
 
   const url = `http://api.marketstack.com/v1/eod/${date}?access_key=${key}&symbols=${accounts.map((a) => a.symbol).join(",")}`;
   const res = await fetch(url);
-  if (res.status === 200) {
-    const data = await res.json();
-    if (data && data.data && data.data.length > 0) {
-      data.data.forEach((s) => {
-        const a = accounts.find((y) => y.symbol === s.symbol);
-        if (a) {
-          const v = values.value.find((v) => v.id === a.id);
-          if (v) {
-            v.value = Number(s.close);
-            v.to_sync = true;
-            pendingToSave.value = true;
-          }
-        }
-      });
-    }
+  if (res.status !== 200) {
+    return false;
   }
+  const data = await res.json();
+  if (!isRecordArray(data?.data)) {
+    return false;
+  }
+  data.data.forEach((s) => {
+    const a = accounts.find((y) => y.symbol === s.symbol);
+    if (a) {
+      const v = values.value.find((v) => v.id === a.id);
+      if (v) {
+        v.value = Number(s.close);
+        v.to_sync = true;
+        pendingToSave.value = true;
+      }
+    }
+  });
+  return true;
 }
 
 // Market Stack https://rapidapi.com/
@@ -461,30 +494,27 @@ async function syncRaidApi(key: string, host: string, accounts: Account[]) {
   };
 
   const res = await fetch(url, options);
-  if (res.status === 200) {
-    const data = await res.json();
-
-    if (
-      data &&
-      data.quoteResponse &&
-      data.quoteResponse.result &&
-      data.quoteResponse.result.length > 0
-    ) {
-      data.quoteResponse.result.forEach((s) => {
-        const a = accounts.find((y) => y.symbol === s.symbol);
-        if (a) {
-          const v = values.value.find((v) => v.id === a.id);
-          if (v) {
-            v.value = Number(s.regularMarketPrice);
-            v.to_sync = true;
-            pendingToSave.value = true;
-          }
-        }
-      });
-    }
+  if (res.status !== 200) {
+    return false;
   }
-}
+  const data = await res.json();
 
+  if (!isRecordArray(data?.quoteResponse?.result)) {
+    return false;
+  }
+  data.quoteResponse.result.forEach((s) => {
+    const a = accounts.find((y) => y.symbol === s.symbol);
+    if (a) {
+      const v = values.value.find((v) => v.id === a.id);
+      if (v) {
+        v.value = Number(s.regularMarketPrice);
+        v.to_sync = true;
+        pendingToSave.value = true;
+      }
+    }
+  });
+  return true;
+}
 async function save() {
   await valuesStore.setValuesForMonth(
     period.value.value.year,

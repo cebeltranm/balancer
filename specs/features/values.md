@@ -12,6 +12,7 @@
 - CONFIRMED: Value lookup supports direct rates, inverse rates, fallback to prior months, explicit zero values, and USD cross-rates.
 - CONFIRMED: Startup copies previous-month values into a missing current month when requested.
 - CONFIRMED: Sync can fetch currency rates from fawazahmed0 currency APIs, crypto values in BTC, and stock prices from AlphaVantage, MarketStack, or RapidAPI/Yahoo Finance depending on `config.stock_api`.
+- CONFIRMED: RT-012 is implemented: external value sync failures are shown as one generic user-facing error.
 
 ## User Flows
 - CONFIRMED: Select month period and inspect current rates/prices with month-over-month and year-over-year deltas.
@@ -33,8 +34,9 @@
 ## Error Handling
 - CONFIRMED: Inline edits are ignored unless the new value is `>= 0` and changed.
 - CONFIRMED: External sync only updates rows when HTTP status is 200 and expected response fields exist.
-- UNCLEAR: External API errors are not surfaced to the user.
-- UNCLEAR: `storageStore.executeInSync()` wraps sync but the values view does not display per-provider failure details.
+- CONFIRMED: RT-012 requires one generic user-facing error when any external value sync provider fails.
+- CONFIRMED: RT-012 does not require per-row or per-provider failure details.
+- CONFIRMED: Current code satisfies RT-012 by aggregating failed external value sync results and emitting one generic user-facing error.
 
 ## Edge Cases
 - CONFIRMED: BTC supports up to 10 decimal places in inputs.
@@ -48,17 +50,20 @@
 - CONFIRMED: GIVEN an explicit zero value exists, WHEN `getValue()` is called, THEN it returns zero and does not fall back to prior months.
 - CONFIRMED: GIVEN the user edits a value to a negative number or unchanged value, WHEN the edit completes, THEN no pending save is created for that row.
 - CONFIRMED: GIVEN the user saves valid selected-month values, WHEN save succeeds, THEN `values_<year>.json` is staged with `to_sync: true` and balances are recalculated from that month.
-- UNCLEAR: The expected user-facing result for external provider failures is not specified.
+- CONFIRMED: GIVEN the user triggers external value sync, WHEN any currency, crypto, or stock provider request rejects, THEN the values view shows one generic external value sync error.
+- CONFIRMED: GIVEN the user triggers external value sync, WHEN any external provider returns a non-200 response, THEN the values view shows one generic external value sync error.
+- CONFIRMED: GIVEN the user triggers external value sync, WHEN any external provider returns a 200 response with missing or malformed expected data, THEN the values view shows one generic external value sync error.
+- CONFIRMED: GIVEN multiple providers fail during one external value sync attempt, THEN the values view shows only one generic error and does not expose per-row or per-provider failure details.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` covers value lookup, zero handling, load/save, join values, and current-month bootstrap.
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers value-dependent balance recalculation paths indirectly.
+- CONFIRMED: `src/views/__tests__/Values.spec.ts` covers generic external value sync errors for rejected provider requests, non-200 responses, malformed payloads, and multiple failures.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered `Values.vue` tests for editing, filtering, pending class, save, or external sync.
-- CONFIRMED: No tests mock external currency/stock API responses.
+- CONFIRMED: No rendered `Values.vue` tests for editing, filtering, pending class, save, or successful external sync.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
 
 ## Product Questions
-- UNCLEAR: Should external sync failures be shown per row, per provider, or as a single generic error?
+- RESOLVED: RT-012 external value sync failures should be shown as a single generic error, not per row or per provider.
 - UNCLEAR: What fallback window should the product guarantee for stale rates/prices?
