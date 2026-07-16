@@ -1,5 +1,5 @@
 <template>
-  <div class="grid justify-content-center">
+  <div v-if="values.length" class="grid justify-content-center">
     <div
       class="col-6 lg:col-4 md:col-4 xl:col-3 sm:text-lg"
       v-for="item in values"
@@ -11,6 +11,9 @@
         :currency="item.currency"
       />
     </div>
+  </div>
+  <div v-else class="text-center text-color-secondary">
+    No current balance data available
   </div>
 </template>
 

@@ -9,7 +9,12 @@
 - CONFIRMED: It always summarizes Expenses and Credit Cards.
 - CONFIRMED: When `storageStore.status.authenticated` is true, it also summarizes Cash, Bank Accounts, and Accounts Receivable.
 - CONFIRMED: Totals are grouped by account type and currency and displayed with `AccountValueCard`.
+- CONFIRMED: Current code satisfies the dashboard empty-state requirement; when no cards are available, `HomeView.vue` renders "No current balance data available".
 - INFERRED: The dashboard depends on authentication startup loading current accounts and balances in `Auth.vue`.
+
+## Product Contract
+- REQUIRED: When no current balance cards are available, the dashboard must show the read-only empty state text: "No current balance data available".
+- REQUIRED: Missing current balance data is not a dashboard error state. A failed-load error state is reserved for future error handling once load failures are explicitly represented.
 
 ## User Flows
 - CONFIRMED: User opens `/` and sees cards for available current-month balances.
@@ -28,7 +33,8 @@
 
 ## Error Handling
 - CONFIRMED: If no balance exists for the current year, the computed list returns an empty array.
-- UNCLEAR: No explicit UI error state is shown for missing or failed balance/account loads.
+- REQUIRED: If no current account or balance data is available for dashboard cards, show the read-only empty state: "No current balance data available".
+- REQUIRED: Do not show a dashboard error state for missing current balance data until failed-load handling exists.
 
 ## Edge Cases
 - CONFIRMED: Accounts with no current-month balance or zero/falsy value do not contribute a card.
@@ -40,18 +46,19 @@
 - CONFIRMED: GIVEN current-month cash, bank-account, or receivable values exist, WHEN the user is not locally authenticated, THEN those cards are hidden.
 - CONFIRMED: GIVEN current-month cash, bank-account, or receivable values exist, WHEN the user is locally authenticated, THEN those cards are shown.
 - CONFIRMED: GIVEN the dashboard renders, WHEN no user action is taken, THEN no finance JSON file is written.
-- UNCLEAR: The intended empty/error state for missing account or balance data is not specified.
+- REQUIRED: GIVEN no current balance cards are available, WHEN the dashboard renders, THEN it shows the read-only text "No current balance data available".
+- REQUIRED: GIVEN no current balance cards are available, WHEN the dashboard renders, THEN it does not show a failed-load error state.
+- REQUIRED: GIVEN current balance cards are available, WHEN the dashboard renders, THEN it shows those cards and does not show the empty-state text.
 
 ## Existing Tests Related To This Feature
+- CONFIRMED: `src/views/__tests__/HomeView.spec.ts` verifies the dashboard empty state and verifies that available cards hide the empty-state text.
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers grouped balance behavior.
 - CONFIRMED: `src/stores/__tests__/accounts.spec.ts` covers group-type helpers.
 - CONFIRMED: `src/helpers/__tests__/options.spec.ts` covers current period helper behavior.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered `HomeView.vue` component test.
 - CONFIRMED: No test verifies authenticated vs unauthenticated dashboard group visibility.
 - CONFIRMED: No test verifies cards are grouped by currency.
 
 ## Product Questions
-- UNCLEAR: Should the dashboard show an empty state, skeleton, or error if current balances are unavailable?
 - UNCLEAR: Should dashboard totals ever convert currencies, or must they remain split by currency?
