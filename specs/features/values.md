@@ -43,11 +43,16 @@
 - CONFIRMED: Historical currency API URL format changes before March 2024 vs March 2024 and later.
 - CONFIRMED: Stock API sync only fetches live stock prices for the current selected month for AlphaVantage and RapidAPI paths.
 - CONFIRMED: `getValue()` searches previous months only up to `maxLevels`.
+- CONFIRMED: RT-013 is implemented in code: the fallback window is the current implementation rule, and the app does not show a warning only because a selected period uses a prior-month value.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN the source and target asset/currency are the same, WHEN `getValue()` is called, THEN it returns `1`.
 - CONFIRMED: GIVEN direct, inverse, or USD-cross rates exist within the permitted fallback window, WHEN `getValue()` is called, THEN it returns the expected finite conversion value.
 - CONFIRMED: GIVEN an explicit zero value exists, WHEN `getValue()` is called, THEN it returns zero and does not fall back to prior months.
+- CONFIRMED: GIVEN no direct or inverse value exists in the selected month, WHEN a matching value exists within the `maxLevels` fallback window, THEN `getValue()` returns that prior-month value without requiring a user-facing freshness warning.
+- CONFIRMED: GIVEN no direct or inverse value exists within the `maxLevels` fallback window, WHEN `getValue()` is called, THEN it returns `0`.
+- CONFIRMED: GIVEN a non-USD to non-USD conversion requires a USD cross-rate, WHEN both USD legs are available within their permitted fallback windows, THEN `getValue()` returns the finite cross-rate result.
+- CONFIRMED: GIVEN a selected period uses a prior-month value from the permitted fallback window, WHEN reports or values are rendered, THEN no warning is shown solely for that fallback.
 - CONFIRMED: GIVEN the user edits a value to a negative number or unchanged value, WHEN the edit completes, THEN no pending save is created for that row.
 - CONFIRMED: GIVEN the user saves valid selected-month values, WHEN save succeeds, THEN `values_<year>.json` is staged with `to_sync: true` and balances are recalculated from that month.
 - CONFIRMED: GIVEN the user triggers external value sync, WHEN any currency, crypto, or stock provider request rejects, THEN the values view shows one generic external value sync error.
@@ -61,9 +66,12 @@
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` covers generic external value sync errors for rejected provider requests, non-200 responses, malformed payloads, and multiple failures.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Add store-level tests that verify the default fallback limit returns values within the permitted window and returns `0` outside it.
+- CONFIRMED: Add store-level tests that verify USD cross-rate fallback uses its documented bounded window.
+- CONFIRMED: Add UI or integration test coverage that verifies prior-month fallback does not emit a warning by itself.
 - CONFIRMED: No rendered `Values.vue` tests for editing, filtering, pending class, save, or successful external sync.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
 
 ## Product Questions
 - RESOLVED: RT-012 external value sync failures should be shown as a single generic error, not per row or per provider.
-- UNCLEAR: What fallback window should the product guarantee for stale rates/prices?
+- RESOLVED: RT-013 values fallback window uses the current implementation rule: `getValue()` searches the selected month and prior months up to `maxLevels` attempts, with the default `maxLevels = 3`; non-USD cross-rate legs use `maxLevels = 2`. The app must not show a warning solely because the selected period used a prior-month value.

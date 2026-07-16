@@ -6,6 +6,12 @@ import Values from "@/views/Values.vue";
 import { EVENTS } from "@/helpers/events";
 import { AccountGroupType, AccountType, Currency } from "@/types";
 
+const valueStoreMocks = vi.hoisted(() => ({
+  getValue: vi.fn(() => 1),
+  loadValuesForYear: vi.fn(),
+  setValuesForMonth: vi.fn(),
+}));
+
 vi.mock("@/components/PeriodSelector.vue", () => ({
   default: defineComponent({
     emits: ["update:period"],
@@ -69,9 +75,9 @@ vi.mock("@/stores/balance", () => ({
 vi.mock("@/stores/values", () => ({
   useValuesStore: () => ({
     values: {},
-    getValue: vi.fn(() => 1),
-    loadValuesForYear: vi.fn(),
-    setValuesForMonth: vi.fn(),
+    getValue: valueStoreMocks.getValue,
+    loadValuesForYear: valueStoreMocks.loadValuesForYear,
+    setValuesForMonth: valueStoreMocks.setValuesForMonth,
   }),
 }));
 
@@ -181,6 +187,9 @@ describe("Values external sync failures", () => {
     root = document.createElement("div");
     document.body.appendChild(root);
     emit = vi.spyOn(EVENTS, "emit");
+    valueStoreMocks.getValue.mockReturnValue(1);
+    valueStoreMocks.loadValuesForYear.mockReset();
+    valueStoreMocks.setValuesForMonth.mockReset();
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -231,5 +240,22 @@ describe("Values external sync failures", () => {
 
     expect(fetch).toHaveBeenCalledTimes(2);
     expectOneGenericExternalValueError(emit);
+  });
+
+  it("does not show a warning when rendered values come from prior-month fallback", async () => {
+    valueStoreMocks.getValue.mockReturnValue(3900);
+    app = await mountValues(root);
+
+    const warningMessages = emit.mock.calls.filter(
+      ([eventName, payload]) =>
+        eventName === "message" &&
+        typeof payload === "object" &&
+        payload !== null &&
+        "severity" in payload &&
+        payload.severity === "warn",
+    );
+
+    expect(valueStoreMocks.getValue).toHaveBeenCalled();
+    expect(warningMessages).toHaveLength(0);
   });
 });

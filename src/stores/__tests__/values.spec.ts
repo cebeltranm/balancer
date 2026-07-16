@@ -62,6 +62,66 @@ describe("values store", () => {
     expect(store.getValue(date, "fund_a", "usd")).toBe(0);
   });
 
+  it("uses prior-month values within the default fallback window", () => {
+    const store = useValuesStore();
+    store.values = {
+      2025: {
+        3: {
+          usd: { cop: 3900 },
+        },
+      },
+    };
+
+    const date = new Date("2025-05-15T00:00:00.000Z");
+    expect(store.getValue(date, "usd", "cop")).toBe(3900);
+    expect(store.hasValue(date, "usd", "cop")).toBe(true);
+  });
+
+  it("returns zero when a value is outside the default fallback window", () => {
+    const store = useValuesStore();
+    store.values = {
+      2025: {
+        2: {
+          usd: { cop: 3900 },
+        },
+      },
+    };
+
+    const date = new Date("2025-05-15T00:00:00.000Z");
+    expect(store.getValue(date, "usd", "cop")).toBe(0);
+    expect(store.hasValue(date, "usd", "cop")).toBe(false);
+  });
+
+  it("uses bounded fallback windows for USD cross-rate legs", () => {
+    const store = useValuesStore();
+    store.values = {
+      2025: {
+        4: {
+          eur: { usd: 1.1 },
+        },
+        5: {
+          usd: { cop: 4000 },
+        },
+      },
+    };
+
+    const date = new Date("2025-05-15T00:00:00.000Z");
+    expect(store.getValue(date, "eur", "cop")).toBeCloseTo(1.1 * 4000);
+
+    store.values = {
+      2025: {
+        3: {
+          eur: { usd: 1.1 },
+        },
+        5: {
+          usd: { cop: 4000 },
+        },
+      },
+    };
+
+    expect(store.getValue(date, "eur", "cop")).toBe(0);
+  });
+
   it("loads values, saves month values, and joins values", async () => {
     vi.mocked(readJsonFile).mockResolvedValue({
       1: {
