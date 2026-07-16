@@ -26,8 +26,8 @@
     "other_taxes":{"type":"Expense","name":"Other","currency":"cop","category":["Taxes"]},
     "property_taxes":{"type":"Expense","name":"Property","currency":"cop","category":["Taxes"]},
     
-    "cash_cop":{"type":"cash","name":"Cash","currency":"cop","entity":"Personal"},
+    "cash_cop":{"type":"Cash","name":"Cash","currency":"cop","entity":"Personal"},
     "amex_usd":{"type":"CreditCard","name":"Amex USD","currency":"usd","entity":"Bank"},
-    "saving_account":{"type":"SavingAccount","name":"Saving Account","currency":"usd","entity":"Bank X"}
+    "saving_account":{"type":"BankAccount","name":"Saving Account","currency":"usd","entity":"Bank X"}
     
     }   
