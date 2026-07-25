@@ -12,6 +12,7 @@
 - CONFIRMED: Value lookup supports direct rates, inverse rates, fallback to prior months, explicit zero values, and USD cross-rates.
 - CONFIRMED: Startup copies previous-month values into a missing current month when requested.
 - CONFIRMED: Sync can fetch currency rates from fawazahmed0 currency APIs, crypto values in BTC, and stock prices from AlphaVantage, MarketStack, or RapidAPI/Yahoo Finance depending on `config.stock_api`.
+- CONFIRMED: Active MXN accounts produce a USD-to-MXN exchange-rate row that can be edited, synchronized, and saved with the `mxn` currency code.
 - CONFIRMED: RT-012 is implemented: external value sync failures are shown as one generic user-facing error.
 
 ## User Flows
@@ -59,17 +60,18 @@
 - CONFIRMED: GIVEN the user triggers external value sync, WHEN any external provider returns a non-200 response, THEN the values view shows one generic external value sync error.
 - CONFIRMED: GIVEN the user triggers external value sync, WHEN any external provider returns a 200 response with missing or malformed expected data, THEN the values view shows one generic external value sync error.
 - CONFIRMED: GIVEN multiple providers fail during one external value sync attempt, THEN the values view shows only one generic error and does not expose per-row or per-provider failure details.
+- CONFIRMED: GIVEN an active MXN account and a successful currency-provider response containing `usd.mxn`, WHEN the user synchronizes and saves values, THEN the MXN rate is persisted as `{ usd: { mxn: number } }`.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` covers value lookup, zero handling, load/save, join values, and current-month bootstrap.
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers value-dependent balance recalculation paths indirectly.
-- CONFIRMED: `src/views/__tests__/Values.spec.ts` covers generic external value sync errors for rejected provider requests, non-200 responses, malformed payloads, and multiple failures.
+- CONFIRMED: `src/views/__tests__/Values.spec.ts` covers generic external value sync errors for rejected provider requests, non-200 responses, malformed payloads, and multiple failures, plus successful MXN rate synchronization and persistence.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Add store-level tests that verify the default fallback limit returns values within the permitted window and returns `0` outside it.
 - CONFIRMED: Add store-level tests that verify USD cross-rate fallback uses its documented bounded window.
 - CONFIRMED: Add UI or integration test coverage that verifies prior-month fallback does not emit a warning by itself.
-- CONFIRMED: No rendered `Values.vue` tests for editing, filtering, pending class, save, or successful external sync.
+- CONFIRMED: No rendered `Values.vue` tests for manual editing, filtering, or pending-row styling; successful MXN external sync and save are covered.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
 
 ## Product Questions

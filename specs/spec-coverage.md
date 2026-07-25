@@ -46,10 +46,11 @@
 - CONFIRMED: Period grouping/date helper behavior is covered by `src/helpers/__tests__/groupData.spec.ts` and `src/helpers/__tests__/options.spec.ts`.
 - CONFIRMED: PWA registration helper is covered by `src/helpers/__tests__/pwa.spec.ts`.
 - CONFIRMED: Browser desktop helper used by responsive views is covered by `src/helpers/__tests__/browser.spec.ts`.
+- CONFIRMED: Currency formatting and top-bar MXN selection/display are covered by `src/helpers/__tests__/format.spec.ts` and `src/layout/__tests__/AppTopbar.spec.ts`.
 
 ## Code Areas Without Specs
-- CONFIRMED: `src/format.ts` has no dedicated spec beyond references from feature specs.
-- CONFIRMED: `src/layout/AppMenu.vue` and `src/layout/AppTopbar.vue` are only covered by architecture-level navigation notes.
+- CONFIRMED: `src/format.ts` has focused MXN currency-formatting coverage; other formatter functions are covered only through feature usage.
+- CONFIRMED: `src/layout/AppMenu.vue` is covered only by architecture-level navigation notes; `src/layout/AppTopbar.vue` has focused MXN currency-selector coverage.
 - CONFIRMED: `src/components/TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `TransactionTypeDialog.vue` are not covered in detail because the main transaction view currently uses `TransactionEditDialog.vue`.
 - CONFIRMED: `src/components/AccountsSelector.vue`, `PeriodSelector.vue`, and `CommentsDialog.vue` are covered only as supporting components.
 - CONFIRMED: `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are covered only at a high level by PWA/architecture notes.

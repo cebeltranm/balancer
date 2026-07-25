@@ -41,6 +41,7 @@
 - CONFIRMED: Purpose is account definition, account grouping, account selector input, expense category trees, investment metadata, dashboard categories, and relationships used by other JSON files.
 - CONFIRMED: Shape is a record keyed by account id. Each value is an account payload without `id` when persisted by `saveAccount()`.
 - CONFIRMED: Supported fields from code are `name`, `type`, `currency`, `category`, `entity`, `activeFrom`, `hideSince`, `symbol`, `logo`, `risk`, and `class`.
+- CONFIRMED: Supported account currency codes include `cop`, `usd`, `eur`, `mxn`, and `btc`; the codes remain lowercase in persisted files.
 - CONFIRMED: `activeFrom` and `hideSince` are serialized as `YYYY-MM-DD` strings and parsed into `Date` objects on load.
 - CONFIRMED: `category` is an array of strings when present; empty categories are omitted on save.
 - CONFIRMED: `class` is a nested record `{ [assetClass]: { [region]: number } }` for account allocation weights.
@@ -101,6 +102,7 @@
 - CONFIRMED: Purpose is yearly monthly exchange rates and asset prices.
 - CONFIRMED: Shape is `{ [monthNumber]: { [assetIdOrCurrency]: { [currency]: number } } }`.
 - CONFIRMED: Currency values are stored as `usd -> targetCurrency` rates, for example `{ usd: { cop: 4000 } }`.
+- CONFIRMED: Mexican peso rates use the same shape, for example `{ usd: { mxn: 18.5 } }`.
 - CONFIRMED: Investment/property values are stored as `{ [accountId]: { [accountCurrency]: value } }`.
 - CONFIRMED: `getValue()` returns 1 for same asset/currency, direct rates, inverse rates, fallback to prior months up to `maxLevels`, and USD cross-rates when neither side is USD.
 - CONFIRMED: Explicit zero values are respected and do not fall back.

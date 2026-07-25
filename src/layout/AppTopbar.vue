@@ -76,7 +76,7 @@ const currencyIcon = computed(() => {
   return iconClass ? `pi ${iconClass}` : "pi";
 });
 const currencyIconText = computed(() =>
-  CURRENCY_ICONS[CURRENCY.value] ? "" : CURRENCY.value,
+  CURRENCY_ICONS[CURRENCY.value] ? "" : CURRENCY.value.toUpperCase(),
 );
 
 const menuCurrencies = ref();

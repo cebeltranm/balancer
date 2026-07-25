@@ -7,6 +7,7 @@
 - CONFIRMED: `/settings/accounts` maps to `src/views/Accounts.vue` and requires authentication.
 - CONFIRMED: The page filters accounts by account group and active/inactive visibility.
 - CONFIRMED: Users can create, edit, hide, and unhide accounts.
+- CONFIRMED: Account creation supports COP, USD, EUR, MXN, and BTC currency codes.
 - CONFIRMED: RT-003 is implemented: archive/hide is the normal path, and hard deletion is blocked in normal app code.
 - CONFIRMED: Persisted accounts are saved to `accounts.json` keyed by account id, without an embedded `id`.
 - CONFIRMED: Account grouping is defined by `ACCOUNT_GROUP_TYPES` in `src/stores/accounts.ts`.
@@ -48,6 +49,7 @@
 - CONFIRMED: GIVEN an investment account without entity, risk outside 1-5, or class allocation total different from 100%, WHEN the user attempts to save, THEN save is blocked.
 - CONFIRMED: GIVEN a valid account save, WHEN `accounts.json` is written, THEN persisted date fields are `YYYY-MM-DD` strings and the saved account payload does not include an embedded `id`.
 - CONFIRMED: GIVEN an existing account, WHEN the edit dialog is opened, THEN id, group, type, and currency controls are disabled.
+- CONFIRMED: GIVEN the user creates an account denominated in Mexican pesos, WHEN the currency is selected, THEN the account is saved with the stable lowercase currency code `mxn`.
 - REQUIRED: GIVEN an existing active account, WHEN the user wants to remove it from normal use, THEN the app hides/archives the account by setting `hideSince` and keeps the account id in `accounts.json`.
 - REQUIRED: GIVEN an existing hidden account, WHEN historical transactions, budgets, values, or balances reference that account id, THEN the account definition remains available for lookup and reporting.
 - REQUIRED: GIVEN any existing account, WHEN normal app code attempts hard deletion, THEN the account is not removed from `accounts.json`.

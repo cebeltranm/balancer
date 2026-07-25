@@ -40,6 +40,12 @@ vi.mock("@/stores/accounts", () => ({
         currency: Currency.COP,
       },
       {
+        id: "mxn_checking",
+        name: "MXN Checking",
+        type: AccountType.BankAccount,
+        currency: Currency.MXN,
+      },
+      {
         id: "btc_wallet",
         name: "BTC",
         type: AccountType.Crypto,
@@ -151,6 +157,19 @@ async function clickSync(root: HTMLElement) {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+async function clickSave(root: HTMLElement) {
+  const saveButton = Array.from(root.querySelectorAll("button")).find(
+    (button) => button.textContent === "Save",
+  );
+  expect(saveButton).toBeTruthy();
+
+  saveButton?.dispatchEvent(
+    new MouseEvent("click", { bubbles: true, cancelable: true }),
+  );
+  await nextTick();
+  await Promise.resolve();
+}
+
 function expectOneGenericExternalValueError(emit: ReturnType<typeof vi.spyOn>) {
   const valueSyncErrors = emit.mock.calls.filter(
     ([eventName, payload]) =>
@@ -178,7 +197,7 @@ function expectOneGenericExternalValueError(emit: ReturnType<typeof vi.spyOn>) {
   );
 }
 
-describe("Values external sync failures", () => {
+describe("Values external sync", () => {
   let root: HTMLDivElement;
   let app: ReturnType<typeof createApp> | undefined;
   let emit: ReturnType<typeof vi.spyOn>;
@@ -257,5 +276,48 @@ describe("Values external sync failures", () => {
 
     expect(valueStoreMocks.getValue).toHaveBeenCalled();
     expect(warningMessages).toHaveLength(0);
+  });
+
+  it("synchronizes and saves the MXN exchange rate for an active MXN account", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        response(200, {
+          usd: {
+            cop: 4100,
+            mxn: 17.5,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        response(200, {
+          btc: {
+            usd: 65000,
+          },
+        }),
+      );
+    app = await mountValues(root);
+
+    await clickSync(root);
+    await clickSave(root);
+
+    expect(valueStoreMocks.setValuesForMonth).toHaveBeenCalledWith(
+      2026,
+      5,
+      expect.objectContaining({
+        usd: expect.objectContaining({
+          mxn: 17.5,
+        }),
+      }),
+    );
+    expect(
+      emit.mock.calls.filter(
+        ([eventName, payload]) =>
+          eventName === "message" &&
+          typeof payload === "object" &&
+          payload !== null &&
+          "severity" in payload &&
+          payload.severity === "error",
+      ),
+    ).toHaveLength(0);
   });
 });

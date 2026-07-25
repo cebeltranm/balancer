@@ -64,6 +64,7 @@ export enum Currency {
   COP = "cop",
   USD = "usd",
   EUR = "eur",
+  MXN = "mxn",
   BTC = "btc",
 }
 

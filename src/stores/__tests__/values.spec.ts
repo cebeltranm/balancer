@@ -33,7 +33,7 @@ describe("values store", () => {
       2025: {
         2: {
           btc: { usd: 50000 },
-          usd: { cop: 4000 },
+          usd: { cop: 4000, mxn: 20 },
           eur: { usd: 1.1 },
         },
       },
@@ -43,6 +43,9 @@ describe("values store", () => {
     expect(store.getValue(date, "btc", "usd")).toBe(50000);
     expect(store.getValue(date, "cop", "usd")).toBeCloseTo(1 / 4000);
     expect(store.getValue(date, "eur", "cop")).toBeCloseTo(1.1 * 4000);
+    expect(store.getValue(date, "usd", "mxn")).toBe(20);
+    expect(store.getValue(date, "mxn", "usd")).toBeCloseTo(1 / 20);
+    expect(store.getValue(date, "mxn", "cop")).toBeCloseTo(200);
   });
 
   it("keeps explicit zero values instead of falling back to prior months", () => {
