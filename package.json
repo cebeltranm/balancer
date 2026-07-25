@@ -1,6 +1,6 @@
 {
   "name": "balancer",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "scripts": {
     "build": "vite build",
     "test": "vitest run",
