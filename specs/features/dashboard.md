@@ -15,6 +15,7 @@
 ## Product Contract
 - REQUIRED: When no current balance cards are available, the dashboard must show the read-only empty state text: "No current balance data available".
 - REQUIRED: Missing current balance data is not a dashboard error state. A failed-load error state is reserved for future error handling once load failures are explicitly represented.
+- RESOLVED (RT-015): Dashboard cards must remain split by currency and must never be currency-converted. Each account group total is shown per currency, one card per (group, currency) pair. This is intended product behavior, not a gap. Converted totals are only used in reports that already depend on a global currency (e.g. Expenses, Balance, Budget, Assets, Transactions, portfolio views), not on the dashboard.
 
 ## User Flows
 - CONFIRMED: User opens `/` and sees cards for available current-month balances.
@@ -39,6 +40,7 @@
 ## Edge Cases
 - CONFIRMED: Accounts with no current-month balance or zero/falsy value do not contribute a card.
 - CONFIRMED: Values are not currency-converted on the dashboard; totals are separated by currency.
+- CONFIRMED: `HomeView.vue` does not inject the global `CURRENCY` value and does not use `useValuesStore()`/conversion helpers, so a global currency selection has no effect on dashboard cards.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN the user opens `/` without authentication, WHEN the route renders, THEN no authentication dialog is required by the router guard for that route.
@@ -49,6 +51,8 @@
 - REQUIRED: GIVEN no current balance cards are available, WHEN the dashboard renders, THEN it shows the read-only text "No current balance data available".
 - REQUIRED: GIVEN no current balance cards are available, WHEN the dashboard renders, THEN it does not show a failed-load error state.
 - REQUIRED: GIVEN current balance cards are available, WHEN the dashboard renders, THEN it shows those cards and does not show the empty-state text.
+- REQUIRED (RT-015): GIVEN current-month balances exist for the same account group in two different currencies, WHEN the dashboard renders, THEN it shows one separate card per currency for that group, and the amounts are not summed together or converted into a single currency.
+- REQUIRED (RT-015): GIVEN a global currency (`CURRENCY`) is selected elsewhere in the app, WHEN the dashboard renders, THEN dashboard card amounts and currencies are unaffected by that selection.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/views/__tests__/HomeView.spec.ts` verifies the dashboard empty state and verifies that available cards hide the empty-state text.
@@ -58,7 +62,10 @@
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No test verifies authenticated vs unauthenticated dashboard group visibility.
-- CONFIRMED: No test verifies cards are grouped by currency.
+- REQUIRED (RT-015): Add a test to `src/views/__tests__/HomeView.spec.ts` asserting that current-month balances for the same account group in two different currencies (e.g. `usd` and `cop`) render as two separate cards rather than one summed/converted total.
+- REQUIRED (RT-015): Add a test to `src/views/__tests__/HomeView.spec.ts` asserting that two accounts in the same group and same currency are summed into a single card.
+- RECOMMENDED (RT-015): Add a test that mounts `HomeView.vue` with a global `CURRENCY` value provided/injected and asserts dashboard card amounts and currencies are unchanged, guarding against future accidental conversion.
 
 ## Product Questions
-- UNCLEAR: Should dashboard totals ever convert currencies, or must they remain split by currency?
+- RESOLVED (RT-015): Dashboard totals must remain split by currency and must never be converted. Converted totals belong only in reports that already depend on a global currency. See Product Contract and Acceptance Criteria above.
+- CONFIRMED: Current code (`src/views/HomeView.vue`, `src/components/AccountValueCard.vue`) already satisfies this requirement as written — no app code change is needed for RT-015. The gap is test coverage only (see Missing Tests above).
