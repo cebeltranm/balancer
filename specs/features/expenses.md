@@ -8,8 +8,13 @@
 - CONFIRMED: Users can switch between table, treemap pie-like view, and stacked bar view.
 - CONFIRMED: Table view shows the latest five periods, current value, percent change vs prior periods, budget progress, and read-only budget comments.
 - CONFIRMED: Authenticated users see both income and expense groups; unauthenticated users see only expenses.
+- CONFIRMED (RT-016): Income is treated as sensitive data. `src/views/Expenses.vue` gates the `AccountGroupType.Incomes` group behind `storageStore.status.authenticated`, which reflects local device authentication (WebAuthn, or the development-only `HttpServer` bypass in `src/stores/storage.ts`) rather than provider/storage login (`status.loggedIn`) alone. No other view currently reads `AccountGroupType.Incomes`.
 - CONFIRMED: Values and budgets are converted to the injected global currency when category children use other currencies.
 - CONFIRMED: Bar view can filter to a top-level expense category and loads up to 10 prior years of balances when selected.
+
+## Product Contract
+- REQUIRED (RT-016): Income account data is sensitive and must be visible only after local device authentication (`storageStore.status.authenticated`), not merely because a data-loading path happens to require it. Being logged in to a storage provider without local authentication must not reveal income.
+- REQUIRED (RT-016): Unauthenticated users must see expense groups only; authenticated users must see both income and expense groups.
 
 ## User Flows
 - CONFIRMED: Select month/quarter/year period.
@@ -46,6 +51,8 @@
 - CONFIRMED: GIVEN category children use different currencies, WHEN totals are rendered, THEN child values are converted into the global currency using available values rates.
 - REQUIRED: GIVEN an expense or income child account uses a non-global currency and no exchange rate is available for the displayed period, WHEN the table, treemap, or bar summary renders, THEN the converted total is shown as a partial total and the UI displays a missing-rate indicator naming the affected currency and account.
 - REQUIRED: GIVEN a conversion rate is explicitly stored as `0`, WHEN expense summaries are rendered, THEN the zero value is treated as present data and is not reported as missing.
+- REQUIRED (RT-016): GIVEN the user is not locally authenticated (`storageStore.status.authenticated` is `false`), WHEN `/expenses` renders in table, treemap, or bar view, THEN no income category or income account row is present in the rendered output, regardless of storage/provider login state.
+- REQUIRED (RT-016): GIVEN the user is locally authenticated (`storageStore.status.authenticated` is `true`), WHEN `/expenses` renders, THEN income categories/rows are present alongside expense categories/rows.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers grouped balance period logic.
@@ -60,6 +67,10 @@
 - CONFIRMED: No tests for budget progress rendering or comment dialog behavior.
 - CONFIRMED: Rendered expense summary coverage verifies missing conversion rates produce partial totals plus a visible missing-rate indicator with affected currencies/accounts.
 - CONFIRMED: Rendered expense summary coverage verifies explicit zero rates/values are not flagged as missing.
+- REQUIRED (RT-016): Add a rendered test mounting `Expenses.vue` with `storageStore.status.authenticated = false` and a mocked `accountsGroupByCategories` that honors the requested `groups` argument (returning an income entry only when `AccountGroupType.Incomes` is requested); assert no income category/row appears in the rendered table.
+- REQUIRED (RT-016): Add a rendered test with `storageStore.status.authenticated = true` using the same honoring mock; assert both income and expense categories/rows appear.
+- NOTE (RT-016): The existing `src/views/__tests__/ExpensesMissingRates.spec.ts` mocks `accountsGroupByCategories` to ignore its `groups` argument and always return expenses only, so it does not currently exercise or guard the authenticated/unauthenticated income-visibility branch.
 
 ## Product Questions
-- UNCLEAR: Should income be hidden from unauthenticated users because it is sensitive, or because the current data-loading flow requires authentication?
+- RESOLVED (RT-016): Income is intentionally sensitive data, hidden until local device authentication succeeds — this is a privacy decision, not an artifact of the current data-loading flow. Unauthenticated users must never see income even if otherwise logged in to a storage provider. See Product Contract and Acceptance Criteria above.
+- CONFIRMED (RT-016): Current code (`src/views/Expenses.vue`, `src/stores/storage.ts`) already satisfies this requirement as written — the income group is gated on `storageStore.status.authenticated` (local authentication), not on storage/provider login, and no app code change is needed. The gap is test coverage only (see Missing Tests above).
