@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, defineComponent, h, nextTick, ref } from "vue";
 import format from "@/format";
-import { AccountGroupType, AccountType } from "@/types";
+import { AccountType } from "@/types";
 import Portfolio from "@/views/portafolio/index.vue";
 
 // RT-017 decision: legacy investment accounts saved with a missing/empty

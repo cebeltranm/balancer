@@ -115,6 +115,43 @@ const displayOptions = [
 ];
 const selectedAccounts = ref([]);
 
+// RT-017: ByAssetClass/ByRegion grouping (pie only) needs the raw investment
+// accounts both to build the grouping below and to detect legacy accounts
+// with a missing/empty `class` allocation for the Unknown bucket/warning.
+const investmentAccounts = computed(() =>
+  displayType.value === "pie" && typeInvestment.value !== "ByCategory"
+    ? accountsStore.activeAccounts(
+        getPeriodDate(period.value.type, period.value.value),
+        period.value.type,
+        [AccountGroupType.Investments],
+      )
+    : [],
+);
+
+// RT-017 decision (specs/features/investments.md): legacy investment
+// accounts with no class allocation must not be dropped from ByAssetClass/
+// ByRegion analytics; they are grouped under an "Unknown" bucket instead.
+function addToUnknownBucket(ant: any, account: any) {
+  if (!ant.Unknown) {
+    ant.Unknown = {};
+  }
+  if (!ant.Unknown.Unknown) {
+    ant.Unknown.Unknown = {};
+  }
+  ant.Unknown.Unknown[account.id] = { ...account, percentage: 1 };
+}
+
+const unallocatedAccounts = computed(() =>
+  ["ByAssetClass", "ByRegion"].includes(typeInvestment.value)
+    ? investmentAccounts.value
+        .filter((account: any) => Object.keys(account.class || {}).length === 0)
+        .map((account: any) => ({
+          accountId: account.id,
+          accountName: account.name,
+        }))
+    : [],
+);
+
 const accountsGroupBy = computed(() => {
   const numPer =
     displayType.value !== "bar"
@@ -182,15 +219,16 @@ const accountsGroupBy = computed(() => {
       []
     );
   }
-  const accounts = accountsStore.activeAccounts(
-    getPeriodDate(period.value.type, period.value.value),
-    period.value.type,
-    [AccountGroupType.Investments],
-  );
+  const accounts = investmentAccounts.value;
   switch (typeInvestment.value) {
     case "ByRegion":
       inv = accounts.reduce((ant: any, account: any) => {
-        Object.keys(account.class || {}).forEach((c: string) => {
+        const assetClasses = Object.keys(account.class || {});
+        if (assetClasses.length === 0) {
+          addToUnknownBucket(ant, account);
+          return ant;
+        }
+        assetClasses.forEach((c: string) => {
           Object.keys(account.class[c] || {}).forEach((r: string) => {
             if (!ant[r]) {
               ant[r] = {};
@@ -218,7 +256,12 @@ const accountsGroupBy = computed(() => {
       break;
     case "ByAssetClass":
       inv = accounts.reduce((ant: any, account: any) => {
-        Object.keys(account.class || {}).forEach((c: string) => {
+        const assetClasses = Object.keys(account.class || {});
+        if (assetClasses.length === 0) {
+          addToUnknownBucket(ant, account);
+          return ant;
+        }
+        assetClasses.forEach((c: string) => {
           if (!ant[c]) {
             ant[c] = {};
           }
@@ -323,6 +366,7 @@ const getTotal = computed(() => {
           gp: div2 > 0 ? (div1 - div2) / div2 : 0,
           gp_value: div2 > 0 ? div1 - div2 : 0,
           missingRates,
+          unallocatedAccounts: unallocatedAccounts.value,
         };
       })
     : [];
