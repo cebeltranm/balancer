@@ -31,7 +31,8 @@
 
 ## Error Handling
 - CONFIRMED: Missing investment grouping data generally returns empty arrays.
-- UNCLEAR: No explicit UI error is shown for missing account class allocation or missing expected composition.
+- REQUIRED: New/edited investment accounts must have a class allocation that sums to 100%; account setup blocks save otherwise (see RT-017 and `specs/features/accounts.md`).
+- REQUIRED (RT-017 decision, PARTIAL — not yet implemented in analytics): Legacy investment accounts saved before allocation was enforced (missing or empty `class`) must not be silently dropped from ByAssetClass/ByRegion analytics. They must be grouped under an "Unknown" asset class/region bucket, and the UI must display a visible warning naming the affected accounts.
 - REQUIRED: When an investment summary cannot convert an account/category currency because an exchange rate is missing, the UI must display a partial total and a visible missing-rate indicator listing the affected currencies/accounts.
 - IMPLEMENTED: Investment summaries preserve partial totals and display missing-rate indicators from `useTotalByCategory()` metadata when conversion rates are unavailable.
 
@@ -46,7 +47,9 @@
 - CONFIRMED: GIVEN config composition contains expected weights, WHEN grouping by asset class or region, THEN rows include expected values derived from current totals and config weights.
 - CONFIRMED: GIVEN an investment account has no `risk`, WHEN grouping by risk, THEN it is grouped under fallback risk `3`.
 - CONFIRMED: GIVEN an investment account lacks another selected grouping attribute, WHEN grouping by that attribute, THEN it is grouped under the empty-string fallback.
-- UNCLEAR: The product response for missing class allocation or expected composition is not specified.
+- REQUIRED (RT-017 decision, NOT YET SATISFIED): GIVEN an investment account has no `class` allocation (or an empty one) while grouping ByAssetClass or ByRegion, WHEN portfolio analytics render, THEN that account's value is included under an "Unknown" asset-class/region bucket instead of being dropped from totals.
+- REQUIRED (RT-017 decision, NOT YET SATISFIED): GIVEN one or more accounts are grouped under "Unknown" in ByAssetClass or ByRegion view, WHEN the portfolio summary renders, THEN the UI displays a visible warning naming the affected accounts, similar in presentation to the existing missing-rate indicator.
+- REQUIRED (RT-017 decision, IMPLEMENTED): GIVEN a new or edited investment account, WHEN the user attempts to save with no class allocation entered, THEN save is blocked the same as an allocation that does not sum to 100% (see `specs/features/accounts.md` acceptance criteria).
 - REQUIRED: GIVEN an investment account or grouped category uses a non-global currency and no exchange rate is available for the displayed period, WHEN the table, treemap, or bar summary renders, THEN the converted total is shown as a partial total and the UI displays a missing-rate indicator naming the affected currency and account/category.
 - REQUIRED: GIVEN a conversion rate or asset value is explicitly stored as `0`, WHEN investment summaries are rendered, THEN the zero value is treated as present data and is not reported as missing.
 
@@ -62,6 +65,10 @@
 - CONFIRMED: No tests for chart/table child component rendering.
 - CONFIRMED: `useTotalByCategory()` tests prove missing conversion rates return partial converted totals, preserve missing-rate metadata, and do not flag explicit zero rates as missing.
 - CONFIRMED: Portfolio table, treemap, and bar views render missing-rate indicators from summary metadata; rendered child component tests remain a broader coverage gap.
+- REQUIRED (RT-017, NOT YET ADDED): `src/helpers/__tests__/investments.spec.ts` must cover an account with no `class` (and one with `class: {}`) being grouped under "Unknown" for both ByAssetClass and ByRegion, with the account's full value attributed there and expected value `0`.
+- REQUIRED (RT-017, NOT YET ADDED): A test proving a fully allocated account never produces an "Unknown" bucket.
+- REQUIRED (RT-017, NOT YET ADDED): A rendered/portfolio-level test (or `src/views/portafolio/index.vue` unit coverage) proving the "Unknown" warning is shown when, and only when, accounts are grouped under "Unknown", naming the affected accounts.
+- REQUIRED (RT-017, NOT YET ADDED): `src/views/Accounts.vue` currently has no dedicated spec file; a test must assert an investment account with no allocation, or one summing to something other than 100%, is blocked from saving (this closes the same gap already noted in `specs/features/accounts.md`).
 
 ## Product Questions
-- UNCLEAR: Should investment accounts with missing class allocations be blocked in account setup, excluded from analytics, or grouped as unknown?
+- RESOLVED (RT-017): Should investment accounts with missing class allocation be blocked, excluded, or grouped as unknown? Decision: enforce required allocation in account setup for investment accounts going forward (already implemented, see `specs/features/accounts.md`); analytics must group legacy accounts with missing/incomplete allocation under an "Unknown" bucket with a visible warning, rather than excluding them (not yet implemented — see Error Handling and Acceptance Criteria above).
