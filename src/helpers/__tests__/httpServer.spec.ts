@@ -89,6 +89,22 @@ describe("http server storage helper", () => {
     expect(window.localStorage.getItem("http_server_token")).toBeNull();
   });
 
+  it("throws a provider-specific auth error when the server cannot be reached during login", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch")),
+    );
+
+    const store = new HttpServerStore();
+
+    await expect(store.doAuth()).rejects.toMatchObject({
+      name: "StorageAuthError",
+      provider: "HttpServer",
+      message: expect.stringContaining("http://localhost:8181/"),
+    });
+    expect(window.localStorage.getItem("http_server_token")).toBeNull();
+  });
+
   it("surfaces invalid remote JSON as a recoverable file error", async () => {
     vi.stubGlobal(
       "fetch",

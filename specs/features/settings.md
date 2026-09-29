@@ -14,7 +14,7 @@
 ## User Flows
 - CONFIRMED: Open settings and see storage connection summary.
 - CONFIRMED: Retry login for the selected provider; successful retry reloads the page.
-- CONFIRMED (decision RT-018): A failed retry shows an error toast and leaves the page and store state unchanged (see Error Handling). Code status: NOT IMPLEMENTED.
+- CONFIRMED (decision RT-018): A failed retry shows an error toast and leaves the page and store state unchanged (see Error Handling). Code status: SATISFIED.
 - CONFIRMED: Clear local device credentials.
 - CONFIRMED: Edit stock API fields.
 - CONFIRMED: Edit composition weights and save.
@@ -38,7 +38,7 @@
 - CONFIRMED (decision RT-018): When retry login fails, Settings shows an error toast. If the provider supplies a specific failure message, the toast detail uses it; otherwise the detail is a generic retry-later message (e.g. "Could not log in to {provider}. Please try again later.").
 - CONFIRMED (decision RT-018): A failed retry keeps existing state unchanged: no page reload, no change to `storeInfo`/`status`, and no local credentials or queued data are cleared.
 - CONFIRMED (decision RT-018): A provider returning `false` because it is redirecting to an external sign-in (Dropbox OAuth) is not a failure and shows no error toast.
-- CONFIRMED (current code, gap): `retryLogin()` in `src/views/Settings.vue` only handles a truthy result; a `false` result is silent and a thrown error is not caught. Code status: NOT IMPLEMENTED.
+- CONFIRMED (current code, gap): `retryLogin()` in `src/views/Settings.vue` only handles a truthy result; a `false` result is silent and a thrown error is not caught. Code status: SATISFIED.
 
 ## Edge Cases
 - CONFIRMED: `normalizeComposition()` includes default asset classes plus config-defined classes.
@@ -52,21 +52,22 @@
 - CONFIRMED: GIVEN valid stock API fields are saved, WHEN `config.json` is written, THEN values persist under `stock_api`.
 - CONFIRMED: GIVEN valid composition weights are saved, WHEN `config.json` is written, THEN values persist under `inv_composition` as decimal weights.
 - CONFIRMED: GIVEN local credentials exist, WHEN the user clears credentials, THEN `crlocal` is removed and local authentication becomes false.
-- CONFIRMED (decision RT-018): GIVEN the user clicks Retry login, WHEN the provider login throws or returns `false` without redirecting, THEN an error toast is shown and the page is not reloaded. Code status: NOT IMPLEMENTED.
-- CONFIRMED (decision RT-018): GIVEN retry login fails AND the provider supplied a specific failure message, WHEN the toast is shown, THEN its detail is that provider message. Code status: NOT IMPLEMENTED (no provider currently supplies one).
-- CONFIRMED (decision RT-018): GIVEN retry login fails AND no provider-specific message is available, WHEN the toast is shown, THEN its detail is the generic retry-later message. Code status: NOT IMPLEMENTED.
-- CONFIRMED (decision RT-018): GIVEN retry login fails, WHEN the toast is shown, THEN `storeInfo`, `status`, and stored credentials are identical to their values before the click. Code status: PARTIALLY SATISFIED (`storage.login()` does not refresh state when `doAuth` returns `false`; a thrown error is not caught in the view).
+- CONFIRMED (decision RT-018): GIVEN the user clicks Retry login, WHEN the provider login throws or returns `false` without redirecting, THEN an error toast is shown and the page is not reloaded. Code status: SATISFIED.
+- CONFIRMED (decision RT-018): GIVEN retry login fails AND the provider supplied a specific failure message, WHEN the toast is shown, THEN its detail is that provider message. Code status: SATISFIED (HttpServer supplies a message via `StorageAuthError` when the server is unreachable; other failures use the generic message).
+- CONFIRMED (decision RT-018): GIVEN retry login fails AND no provider-specific message is available, WHEN the toast is shown, THEN its detail is the generic retry-later message. Code status: SATISFIED.
+- CONFIRMED (decision RT-018): GIVEN retry login fails, WHEN the toast is shown, THEN `storeInfo`, `status`, and stored credentials are identical to their values before the click. Code status: SATISFIED (`storage.login()` does not refresh state when `doAuth` returns `false`; the view catches thrown errors).
 - CONFIRMED (decision RT-018): GIVEN the provider is redirecting to external sign-in (Dropbox `doAuth` returns `false`), WHEN retry login completes, THEN no error toast is shown. Code status: SATISFIED (no toast is shown for any failure today); must be preserved when the error toast is added.
 - CONFIRMED (decision RT-018): GIVEN retry login succeeds, WHEN it completes, THEN the success toast is shown and the page reloads. Code status: SATISFIED.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/config.spec.ts` covers load, save, and composition grouping.
-- CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers reset/logout related state.
+- CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers reset/logout related state and login returning `false`.
+- CONFIRMED: `src/views/__tests__/Settings.spec.ts` covers retry-login success, failure, provider message, and Dropbox redirect.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered `Settings.vue` tests.
+- CONFIRMED: `Settings.vue` rendered tests cover retry login only (`src/views/__tests__/Settings.spec.ts`); config/composition editing is untested.
 - CONFIRMED: No tests for composition normalization/building.
-- CONFIRMED: No tests for retry login UI behavior or credential-clearing toast.
+- CONFIRMED: No tests for the credential-clearing toast.
 
 ## Test Expectations (RT-018)
 - Add `src/views/__tests__/Settings.spec.ts` (mounted view, mocked storage store and toast). Expected cases:
@@ -78,7 +79,7 @@
   - after any failure, `storeInfo` and `status` are unchanged.
 - Extend `src/helpers/__tests__/httpServer.spec.ts`: `doAuth` returns `false` on a non-200 response and does not store a token.
 - Extend `src/stores/__tests__/storage.spec.ts`: `login()` returning `false` does not call `refreshStoreInfo` or seed `config.json`.
-- Status: none of these tests exist yet.
+- Status: implemented in `src/views/__tests__/Settings.spec.ts`, `src/helpers/__tests__/httpServer.spec.ts`, and `src/stores/__tests__/storage.spec.ts`.
 
 ## Product Questions
 - UNCLEAR: Should zero-valued generated composition cells be persisted or omitted for compactness?
