@@ -30,6 +30,30 @@ describe("investments helper", () => {
     expect(mapped[0].children[0].children[0].expected).toBe(60);
   });
 
+  it("treats missing expected entries as zero (RT-019)", () => {
+    const mapped = mapInvestmentsBySubCategory(
+      {
+        Equities: {
+          US: { a1: { id: "a1", name: "SPY", type: "ETF" } },
+          Global: { a2: { id: "a2", name: "VT", type: "ETF" } },
+        },
+        Cash: {
+          US: { a3: { id: "a3", name: "MMF", type: "MutualFund" } },
+        },
+      },
+      {
+        Equities: { value: 1, US: { value: 1, ETF: { value: 1 } } },
+      },
+    );
+
+    const [equities, cash] = mapped;
+    expect(equities.expected).toBe(1);
+    expect(equities.children[1].name).toBe("Global");
+    expect(equities.children[1].expected).toBe(0);
+    expect(cash.expected).toBe(0);
+    expect(cash.children[0].expected).toBe(0);
+  });
+
   it("groups accounts by selected attribute", () => {
     const grouped = accountsGrupedByAttribute(
       [
