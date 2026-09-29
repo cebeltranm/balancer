@@ -62,6 +62,7 @@
 - CONFIRMED: `inv_composition` shape is `{ [assetClass]: { [region]: { [instrumentType]: number } } }`.
 - CONFIRMED: Settings UI edits composition as percentages and saves normalized decimal values by dividing by 100.
 - CONFIRMED: Settings UI rejects negative/non-numeric weights and total allocation not equal to 100%.
+- REQUIRED (decision RT-019): `inv_composition` is sparse. Zero-valued instrument-type cells, empty regions, and all-zero asset classes are omitted on save; a missing cell must be read as `0`. Explicit zeros in existing files remain valid. Code status: read side SATISFIED; save side NOT SATISFIED (see `specs/features/settings.md`).
 - CONFIRMED: Config composition is transformed by `useConfigStore()` into grouped composition by asset class and by region for portfolio views.
 - REQUIRED: The minimum persisted `config.json` shape is `{ "stock_api": {}, "inv_composition": {} }`.
 - REQUIRED: On first successful storage initialization, when `config.json` is missing, the app must create `config.json` with the minimum persisted shape.
