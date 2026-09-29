@@ -2,6 +2,12 @@
   <small class="block text-orange-300 text-right" v-if="missingRates.length">
     {{ missingRateLabel(missingRates) }}
   </small>
+  <small
+    class="block text-orange-300 text-right"
+    v-if="unallocatedAccounts.length"
+  >
+    {{ unallocatedAccountsLabel(unallocatedAccounts) }}
+  </small>
   <GChart
     :settings="{ packages: ['corechart', 'treemap'] }"
     type="TreeMap"
@@ -142,6 +148,18 @@ const missingRates = computed(() =>
 function missingRateLabel(rates: any[]) {
   return `Missing rate: ${rates
     .map((rate) => `${rate.asset}->${rate.currency} (${rate.accountId})`)
+    .join(", ")}`;
+}
+
+// RT-017: accounts with no class allocation are grouped under "Unknown"
+// instead of being dropped; this warns which accounts are affected.
+const unallocatedAccounts = computed(
+  () => props.total?.[0]?.unallocatedAccounts || [],
+);
+
+function unallocatedAccountsLabel(accounts: any[]) {
+  return `Missing class allocation, shown as Unknown: ${accounts
+    .map((account) => account.accountName || account.accountId)
     .join(", ")}`;
 }
 
