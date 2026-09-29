@@ -176,6 +176,7 @@ import { computed, onMounted, ref } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useConfigStore } from "@/stores/config";
 import { useStorageStore } from "@/stores/storage";
+import { isStorageAuthError } from "@/helpers/storageAuthError";
 import {
   ASSET_CLASS_OPTIONS,
   GEOGRAPHIC_EXPOSURE_OPTIONS,
@@ -367,7 +368,17 @@ async function retryLogin() {
   if (!canLogin.value) {
     return;
   }
-  const completed = await storageStore.login();
+  const providerType = storageStore.storeInfo?.type;
+  let completed = false;
+  let failureDetail = "";
+  try {
+    completed = await storageStore.login();
+  } catch (error) {
+    console.error("retry login failed", error);
+    failureDetail = isStorageAuthError(error)
+      ? error.message
+      : genericRetryFailureDetail(providerType);
+  }
   if (completed) {
     toast.add({
       severity: "success",
@@ -376,7 +387,22 @@ async function retryLogin() {
       life: 2500,
     });
     window.location.reload();
+    return;
   }
+  // Dropbox returns false while redirecting to external sign-in.
+  if (!failureDetail && providerType === "Dropbox") {
+    return;
+  }
+  toast.add({
+    severity: "error",
+    summary: "Login failed",
+    detail: failureDetail || genericRetryFailureDetail(providerType),
+    life: 5000,
+  });
+}
+
+function genericRetryFailureDetail(providerType?: string) {
+  return `Could not log in to ${providerType || "the storage provider"}. Please try again later.`;
 }
 
 function clearLocalCredentials() {

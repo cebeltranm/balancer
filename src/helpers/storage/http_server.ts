@@ -1,4 +1,5 @@
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
+import { StorageAuthError } from "@/helpers/storageAuthError";
 
 const SERVER_URL = "http://localhost:8181/";
 const TOKEN_KEY = "http_server_token";
@@ -52,12 +53,21 @@ export default class HttpServerStore {
   }
 
   async doAuth(_code?: string) {
-    const res = await fetch(`${SERVER_URL}auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${SERVER_URL}auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      throw new StorageAuthError(
+        "HttpServer",
+        `Could not reach the local server at ${SERVER_URL}. Check that it is running and try again.`,
+        { cause: e },
+      );
+    }
     if (res.status === 200) {
       const data = await res.json();
       if (data.token) {
