@@ -135,6 +135,19 @@ describe("storage store", () => {
     });
   });
 
+  it("does not refresh store info or seed config when login returns false", async () => {
+    storageMocks.doAuthMock.mockResolvedValue(false);
+    const store = useStorageStore();
+
+    const authenticated = await store.login();
+
+    expect(authenticated).toBe(false);
+    expect(storageMocks.getInfoMock).not.toHaveBeenCalled();
+    expect(store.storeInfo).toBeNull();
+    expect(readJsonFile).not.toHaveBeenCalled();
+    expect(writeJsonFile).not.toHaveBeenCalled();
+  });
+
   it("does not overwrite an existing config file after successful storage initialization", async () => {
     const existingConfig = { stock_api: { key: "k" } };
     vi.mocked(readJsonFile).mockResolvedValue(existingConfig);

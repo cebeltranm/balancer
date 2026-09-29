@@ -79,6 +79,16 @@ describe("http server storage helper", () => {
     );
   });
 
+  it("returns false and stores no token when login is rejected by the server", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ status: 500 }));
+
+    const store = new HttpServerStore();
+    const loggedIn = await store.doAuth();
+
+    expect(loggedIn).toBe(false);
+    expect(window.localStorage.getItem("http_server_token")).toBeNull();
+  });
+
   it("surfaces invalid remote JSON as a recoverable file error", async () => {
     vi.stubGlobal(
       "fetch",
