@@ -339,17 +339,27 @@ function normalizeComposition(composition: Record<string, any>) {
 function buildCompositionFromMatrix() {
   return assetClasses.value.reduce(
     (composition, assetClass) => {
-      composition[assetClass] = {};
-      (compositionMatrix.value[assetClass] || []).forEach((row) => {
-        const regionValues = Object.entries(row.weights).reduce(
-          (regionAcc, [instrumentType, value]) => {
-            regionAcc[instrumentType] = value / 100;
-            return regionAcc;
-          },
-          {} as Record<string, number>,
-        );
-        composition[assetClass][row.region] = regionValues;
-      });
+      const regions = (compositionMatrix.value[assetClass] || []).reduce(
+        (regionsAcc, row) => {
+          const regionValues = Object.entries(row.weights).reduce(
+            (regionAcc, [instrumentType, value]) => {
+              if (value > 0) {
+                regionAcc[instrumentType] = value / 100;
+              }
+              return regionAcc;
+            },
+            {} as Record<string, number>,
+          );
+          if (Object.keys(regionValues).length > 0) {
+            regionsAcc[row.region] = regionValues;
+          }
+          return regionsAcc;
+        },
+        {} as Record<string, Record<string, number>>,
+      );
+      if (Object.keys(regions).length > 0) {
+        composition[assetClass] = regions;
+      }
       return composition;
     },
     {} as Record<string, Record<string, Record<string, number>>>,

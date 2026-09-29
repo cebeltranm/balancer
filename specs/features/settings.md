@@ -44,7 +44,9 @@
 - CONFIRMED: `normalizeComposition()` includes default asset classes plus config-defined classes.
 - CONFIRMED: Region rows include defined geographic exposure options plus `Global`.
 - CONFIRMED: Instrument types include defaults `ETF` and `MutualFund` plus any configured types.
-- INFERRED: Saving writes zero-valued weights for every generated region/type cell.
+- CONFIRMED (decision RT-019): `buildCompositionFromMatrix()` in `src/views/Settings.vue` writes only cells with a weight greater than 0; the generated matrix used for editing still contains every asset class/region/type cell. Code status: SATISFIED (implemented; zero cells, empty regions, and all-zero asset classes are omitted).
+- CONFIRMED (decision RT-019): Zero-valued composition cells are omitted on save; a missing cell means a `0` weight. Hard zero targets are not stored.
+- CONFIRMED (current code): Read paths already treat missing cells as zero: `normalizeComposition()` fills missing types with `0` in the form, `groupComposition`/`invCompositionByRegion` in `src/stores/config.ts` only sum present keys, and `mapInvestmentsBySubCategory` in `src/helpers/investments.ts` falls back to `0` for missing expected entries. Code status: SATISFIED.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN composition weights total anything other than 100%, WHEN the user saves, THEN save is blocked and an error toast is shown.
@@ -58,15 +60,22 @@
 - CONFIRMED (decision RT-018): GIVEN retry login fails, WHEN the toast is shown, THEN `storeInfo`, `status`, and stored credentials are identical to their values before the click. Code status: SATISFIED (`storage.login()` does not refresh state when `doAuth` returns `false`; the view catches thrown errors).
 - CONFIRMED (decision RT-018): GIVEN the provider is redirecting to external sign-in (Dropbox `doAuth` returns `false`), WHEN retry login completes, THEN no error toast is shown. Code status: SATISFIED (no toast is shown for any failure today); must be preserved when the error toast is added.
 - CONFIRMED (decision RT-018): GIVEN retry login succeeds, WHEN it completes, THEN the success toast is shown and the page reloads. Code status: SATISFIED.
+- REQUIRED (decision RT-019): GIVEN the composition matrix contains zero-valued cells, WHEN the user saves, THEN `inv_composition` in `config.json` contains only cells with a weight greater than 0. Code status: SATISFIED.
+- REQUIRED (decision RT-019): GIVEN a region has no non-zero instrument types, WHEN the user saves, THEN that region key is omitted (no empty `{}` region object). Code status: SATISFIED.
+- REQUIRED (decision RT-019): GIVEN an asset class has no non-zero cells, WHEN the user saves, THEN that asset class key is omitted. Code status: SATISFIED.
+- REQUIRED (decision RT-019): GIVEN non-zero cells, WHEN saved, THEN values remain decimal weights (percentage / 100) and the 100% total validation is unchanged. Code status: SATISFIED for value scaling and validation.
+- REQUIRED (decision RT-019): GIVEN a `config.json` whose `inv_composition` omits asset classes, regions, or instrument types, WHEN it is loaded, THEN missing cells read as `0` in the settings form and contribute `0` to store totals and portfolio expected values. Code status: SATISFIED.
+- REQUIRED (decision RT-019): GIVEN an existing `config.json` with explicit zero weights, WHEN it loads, THEN it is still valid and unchanged until the next save, which compacts it. Code status: SATISFIED (loading does not rewrite the file).
 
 ## Existing Tests Related To This Feature
-- CONFIRMED: `src/stores/__tests__/config.spec.ts` covers load, save, and composition grouping.
+- CONFIRMED: `src/stores/__tests__/config.spec.ts` covers load, save, and composition grouping, including sparse vs. explicit-zero totals.
+- CONFIRMED: `src/views/__tests__/SettingsComposition.spec.ts` covers sparse composition save, compaction of explicit zeros, and round-trip (RT-019).
 - CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers reset/logout related state and login returning `false`.
 - CONFIRMED: `src/views/__tests__/Settings.spec.ts` covers retry-login success, failure, provider message, and Dropbox redirect.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: `Settings.vue` rendered tests cover retry login only (`src/views/__tests__/Settings.spec.ts`); config/composition editing is untested.
-- CONFIRMED: No tests for composition normalization/building.
+- CONFIRMED: Composition normalization/building is covered only through the mounted view (`src/views/__tests__/SettingsComposition.spec.ts`); there are no standalone helper tests.
 - CONFIRMED: No tests for the credential-clearing toast.
 
 ## Test Expectations (RT-018)
@@ -81,6 +90,14 @@
 - Extend `src/stores/__tests__/storage.spec.ts`: `login()` returning `false` does not call `refreshStoreInfo` or seed `config.json`.
 - Status: implemented in `src/views/__tests__/Settings.spec.ts`, `src/helpers/__tests__/httpServer.spec.ts`, and `src/stores/__tests__/storage.spec.ts`.
 
+## Test Expectations (RT-019)
+- Unit test for composition build (extract `normalizeComposition`/`buildCompositionFromMatrix` into a helper under `src/helpers/` or test via the mounted view): a matrix mixing zero and non-zero cells yields only non-zero cells, as decimals (`/100`), with no empty region objects and no all-zero asset classes.
+- Round-trip test: build then normalize restores the same matrix, with omitted cells reading as `0`.
+- Settings view test: saving calls `configStore.saveConfig` with a sparse `inv_composition`, and other config fields are preserved.
+- Extend `src/stores/__tests__/config.spec.ts`: `invCompositionByAssetClass` and `invCompositionByRegion` give identical totals for sparse data and for the same data with explicit zeros.
+- Extend `src/helpers/__tests__/investments.spec.ts`: `mapInvestmentsBySubCategory` returns `expected: 0` when the expected entry is missing.
+- Status: IMPLEMENTED. Save/round-trip/compaction cases are in `src/views/__tests__/SettingsComposition.spec.ts` (mounted view); sparse-vs-explicit-zero totals are in `src/stores/__tests__/config.spec.ts`; missing expected entries are in `src/helpers/__tests__/investments.spec.ts`. Standalone helper extraction was not done.
+
 ## Product Questions
-- UNCLEAR: Should zero-valued generated composition cells be persisted or omitted for compactness?
+- RESOLVED (RT-019): Zero-valued composition cells are omitted on save; missing cells are read as zero. Users needing hard zero targets are out of scope for now. Backward compatibility: existing files with explicit zeros stay valid and are compacted on next save.
 - RESOLVED (RT-018): Retry-login failures show provider-specific remediation text when the provider supplies it, otherwise a generic retry-later message; existing state is left unchanged.
