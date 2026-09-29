@@ -104,6 +104,7 @@ export enum GeographicExposure {
   Europe = "Europe",
   Asia = "Asia",
   Latam = "Latam",
+  Global = "Global",
 }
 
 export const GEOGRAPHIC_EXPOSURE_OPTIONS = Object.values(GeographicExposure);
