@@ -33,6 +33,22 @@ describe("files helper", () => {
     expect(readJsonFileMock).not.toHaveBeenCalled();
   });
 
+  it("serves cached data without contacting the provider while offline (RT-024)", async () => {
+    vi.mocked(idb.getJsonFile).mockResolvedValue({ data: { a: 1 } } as any);
+    readJsonFileMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(readJsonFile("config.json", true)).resolves.toEqual({ a: 1 });
+    expect(readJsonFileMock).not.toHaveBeenCalled();
+  });
+
+  it("returns an unavailable result instead of throwing for an uncached file while offline (RT-024)", async () => {
+    vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
+    readJsonFileMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(readJsonFile("values_2025.json", true)).resolves.toBe(false);
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+
   it("reads from storage and caches result", async () => {
     vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
     readJsonFileMock.mockResolvedValue({ b: 2 });
