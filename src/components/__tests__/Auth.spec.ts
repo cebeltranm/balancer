@@ -51,6 +51,7 @@ vi.mock("@/helpers/files", () => ({
 }));
 vi.mock("@/helpers/storage", () => ({
   getAvailableStorageProviders: vi.fn(() => []),
+  isLocalDevHost: vi.fn(() => window.location.host === "localhost:3000"),
   getSelectedStorageProvider: vi.fn(() => "dropbox"),
   setSelectedStorageProvider: vi.fn(),
   getStorage: vi.fn(() => ({
@@ -351,5 +352,78 @@ describe("Auth dialog failure handling (RT-020)", () => {
     );
     expect(idb.clearDatabase).not.toHaveBeenCalled();
     expect(authError(store)).toBeNull();
+  });
+
+  // RT-021: WebAuthn is mandatory for Dropbox-backed sensitive routes; the
+  // HTTP server bypass is development-only. See specs/features/authentication.md.
+  describe("WebAuthn requirement (RT-021)", () => {
+    const originalHost = window.location.host;
+
+    afterEach(() => {
+      window.location.host = originalHost;
+    });
+
+    it("keeps Dropbox unauthenticated until WebAuthn succeeds", async () => {
+      let resolveGet!: (value: unknown) => void;
+      mocks.credentialsGet.mockReturnValue(
+        new Promise((resolve) => (resolveGet = resolve)),
+      );
+      const store = await mountAuth({
+        type: "Dropbox",
+        loggedIn: true,
+        credentials: true,
+      });
+
+      expect(store.status.loggedIn).toBe(true);
+      expect(store.status.authenticated).toBe(false);
+
+      await click(/authenticate with credentials/i);
+      expect(mocks.credentialsGet).toHaveBeenCalledTimes(1);
+      expect(store.status.authenticated).toBe(false);
+
+      resolveGet({ id: "ok" });
+      await flush();
+
+      expect(store.status.authenticated).toBe(true);
+    });
+
+    it("requires registration for Dropbox without local credentials and offers no skip", async () => {
+      const store = await mountAuth({
+        type: "Dropbox",
+        loggedIn: true,
+        credentials: false,
+      });
+
+      expect(store.status.authenticated).toBe(false);
+      expect(mocks.credentialsGet).not.toHaveBeenCalled();
+      expect(mocks.credentialsCreate).not.toHaveBeenCalled();
+      expect(findButton(/register credentials/i)).toBeTruthy();
+      expect(findButton(/skip|continue without|opt out/i)).toBeUndefined();
+    });
+
+    it("authenticates the HTTP server provider on the dev host without WebAuthn", async () => {
+      window.location.host = "localhost:3000";
+      const store = await mountAuth({
+        type: "HttpServer",
+        loggedIn: true,
+        credentials: false,
+      });
+
+      expect(store.status.authenticated).toBe(true);
+      expect(mocks.credentialsGet).not.toHaveBeenCalled();
+      expect(mocks.credentialsCreate).not.toHaveBeenCalled();
+    });
+
+    it("does not bypass WebAuthn for the HTTP server provider outside the dev host", async () => {
+      window.location.host = "example.com";
+      const store = await mountAuth({
+        type: "HttpServer",
+        loggedIn: true,
+        credentials: false,
+      });
+
+      expect(store.status.authenticated).toBe(false);
+      expect(findButton(/register credentials/i)).toBeTruthy();
+    });
   });
 });
