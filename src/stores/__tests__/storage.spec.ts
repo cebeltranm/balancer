@@ -38,6 +38,7 @@ vi.mock("@/helpers/storage", () => ({
     },
   ]),
   getSelectedStorageProvider: vi.fn(() => "dropbox"),
+  isLocalDevHost: vi.fn(() => true),
   getStorage: vi.fn(() => ({
     getInfo: storageMocks.getInfoMock,
     doAuth: storageMocks.doAuthMock,

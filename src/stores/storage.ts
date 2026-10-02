@@ -10,6 +10,7 @@ import {
   getAvailableStorageProviders,
   getSelectedStorageProvider,
   getStorage,
+  isLocalDevHost,
   setSelectedStorageProvider,
   type StorageProviderId,
 } from "@/helpers/storage";
@@ -181,7 +182,7 @@ export const useStorageStore = defineStore("storage", () => {
     status.value.offline = info.offline;
     if (!info.loggedIn) {
       status.value.authenticated = false;
-    } else if (info.type === "HttpServer") {
+    } else if (info.type === "HttpServer" && isLocalDevHost()) {
       status.value.authenticated = true;
     }
     return info;
