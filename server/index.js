@@ -5,7 +5,7 @@ const app = express();
 const DEV_AUTH_TOKEN = "balancer-local-dev-token";
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 
 const port = 8181;
 function isAuthorized(request) {
