@@ -287,6 +287,7 @@ describe("storage store", () => {
 
     beforeEach(() => {
       local = new Map();
+      vi.mocked(readJsonFile).mockResolvedValue({ stock_api: {} });
       (window as any).localStorage = {
         getItem: (key: string) => local.get(key) ?? null,
         setItem: (key: string, value: string) => void local.set(key, value),

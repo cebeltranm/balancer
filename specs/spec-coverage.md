@@ -63,7 +63,7 @@
 - INFERRED: Account legacy/migration concerns are inferred from `public/accounts.json` and enum mismatches.
 - CONFIRMED: Missing exchange-rate behavior is specified by RT-011: expense and investment UI summaries must show partial totals with a visible missing-rate indicator listing affected currencies/accounts, and must not silently coerce missing rates to zero.
 - UNCLEAR: Runtime service-worker behavior is weakly evidenced because generated service-worker output is not inspected or specified.
-- RESOLVED: WebAuthn failure handling is specified by RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart). Current code does not yet satisfy it and no tests cover `navigator.credentials` failures.
+- RESOLVED: WebAuthn failure handling is specified by RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart). Current code satisfies it (`Auth.vue`, `src/stores/storage.ts`, `dropbox.ts`) with tests in `Auth.spec.ts`, `dropbox.spec.ts`, and `storage.spec.ts`.
 - CONFIRMED: Versionless JSON compatibility is covered by `src/helpers/__tests__/persistedShapes.spec.ts` and persisted-family store tests for current names, additive defaults, and ignored deprecated structures.
 
 ## Spec Quality Review
@@ -94,7 +94,7 @@
 - UNCLEAR: First-run onboarding, including missing `accounts.json` seeding and what the user sees before setup completes.
 - UNCLEAR: Failed sync and retry recovery after local writes have been accepted.
 - CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
-- RESOLVED: Lost local WebAuthn credential recovery uses the auth dialog Reset local credentials action, then re-registration, keeping provider credentials (RT-020). Dialog action not yet implemented.
+- RESOLVED: Lost local WebAuthn credential recovery uses the auth dialog Reset local credentials action, then re-registration, keeping provider credentials (RT-020). Implemented in the auth dialog.
 - RESOLVED: Missing exchange rates in expense and investment UI summaries require partial totals plus affected currency/account indicators. Current expense and investment code satisfies this with missing-rate metadata and visible indicators; balance recalculation separately warns about missing source data.
 - RESOLVED: Dashboard totals must remain split by currency and must never be converted (RT-015). Current dashboard code (`src/views/HomeView.vue`, `src/components/AccountValueCard.vue`) already satisfies this; converted totals are used only in reports that already depend on a global currency. Test coverage for the multi-currency card split is still missing.
 - RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
@@ -112,7 +112,7 @@
 ## Highest-Priority Product Owner Questions
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
 - RESOLVED: Account lifecycle uses archive/hide as the normal path; hard deletion is blocked in all cases.
-- RESOLVED: Failed sync follows RT-002; provider login, WebAuthn, and Dropbox token refresh follow RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart; not yet implemented). External value providers remain UNCLEAR.
+- RESOLVED: Failed sync follows RT-002; provider login, WebAuthn, and Dropbox token refresh follow RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart; implemented and tested). External value providers remain UNCLEAR.
 - UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?
 - UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?
 - RESOLVED: Balance snapshots are rebuildable cache and require an authenticated force-recalculate action with missing-source warnings. Current code satisfies this with store and rendered view coverage.

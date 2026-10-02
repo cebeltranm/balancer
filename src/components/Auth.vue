@@ -40,6 +40,24 @@
         <Button label="Login to store" @click="doLoginStore" />
       </template>
     </div>
+    <template v-if="storageStore.status.authError">
+      <Message severity="error" :closable="false" class="mt-3">
+        {{ storageStore.status.authError.message }}
+      </Message>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <Button label="Retry" @click="retry" />
+        <Button
+          label="Reset local credentials"
+          severity="secondary"
+          @click="resetCredentials"
+        />
+        <Button
+          label="Restart provider login"
+          severity="secondary"
+          @click="restartLogin"
+        />
+      </div>
+    </template>
     <Divider />
     <div>
       <Button
@@ -58,11 +76,12 @@
   </Dialog>
 </template>
 <script lang="ts" setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { getStorage, type StorageProviderId } from "@/helpers/storage";
 import { useRoute, useRouter } from "vue-router";
 import * as files from "@/helpers/files";
 import * as sync from "@/helpers/sync";
+import { isStorageAuthError } from "@/helpers/storageAuthError";
 import { useStorageStore } from "@/stores/storage";
 import { useAccountsStore } from "@/stores/accounts";
 import { useConfigStore } from "@/stores/config";
@@ -97,6 +116,56 @@ const loginProviderOptions = computed(() =>
     (option) => option.available && !option.planned,
   ),
 );
+
+// A new auth error must be visible even when the dialog was closed.
+watch(
+  () => storageStore.status.authError,
+  (error) => {
+    if (error) {
+      visible.value = true;
+    }
+  },
+);
+
+function webauthnErrorMessage(error: unknown) {
+  switch ((error as { name?: string } | null)?.name) {
+    case "NotAllowedError":
+      return "Device authentication was cancelled or timed out. Try again.";
+    case "InvalidStateError":
+      return "These device credentials are already registered. Reset local credentials and register again.";
+    case "NotSupportedError":
+    case "SecurityError":
+      return "This browser or device cannot use local credentials.";
+    default:
+      return "Device authentication failed. Try again, or reset local credentials.";
+  }
+}
+
+function reportWebauthnError(error?: unknown) {
+  if (error) {
+    console.log(error);
+  }
+  storageStore.setAuthError({
+    kind: "webauthn",
+    message: error
+      ? webauthnErrorMessage(error)
+      : "Device authentication did not complete. Try again.",
+  });
+}
+
+function reportLoginError(error?: unknown) {
+  if (error) {
+    console.log(error);
+  }
+  const provider = storeInfo.value?.type;
+  storageStore.setAuthError({
+    kind: "provider-login",
+    provider,
+    message: isStorageAuthError(error)
+      ? error.message
+      : `Could not log in to ${provider || "the storage provider"}. Please try again.`,
+  });
+}
 
 function show() {
   visible.value = true;
@@ -184,7 +253,7 @@ function register() {
     timeout: 360000,
     excludeCredentials: [],
   };
-  navigator.credentials
+  return navigator.credentials
     .create({ publicKey })
     .then((credential: any) => {
       localStorage.setItem(
@@ -195,10 +264,9 @@ function register() {
         }),
       );
       localCredentials.value = !!localStorage.getItem("crlocal");
+      storageStore.clearAuthError();
     })
-    .catch(function (err) {
-      console.log(err);
-    });
+    .catch(reportWebauthnError);
 }
 
 async function authenticate() {
@@ -217,16 +285,56 @@ async function authenticate() {
       },
     ],
   };
-  const credential = await navigator.credentials.get({ publicKey });
-  if (credential) {
-    storageStore.status.authenticated = true;
-    visible.value = false;
+  try {
+    const credential = await navigator.credentials.get({ publicKey });
+    if (credential) {
+      storageStore.status.authenticated = true;
+      storageStore.clearAuthError();
+      visible.value = false;
+    } else {
+      reportWebauthnError();
+    }
+  } catch (error) {
+    reportWebauthnError(error);
   }
+}
+
+function retry() {
+  switch (storageStore.status.authError?.kind) {
+    case "provider-login":
+      return doLoginStore();
+    case "token-refresh":
+      storageStore.clearAuthError();
+      return refreshStoreInfo();
+    default:
+      return localCredentials.value ? authenticate() : register();
+  }
+}
+
+function resetCredentials() {
+  storageStore.resetLocalCredentials();
+  localCredentials.value = false;
+}
+
+function restartLogin() {
+  return attemptLogin(() => storageStore.restartProviderLogin());
 }
 
 async function doLoginStore() {
   await storageStore.selectProvider(selectedProvider.value);
-  const success = await storageStore.login(toQueryString(route.query.code));
+  await attemptLogin(() => storageStore.login(toQueryString(route.query.code)));
+}
+
+async function attemptLogin(login: () => Promise<boolean>) {
+  let success = false;
+  let failed = false;
+  try {
+    success = await login();
+  } catch (error) {
+    failed = true;
+    await refreshStoreInfo();
+    reportLoginError(error);
+  }
   if (route.query.code) {
     router.replace({ query: null });
   }
@@ -235,6 +343,9 @@ async function doLoginStore() {
     await checkStore();
     await loadBasicFiles();
     setTimeout(() => syncCachedFiles(), 5000);
+  } else if (!success && !failed && storeInfo.value?.type !== "Dropbox") {
+    // Dropbox returns false while it redirects to external sign-in.
+    reportLoginError();
   }
 }
 
