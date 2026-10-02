@@ -209,7 +209,7 @@
       </Form>
       <template #footer>
         <div class="flex flex-row-reverse">
-          <Button label="Save" @click="() => form.submit()" />
+          <Button v-if="!saving" label="Save" @click="() => form.submit()" />
           <Button label="Cancel" @click="close" class="p-button-text" />
         </div>
       </template>
@@ -291,6 +291,7 @@ const suggestedTags = ref<string[]>([]);
 // used to fix https://github.com/primefaces/primevue/issues/6924
 const formErrors = ref<any>({});
 const submitted = ref(false);
+const saving = ref(false);
 
 const emit = defineEmits(["update:transaction"]);
 
@@ -518,6 +519,7 @@ async function handleSubmit(_event: any) {
     return;
   }
 
+  saving.value = true;
   try {
     if (props.transaction?.id) {
       await trxStore.deleteTransaction(toRaw(props.transaction));
@@ -559,6 +561,8 @@ async function handleSubmit(_event: any) {
       summary: "Transaction not saved",
       message: "The transaction could not be saved locally. Please try again.",
     });
+  } finally {
+    saving.value = false;
   }
 }
 

@@ -126,7 +126,7 @@
 
     <template #footer>
       <div class="flex flex-row-reverse">
-        <Button label="Save" @click="handleSubmit" />
+        <Button v-if="!saving" label="Save" @click="handleSubmit" />
         <Button label="Cancel" class="p-button-text" @click="close" />
       </div>
     </template>
@@ -524,6 +524,8 @@ watch(
   { immediate: true },
 );
 
+const saving = ref(false);
+
 async function handleSubmit() {
   if (
     !validate() ||
@@ -552,6 +554,7 @@ async function handleSubmit() {
     ],
   };
 
+  saving.value = true;
   try {
     await transactionsStore.saveTransaction(transaction);
     close();
@@ -562,6 +565,8 @@ async function handleSubmit() {
       summary: "Transaction not saved",
       message: "The transaction could not be saved locally. Please try again.",
     });
+  } finally {
+    saving.value = false;
   }
 }
 

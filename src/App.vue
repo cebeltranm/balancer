@@ -30,7 +30,7 @@
       </div>
     </div>
     <ConfirmPopup></ConfirmPopup>
-    <Toast />
+    <Toast position="bottom-right" />
     <Toast group="pwa-update" position="bottom-center">
       <template #message="slotProps">
         <div
