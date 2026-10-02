@@ -77,7 +77,11 @@
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from "vue";
-import { getStorage, type StorageProviderId } from "@/helpers/storage";
+import {
+  getStorage,
+  isLocalDevHost,
+  type StorageProviderId,
+} from "@/helpers/storage";
 import { useRoute, useRouter } from "vue-router";
 import * as files from "@/helpers/files";
 import * as sync from "@/helpers/sync";
@@ -200,7 +204,11 @@ onMounted(async () => {
     visible.value = true;
   }
 
-  if (storeInfo.value.loggedIn && storeInfo.value.type === "HttpServer") {
+  if (
+    storeInfo.value.loggedIn &&
+    storeInfo.value.type === "HttpServer" &&
+    isLocalDevHost()
+  ) {
     storageStore.status.authenticated = true;
     visible.value = false;
   }
