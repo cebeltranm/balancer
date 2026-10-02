@@ -37,21 +37,40 @@
 - CONFIRMED: Manifest icon paths intentionally mix slash/no-slash paths, with comments indicating test sensitivity.
 - INFERRED: Offline app shell does not guarantee offline availability of remote JSON storage data unless already cached in IndexedDB.
 
+## Offline Product Promise (RT-024)
+- RESOLVED: Offline supports (1) the app shell, (2) previously cached finance data in IndexedDB, and (3) queued local edits for supported write flows.
+- RESOLVED: Supported queued write flows are transaction add/edit/delete (IndexedDB `transactions` queue) and whole-file saves for budget, values, and balance (IndexedDB `files` entries with `to_sync: true`).
+- RESOLVED: Fresh remote data requires connectivity: first load on a new device or browser, reading a file not yet in IndexedDB, provider login, and token refresh are not promised offline.
+- RESOLVED: Queued edits sync automatically when the provider is reachable; conflict and failure behavior follows `storage-sync.md` (RT-001, RT-002).
+- Code status: PARTIALLY SATISFIED. App shell precache and navigation fallback, cache-first reads, local queues, and sync suppression while offline exist. Gaps: no browser `online`/`offline` event handling (the offline flag is only refreshed via `refreshStoreInfo()`), no defined behavior for an uncached file read while offline, and no offline/pending-changes indicator beyond the Settings status text.
+
 ## Acceptance Criteria
 - CONFIRMED: GIVEN `initPWA()` runs, WHEN `useRegisterSW()` is called, THEN it is called with immediate registration.
 - CONFIRMED: GIVEN `needRefresh` becomes true, WHEN `App.vue` observes it, THEN a persistent update toast is displayed.
 - CONFIRMED: GIVEN the update toast is visible, WHEN the user clicks "Update now", THEN the toast is removed and `updateServiceWorker(true)` is invoked.
 - CONFIRMED: GIVEN the app is built with VitePWA config, WHEN the manifest is generated, THEN it contains app name/short name `Balancer` and configured 192/512 icons.
 - UNCLEAR: The expected user-facing behavior for service-worker registration failure is not specified.
+- CONFIRMED (code satisfies): GIVEN the app shell was precached, WHEN the user loads any app route offline, THEN the service worker serves `index.html` through the navigation fallback.
+- CONFIRMED (code satisfies): GIVEN a JSON file exists in the IndexedDB cache, WHEN it is read, THEN cached data is returned without a provider request, online or offline.
+- CONFIRMED (code satisfies): GIVEN the user is offline and saves a supported write flow, WHEN the local write completes, THEN the change stays queued (`transactions` row or `to_sync: true` file) and the pending counters reflect it.
+- CONFIRMED (code satisfies): GIVEN `status.offline` is true, WHEN pending counters become non-zero, THEN sync does not start.
+- NOT YET SATISFIED: GIVEN the browser regains connectivity, WHEN the provider is reachable, THEN the offline flag clears and pending changes sync without a manual reload.
+- NOT YET SATISFIED: GIVEN the user is offline and reads a file that is not in IndexedDB, THEN the app shows an empty or unavailable state with a clear message instead of an unhandled error.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/helpers/__tests__/pwa.spec.ts` verifies `useRegisterSW()` is called with immediate registration and callbacks.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No browser/service-worker integration tests.
+- Test expectations for RT-024 (to add; no app code changes needed for the first four):
+  - `src/helpers/__tests__/files.spec.ts`: cache hit makes no provider call; cache miss with provider failure follows the defined offline behavior.
+  - `src/stores/__tests__/storage.spec.ts`: `sync()` and automatic sync are skipped while `status.offline` is true and run once it clears.
+  - `src/stores/__tests__/transactions.spec.ts`, `budget.spec.ts`, `values.spec.ts`, `balance.spec.ts`: saves made while offline stay queued and increase pending counts.
+  - `src/helpers/__tests__/pwa.spec.ts` or a build-config test: precache `globPatterns` and navigation fallback are configured.
+  - If reconnect handling is added: a storage store test that an `online` event refreshes store info and triggers sync.
 - CONFIRMED: No tests for update toast interaction in `App.vue`.
 - CONFIRMED: No tests for generated manifest or cache contents.
 
 ## Product Questions
-- UNCLEAR: Should offline mode promise read access only to previously cached finance data, or broader offline workflows?
+- RESOLVED (RT-024): Offline promise is app shell plus previously cached data plus queued local edits for supported write flows. Fresh remote data requires connectivity. Full offline workflows are not promised.
 - UNCLEAR: Should users be allowed to dismiss an update prompt without updating?

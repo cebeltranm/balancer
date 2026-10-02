@@ -61,4 +61,4 @@
 - CONFIRMED: `product-overview.md`, `architecture.md`, and `storage-sync.md` consistently describe Dropbox as the normal provider and the local HTTP provider as development-only.
 - CONFIRMED: `authentication.md`, `dashboard.md`, `expenses.md`, `balance.md`, and `investments.md` consistently state that `/` and `/expenses` remain accessible without router authentication checks, while sensitive routes require authentication.
 - INFERRED: `data-model.md`, `accounts.md`, and `investments.md` all depend on account ids and investment metadata remaining stable, but none defines a full migration/reference policy.
-- UNCLEAR: `pwa.md` promises offline-ready app assets, while `storage-sync.md` makes clear remote JSON data still depends on IndexedDB/provider state; the exact offline product promise is not defined.
+- RESOLVED: `pwa.md` offline-ready assets and `storage-sync.md` IndexedDB/provider dependence are reconciled by the RT-024 promise: app shell, previously cached data, and queued local edits; fresh remote data requires connectivity.
