@@ -42,6 +42,7 @@
 - RESOLVED: Supported queued write flows are transaction add/edit/delete (IndexedDB `transactions` queue) and whole-file saves for budget, values, and balance (IndexedDB `files` entries with `to_sync: true`).
 - RESOLVED: Fresh remote data requires connectivity: first load on a new device or browser, reading a file not yet in IndexedDB, provider login, and token refresh are not promised offline.
 - RESOLVED: Queued edits sync automatically when the provider is reachable; conflict and failure behavior follows `storage-sync.md` (RT-001, RT-002).
+- CONFIRMED (code satisfies): While `status.loggedIn && status.offline`, `AppTopbar.vue` shows an "Offline" indicator (`data-testid="offline-indicator"`); it is hidden otherwise. Covered by `AppTopbar.spec.ts`.
 - Code status: SATISFIED for the RT-024 promise. App shell precache and navigation fallback, cache-first reads, local queues, sync suppression while offline, browser `online`/`offline` handling in `useStorageStore()`, and unavailable (`false`) results for uncached network-failed reads are implemented and tested. Remaining out of scope: no offline/pending-changes indicator beyond the Settings status text, and no service-worker integration test.
 
 ## Acceptance Criteria

@@ -79,6 +79,29 @@ describe("http server storage helper", () => {
     );
   });
 
+  it("reads a file's last modification from the server file list", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        status: 200,
+        json: vi
+          .fn()
+          .mockResolvedValue([
+            { name: "a.json", lastModified: "2026-01-02T03:04:05.000Z" },
+          ]),
+      }),
+    );
+
+    const store = new HttpServerStore();
+
+    await expect(store.getLastModification("a.json")).resolves.toEqual(
+      new Date("2026-01-02T03:04:05.000Z"),
+    );
+    await expect(store.getLastModification("missing.json")).resolves.toBe(
+      undefined,
+    );
+  });
+
   it("returns false and stores no token when login is rejected by the server", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ status: 500 }));
 

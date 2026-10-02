@@ -62,6 +62,7 @@ describe("sync helper", () => {
       ],
       date_cached: expect.any(Number),
       to_sync: true,
+      skip_conflict_check: true,
     });
     expect(idb.removeTransactions).toHaveBeenCalledWith([1, 2, 3]);
   });
@@ -111,6 +112,7 @@ describe("sync helper", () => {
       ],
       date_cached: expect.any(Number),
       to_sync: true,
+      skip_conflict_check: true,
     });
     expect(idb.removeTransactions).toHaveBeenCalledWith([42, 123456789]);
   });
@@ -179,6 +181,35 @@ describe("sync helper", () => {
       summary: "Sync conflict",
       message: expect.stringContaining("budget_2025.json"),
     });
+  });
+
+  it("uploads staged merged files without a conflict warning even if the remote looks newer", async () => {
+    const emit = vi.spyOn(EVENTS, "emit");
+    vi.mocked(idb.getAllFilesInCache).mockResolvedValue([
+      "transactions_2026_5.json",
+    ]);
+    vi.mocked(idb.getJsonFile).mockResolvedValue({
+      date_cached: 100,
+      to_sync: true,
+      skip_conflict_check: true,
+      data: [],
+    } as any);
+    storageMocks.getLastModificationMock.mockResolvedValue(new Date(500));
+    vi.mocked(files.writeJsonFile).mockResolvedValue(true);
+
+    const synced = await syncFiles();
+
+    expect(files.writeJsonFile).toHaveBeenCalledWith(
+      "transactions_2026_5.json",
+      [],
+    );
+    expect(synced).toEqual([
+      { fileName: "transactions_2026_5.json", stored: true },
+    ]);
+    expect(emit).not.toHaveBeenCalledWith(
+      "message",
+      expect.objectContaining({ summary: "Sync conflict" }),
+    );
   });
 
   it("reports failed uploads and leaves cached files queued for retry", async () => {

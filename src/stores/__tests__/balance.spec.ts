@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useAccountsStore } from "@/stores/accounts";
 import { useBalanceStore } from "@/stores/balance";
+import { useStorageStore } from "@/stores/storage";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
 import {
@@ -225,6 +226,23 @@ describe("balance store", () => {
       expect.objectContaining({
         id: "balance_2026.json",
         to_sync: true,
+        skip_conflict_check: true,
+      }),
+    );
+  });
+
+  it("caches the recalculated balance without queueing it while offline", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue(false);
+    useStorageStore().status.offline = true;
+
+    const balanceStore = useBalanceStore();
+    await balanceStore.recalculateBalance(2026, 5, true);
+
+    expect(idb.saveJsonFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "balance_2026.json",
+        to_sync: false,
+        skip_conflict_check: true,
       }),
     );
   });
@@ -290,6 +308,7 @@ describe("balance store", () => {
       expect.objectContaining({
         id: "balance_2026.json",
         to_sync: true,
+        skip_conflict_check: true,
       }),
     );
   });

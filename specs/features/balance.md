@@ -43,6 +43,7 @@
 - CONFIRMED: Recalculation crosses year boundaries by reading previous December when recalculating January.
 
 ## Acceptance Criteria
+- CONFIRMED (RT-024, code satisfies): GIVEN the app is offline, WHEN a balance year is recalculated and saved, THEN it is cached only (`to_sync: false`); when online it is saved with `to_sync: true` and `skip_conflict_check: true` because it is derived data. `balance.spec.ts` covers both.
 - CONFIRMED: GIVEN at least one account already has a current-month balance, WHEN `ensureCurrentMonthBalance()` runs, THEN it does not recalculate the current month.
 - CONFIRMED: GIVEN no account has a current-month balance, WHEN `ensureCurrentMonthBalance()` runs, THEN the current month is recalculated from transactions, values, and prior balances.
 - CONFIRMED: GIVEN an earlier month is recalculated, WHEN the month is before the current month, THEN future months are recalculated through the current month.

@@ -42,6 +42,9 @@ export async function syncTransactions() {
               data: toRaw(trans),
               date_cached: Date.now(),
               to_sync: true,
+              // Merged with the remote file read above, so there is no
+              // newer remote version to warn about at upload time.
+              skip_conflict_check: true,
             });
 
             await idb.removeTransactions(byMonth[year][month].map((t) => t.id));
@@ -77,11 +80,13 @@ export async function syncFiles() {
       fileKeys.map(async (fileName) => {
         const file = await idb.getJsonFile(fileName);
         if (file.to_sync) {
-          const remoteModified =
-            typeof file.remote_modified === "number"
+          const remoteModified = file.skip_conflict_check
+            ? undefined
+            : typeof file.remote_modified === "number"
               ? file.remote_modified
               : await getRemoteFileModified(String(fileName));
           const conflict =
+            !file.skip_conflict_check &&
             typeof remoteModified === "number" &&
             remoteModified > file.date_cached;
           const warning = conflict
