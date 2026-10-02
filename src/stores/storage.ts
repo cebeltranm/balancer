@@ -4,6 +4,7 @@ import bounced from "lodash-es/debounce";
 import * as syncHelpers from "@/helpers/sync";
 import * as idb from "@/helpers/idb";
 import { EVENTS } from "@/helpers/events";
+import { isStorageAuthError } from "@/helpers/storageAuthError";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import {
   getAvailableStorageProviders,
@@ -12,6 +13,12 @@ import {
   setSelectedStorageProvider,
   type StorageProviderId,
 } from "@/helpers/storage";
+
+export interface AuthErrorState {
+  kind: "webauthn" | "provider-login" | "token-refresh";
+  provider?: string;
+  message: string;
+}
 
 let currentSyncPromise: Promise<any> | null = null;
 const MINIMUM_CONFIG = { stock_api: {}, inv_composition: {} };
@@ -33,6 +40,7 @@ export const useStorageStore = defineStore("storage", () => {
     authenticated: false,
     syncFailed: false,
     lastSyncError: "",
+    authError: null as AuthErrorState | null,
   });
   const selectedProvider = ref<StorageProviderId>(getSelectedStorageProvider());
   const providerOptions = computed(() => getAvailableStorageProviders());
@@ -153,7 +161,21 @@ export const useStorageStore = defineStore("storage", () => {
 
   async function refreshStoreInfo() {
     selectedProvider.value = getSelectedStorageProvider();
-    const info = await getStorage().getInfo();
+    let info;
+    try {
+      info = await getStorage().getInfo();
+    } catch (error) {
+      if (!isStorageAuthError(error)) {
+        throw error;
+      }
+      // Provider tokens are kept until the user restarts provider login.
+      setAuthError({
+        kind: "token-refresh",
+        provider: error.provider,
+        message: error.message,
+      });
+      info = { type: error.provider, loggedIn: true, offline: true, user: {} };
+    }
     storeInfo.value = info;
     status.value.loggedIn = info.loggedIn;
     status.value.offline = info.offline;
@@ -172,8 +194,28 @@ export const useStorageStore = defineStore("storage", () => {
       if (info.loggedIn && !info.offline) {
         await ensureMinimumConfigFile();
       }
+      clearAuthError();
     }
     return authenticated;
+  }
+
+  function setAuthError(error: AuthErrorState) {
+    status.value.authError = error;
+  }
+
+  function clearAuthError() {
+    status.value.authError = null;
+  }
+
+  // Clears provider tokens only; the IndexedDB cache and pending sync queues
+  // are kept so queued local changes are not lost.
+  async function restartProviderLogin() {
+    const storage = getStorage() as { logout?: () => Promise<boolean> };
+    await storage.logout?.();
+    status.value.loggedIn = false;
+    status.value.authenticated = false;
+    clearAuthError();
+    return login();
   }
 
   async function logout() {
@@ -187,18 +229,21 @@ export const useStorageStore = defineStore("storage", () => {
     status.value.authenticated = false;
     status.value.syncFailed = false;
     status.value.lastSyncError = "";
+    clearAuthError();
   }
 
   async function selectProvider(provider: StorageProviderId) {
     setSelectedStorageProvider(provider);
     selectedProvider.value = provider;
     status.value.authenticated = false;
+    clearAuthError();
     return refreshStoreInfo();
   }
 
   function resetLocalCredentials() {
     window.localStorage.removeItem("crlocal");
     status.value.authenticated = false;
+    clearAuthError();
   }
 
   return {
@@ -213,6 +258,9 @@ export const useStorageStore = defineStore("storage", () => {
     refreshStoreInfo,
     login,
     logout,
+    setAuthError,
+    clearAuthError,
+    restartProviderLogin,
     selectProvider,
     resetLocalCredentials,
   };

@@ -1,5 +1,9 @@
 import { Dropbox, DropboxAuth, DropboxResponseError } from "dropbox";
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
+import {
+  StorageAuthError,
+  isStorageAuthError,
+} from "@/helpers/storageAuthError";
 
 const CLIENT_ID = "odmed9kdyvxuszo";
 const REDIRECT_URI = `${window.location.protocol}//${window.location.host}${window.location.pathname.includes("balancer") ? "/balancer/" : "/"}`;
@@ -39,17 +43,46 @@ export default class DropboxStore {
           }
         } catch (e: any) {
           if (e.status === 401 && authLoggin) {
-            await this.doAuth();
-            return this.getInfo(false);
+            if (await this.__refreshAccessToken()) {
+              return this.getInfo(false);
+            }
+            throw new StorageAuthError(
+              "Dropbox",
+              "Your Dropbox session expired and could not be refreshed. Restart provider login to sign in again.",
+              { cause: e },
+            );
           }
           if (!(e instanceof DropboxResponseError) || e.status !== 401) {
             info.offline = true;
           }
         }
       }
-    } catch {}
+    } catch (e) {
+      if (isStorageAuthError(e)) {
+        throw e;
+      }
+    }
 
     return info;
+  }
+
+  async __refreshAccessToken() {
+    const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_ID);
+    if (!refreshToken) {
+      return false;
+    }
+    const dbxAuth = new DropboxAuth({ clientId: CLIENT_ID, refreshToken });
+    try {
+      await dbxAuth.refreshAccessToken();
+      const accessToken = dbxAuth.getAccessToken();
+      if (accessToken) {
+        window.localStorage.setItem(TOKEN_ID, accessToken);
+      }
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
   }
 
   async doAuth(code?: string) {
@@ -58,7 +91,17 @@ export default class DropboxStore {
       const dbxAuth = new DropboxAuth({ clientId: CLIENT_ID });
       dbxAuth.setCodeVerifier(storedCodeVerifier);
 
-      const response = await dbxAuth.getAccessTokenFromCode(REDIRECT_URI, code);
+      let response;
+      try {
+        response = await dbxAuth.getAccessTokenFromCode(REDIRECT_URI, code);
+      } catch (e) {
+        window.sessionStorage.removeItem(CODE_VERIFIER_ID);
+        throw new StorageAuthError(
+          "Dropbox",
+          "Dropbox sign-in could not be completed. Restart provider login and try again.",
+          { cause: e },
+        );
+      }
       const result = response.result as {
         access_token?: string;
         refresh_token?: string;
@@ -72,23 +115,10 @@ export default class DropboxStore {
       window.sessionStorage.removeItem(CODE_VERIFIER_ID);
       return true;
     } else {
-      const dbxAuth = new DropboxAuth({
-        clientId: CLIENT_ID,
-        refreshToken:
-          window.localStorage.getItem(REFRESH_TOKEN_ID) || undefined,
-      });
-      if (window.localStorage.getItem(REFRESH_TOKEN_ID)) {
-        try {
-          await dbxAuth.refreshAccessToken();
-          const accessToken = dbxAuth.getAccessToken();
-          if (accessToken) {
-            window.localStorage.setItem(TOKEN_ID, accessToken);
-          }
-          return true;
-        } catch (e) {
-          console.log(e);
-        }
+      if (await this.__refreshAccessToken()) {
+        return true;
       }
+      const dbxAuth = new DropboxAuth({ clientId: CLIENT_ID });
       const authUrl = await dbxAuth.getAuthenticationUrl(
         REDIRECT_URI,
         undefined,
