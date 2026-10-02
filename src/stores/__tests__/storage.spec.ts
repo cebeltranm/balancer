@@ -260,4 +260,114 @@ describe("storage store", () => {
     expect((store.status as any).syncFailed).toBe(false);
     expect((store.status as any).lastSyncError).toBe("");
   });
+
+  describe("auth error state and recovery (RT-020)", () => {
+    // Shape the spec defines; typed locally so this compiles before the
+    // implementation exists.
+    type AuthErrorStatus = {
+      kind: "webauthn" | "provider-login" | "token-refresh";
+      provider?: string;
+      message: string;
+    };
+    type AuthErrorApi = {
+      setAuthError: (error: AuthErrorStatus) => void;
+      clearAuthError: () => void;
+      restartProviderLogin: () => Promise<unknown>;
+    };
+    const api = (store: ReturnType<typeof useStorageStore>) =>
+      store as unknown as AuthErrorApi;
+    const authError = (store: ReturnType<typeof useStorageStore>) =>
+      (store.status as unknown as { authError?: AuthErrorStatus | null })
+        .authError ?? null;
+    const sample: AuthErrorStatus = {
+      kind: "webauthn",
+      message: "Device authentication was cancelled.",
+    };
+    let local: Map<string, string>;
+
+    beforeEach(() => {
+      local = new Map();
+      (window as any).localStorage = {
+        getItem: (key: string) => local.get(key) ?? null,
+        setItem: (key: string, value: string) => void local.set(key, value),
+        removeItem: (key: string) => void local.delete(key),
+      };
+    });
+
+    it("starts with no auth error", () => {
+      expect(authError(useStorageStore())).toBeNull();
+    });
+
+    it("stores and clears an auth error", () => {
+      const store = useStorageStore();
+
+      api(store).setAuthError(sample);
+      expect(authError(store)).toEqual(sample);
+
+      api(store).clearAuthError();
+      expect(authError(store)).toBeNull();
+    });
+
+    it("resetLocalCredentials removes crlocal and deauthenticates", () => {
+      const store = useStorageStore();
+      local.set("crlocal", "{}");
+      store.status.authenticated = true;
+
+      store.resetLocalCredentials();
+
+      expect(local.has("crlocal")).toBe(false);
+      expect(store.status.authenticated).toBe(false);
+    });
+
+    it("resetLocalCredentials also clears the auth error", () => {
+      const store = useStorageStore();
+      local.set("crlocal", "{}");
+      store.status.authenticated = true;
+      api(store).setAuthError(sample);
+
+      store.resetLocalCredentials();
+
+      expect(local.has("crlocal")).toBe(false);
+      expect(store.status.authenticated).toBe(false);
+      expect(authError(store)).toBeNull();
+    });
+
+    it("clears the auth error on logout and provider change", async () => {
+      const store = useStorageStore();
+
+      api(store).setAuthError(sample);
+      await store.logout();
+      expect(authError(store)).toBeNull();
+
+      api(store).setAuthError(sample);
+      await store.selectProvider("dropbox");
+      expect(authError(store)).toBeNull();
+    });
+
+    it("clears the auth error after a successful login", async () => {
+      const store = useStorageStore();
+      api(store).setAuthError({ ...sample, kind: "provider-login" });
+
+      await store.login();
+
+      expect(authError(store)).toBeNull();
+    });
+
+    it("restartProviderLogin clears provider tokens, keeps cached data, and logs in again", async () => {
+      const store = useStorageStore();
+      store.pendingToSync = { transactions: 3, files: 2 };
+      api(store).setAuthError({ ...sample, kind: "token-refresh" });
+
+      await api(store).restartProviderLogin();
+
+      expect(storageMocks.logoutMock).toHaveBeenCalledTimes(1);
+      expect(storageMocks.doAuthMock).toHaveBeenCalledTimes(1);
+      expect(storageMocks.logoutMock.mock.invocationCallOrder[0]).toBeLessThan(
+        storageMocks.doAuthMock.mock.invocationCallOrder[0],
+      );
+      expect(idb.clearDatabase).not.toHaveBeenCalled();
+      expect(store.pendingToSync).toEqual({ transactions: 3, files: 2 });
+      expect(authError(store)).toBeNull();
+    });
+  });
 });
