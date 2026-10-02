@@ -269,7 +269,8 @@ describe("storage store", () => {
       summary: "Sync failed",
       message: expect.stringContaining("queued locally"),
       life: 0,
-      closable: false,
+      closable: true,
+      group: "sync-failed",
     });
   });
 
@@ -295,9 +296,12 @@ describe("storage store", () => {
     await flushPromises();
     expect((store.status as any).syncFailed).toBe(true);
 
+    const emit = vi.spyOn(EVENTS, "emit");
+    emit.mockClear();
     store.sync();
     await flushPromises();
 
+    expect(emit).toHaveBeenCalledWith("clear-messages", "sync-failed");
     expect(store.status.inSync).toBe(false);
     expect(store.pendingToSync).toEqual({ transactions: 0, files: 0 });
     expect((store.status as any).syncFailed).toBe(false);

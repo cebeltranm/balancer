@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import bounced from "lodash-es/debounce";
 import * as syncHelpers from "@/helpers/sync";
 import * as idb from "@/helpers/idb";
-import { EVENTS } from "@/helpers/events";
+import { EVENTS, CLEAR_MESSAGES, SYNC_FAILED_GROUP } from "@/helpers/events";
 import { isStorageAuthError } from "@/helpers/storageAuthError";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
 import {
@@ -94,6 +94,8 @@ export const useStorageStore = defineStore("storage", () => {
       } else {
         status.value.syncFailed = false;
         status.value.lastSyncError = "";
+        // Sync recovered: dismiss any stale "Sync failed" toast.
+        EVENTS.emit(CLEAR_MESSAGES, SYNC_FAILED_GROUP);
       }
     } catch (error) {
       failureMessage =
@@ -106,12 +108,14 @@ export const useStorageStore = defineStore("storage", () => {
       if (failureMessage) {
         status.value.syncFailed = true;
         status.value.lastSyncError = failureMessage;
+        EVENTS.emit(CLEAR_MESSAGES, SYNC_FAILED_GROUP);
         EVENTS.emit("message", {
           severity: "error",
           summary: "Sync failed",
           message: `${failureMessage} Changes are still queued locally. Use sync status to retry.`,
           life: 0,
-          closable: false,
+          closable: true,
+          group: SYNC_FAILED_GROUP,
         });
       }
     }
