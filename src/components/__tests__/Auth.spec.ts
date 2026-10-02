@@ -5,6 +5,8 @@ import { createApp, defineComponent, h, nextTick } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import Auth from "@/components/Auth.vue";
 import { StorageAuthError } from "@/helpers/storageAuthError";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
+import * as files from "@/helpers/files";
 import * as idb from "@/helpers/idb";
 import { useStorageStore } from "@/stores/storage";
 
@@ -424,6 +426,94 @@ describe("Auth dialog failure handling (RT-020)", () => {
 
       expect(store.status.authenticated).toBe(false);
       expect(findButton(/register credentials/i)).toBeTruthy();
+    });
+  });
+
+  // RT-023: first-run checklist (storage login, seed accounts, register local
+  // credential). See specs/features/authentication.md.
+  describe("First-run seeding (RT-023)", () => {
+    const seed = {
+      cash_1: { type: "Cash", name: "Wallet", currency: "usd" },
+    };
+    let fetchMock: ReturnType<typeof vi.fn>;
+
+    async function loginToStore() {
+      const store = await mountAuth({
+        type: "Dropbox",
+        loggedIn: false,
+        credentials: false,
+      });
+      // mountAuth installs its own getInfo mock; restore the login sequence.
+      mocks.getInfo
+        .mockReset()
+        .mockResolvedValueOnce({
+          type: "Dropbox",
+          loggedIn: false,
+          offline: true,
+        })
+        .mockResolvedValue({ type: "Dropbox", loggedIn: true, offline: true });
+      await click(/login to store/i);
+      return store;
+    }
+
+    beforeEach(() => {
+      fetchMock = vi.fn().mockResolvedValue({ json: async () => seed });
+      vi.stubGlobal("fetch", fetchMock);
+      vi.mocked(files.writeJsonFile).mockClear();
+    });
+
+    it("seeds a missing accounts.json from public/accounts.json once after storage login", async () => {
+      vi.mocked(files.readJsonFile).mockResolvedValue(false);
+
+      const store = await loginToStore();
+
+      expect(store.status.loggedIn).toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith("./accounts.json");
+      const seedWrites = vi
+        .mocked(files.writeJsonFile)
+        .mock.calls.filter(([name]) => name === "accounts.json");
+      expect(seedWrites).toEqual([["accounts.json", seed]]);
+    });
+
+    it("does not overwrite an existing valid accounts.json", async () => {
+      vi.mocked(files.readJsonFile).mockResolvedValue({
+        mine: { type: "Cash", name: "Mine", currency: "cop" },
+      });
+
+      await loginToStore();
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(files.writeJsonFile).not.toHaveBeenCalledWith(
+        "accounts.json",
+        expect.anything(),
+      );
+    });
+
+    it("does not seed over an invalid accounts.json", async () => {
+      vi.mocked(files.readJsonFile).mockRejectedValue(
+        new PersistedFileError(
+          "invalid_file",
+          "accounts.json",
+          "accounts.json contains invalid JSON.",
+        ),
+      );
+
+      await loginToStore();
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(files.writeJsonFile).not.toHaveBeenCalledWith(
+        "accounts.json",
+        expect.anything(),
+      );
+    });
+
+    it("offers Register Credentials after storage login when no local credential exists", async () => {
+      vi.mocked(files.readJsonFile).mockResolvedValue({});
+
+      await loginToStore();
+
+      expect(findButton(/register credentials/i)).toBeTruthy();
+      expect(findButton(/skip|continue without|opt out/i)).toBeUndefined();
     });
   });
 });
