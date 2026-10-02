@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useAccountsStore } from "@/stores/accounts";
@@ -278,5 +279,22 @@ describe("accounts store", () => {
       currency: "cop",
     });
     expect(writeJsonFile).not.toHaveBeenCalled();
+  });
+
+  // RT-023: the first-run seed must stay loadable by the account loader.
+  it("loads every account in public/accounts.json (first-run seed)", async () => {
+    const seed = JSON.parse(readFileSync("public/accounts.json", "utf-8"));
+    vi.mocked(readJsonFile).mockResolvedValue(seed);
+
+    const store = useAccountsStore();
+    const loaded = await store.loadAccounts(true);
+
+    const ids = Object.keys(seed).filter((id) => id !== "default");
+    expect(Object.keys(loaded)).toEqual(ids);
+    expect(ids.length).toBeGreaterThan(0);
+    ids.forEach((id) => {
+      expect(Object.values(AccountType)).toContain(loaded[id].type);
+      expect(loaded[id].currency.trim()).not.toBe("");
+    });
   });
 });

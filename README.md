@@ -38,6 +38,16 @@ Run the development server:
 npm run dev
 ```
 
+## First Run
+
+On first use, complete these steps in order:
+
+1. **Storage login**: choose a storage provider in the authentication dialog and log in.
+2. **Seed accounts**: if storage has no `accounts.json`, the app creates it from `public/accounts.json`. An existing `accounts.json` is never overwritten.
+3. **Register local credential**: register a device credential (WebAuthn). It is required and cannot be skipped; it only gates the app on this device.
+4. **Review/edit accounts**: open Accounts and adjust the seeded accounts (names, types, currencies, hide/unhide). The seed is a starting template.
+5. **Confirm base currency/config**: check each account's currency and review `config.json` in Settings (`stock_api`, `inv_composition`). There is no separate base-currency setting.
+
 ## Scripts
 
 - `npm run dev`: start local dev server

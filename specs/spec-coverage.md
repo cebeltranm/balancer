@@ -91,7 +91,7 @@
 - UNCLEAR: The specs do not yet distinguish immutable product requirements from current implementation details in a formal way beyond `CONFIRMED`, `INFERRED`, and `UNCLEAR`.
 
 ### Missing Product Flows
-- UNCLEAR: First-run onboarding, including missing `accounts.json` seeding and what the user sees before setup completes.
+- RESOLVED: First-run onboarding follows the RT-023 checklist (storage login, seed accounts, register local credential, review/edit accounts, confirm base currency/config). Implemented: seeding, credential registration, account/config editing, README "First Run" section, and seeding tests exist; there is no base-currency setting by design.
 - UNCLEAR: Failed sync and retry recovery after local writes have been accepted.
 - CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
 - RESOLVED: Lost local WebAuthn credential recovery uses the auth dialog Reset local credentials action, then re-registration, keeping provider credentials (RT-020). Implemented in the auth dialog.
@@ -113,7 +113,7 @@
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
 - RESOLVED: Account lifecycle uses archive/hide as the normal path; hard deletion is blocked in all cases.
 - RESOLVED: Failed sync follows RT-002; provider login, WebAuthn, and Dropbox token refresh follow RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart; implemented and tested). External value providers remain UNCLEAR.
-- UNCLEAR: What is the intended first-run onboarding flow after storage login and default `accounts.json` seeding?
+- RESOLVED: First-run onboarding is the RT-023 checklist documented in `specs/features/authentication.md`, with no dedicated onboarding UI; implemented and tested.
 - UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?
 - RESOLVED: Balance snapshots are rebuildable cache and require an authenticated force-recalculate action with missing-source warnings. Current code satisfies this with store and rendered view coverage.
 - RESOLVED: Transaction edits continue using delete-plus-new-id. Current code satisfies this behavior; add dialog-level coverage to lock it down.
