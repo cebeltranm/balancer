@@ -13,6 +13,7 @@ import {
 import { useAccountsStore } from "@/stores/accounts";
 import { useValuesStore } from "@/stores/values";
 import { useTransactionsStore } from "@/stores/transactions";
+import { useStorageStore } from "@/stores/storage";
 import { groupDataByPeriods } from "@/helpers/groupData";
 import * as idb from "../helpers/idb";
 import { toRaw } from "vue";
@@ -512,11 +513,14 @@ export const useBalanceStore = defineStore("balance", () => {
       (month === DECEMBER ||
         (month === currentPeriod.month && year === currentPeriod.year));
     if (shouldSave) {
+      // Balance is derived data: offline it is only cached (not queued);
+      // sync recalculates it from the latest transactions and uploads it.
       idb.saveJsonFile({
         id: `balance_${year}.json`,
         data: toRaw(yearBalance),
         date_cached: Date.now(),
-        to_sync: true,
+        to_sync: !useStorageStore().status.offline,
+        skip_conflict_check: true,
       });
     }
 

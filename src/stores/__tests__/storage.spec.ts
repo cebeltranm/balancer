@@ -81,6 +81,48 @@ describe("storage store", () => {
     expect(store.pendingToSync).toEqual({ transactions: 2, files: 1 });
   });
 
+  it("does not start sync while offline and keeps changes queued (RT-024)", async () => {
+    const store = useStorageStore();
+    store.status.offline = true;
+
+    store.sync();
+    await store.updatePendingToSync();
+    await flushPromises();
+
+    expect(syncHelpers.syncTransactions).not.toHaveBeenCalled();
+    expect(syncHelpers.syncFiles).not.toHaveBeenCalled();
+    expect(store.pendingToSync).toEqual({ transactions: 2, files: 1 });
+  });
+
+  it("refreshes store info and syncs queued changes when the browser comes back online (RT-024)", async () => {
+    const listeners: Record<string, () => void> = {};
+    (window as any).addEventListener = vi.fn(
+      (name: string, handler: () => void) => {
+        listeners[name] = handler;
+      },
+    );
+    storageMocks.getInfoMock.mockResolvedValue({
+      type: "Dropbox",
+      loggedIn: true,
+      offline: true,
+    });
+    const store = useStorageStore();
+    await store.refreshStoreInfo();
+    expect(store.status.offline).toBe(true);
+
+    storageMocks.getInfoMock.mockResolvedValue({
+      type: "Dropbox",
+      loggedIn: true,
+      offline: false,
+    });
+    expect(listeners.online).toBeTypeOf("function");
+    listeners.online();
+    await flushPromises();
+
+    expect(store.status.offline).toBe(false);
+    expect(syncHelpers.syncFiles).toHaveBeenCalled();
+  });
+
   it("serializes executeInSync calls", async () => {
     const store = useStorageStore();
     let resolveFirst: (() => void) | null = null;
@@ -227,7 +269,8 @@ describe("storage store", () => {
       summary: "Sync failed",
       message: expect.stringContaining("queued locally"),
       life: 0,
-      closable: false,
+      closable: true,
+      group: "sync-failed",
     });
   });
 
@@ -253,9 +296,12 @@ describe("storage store", () => {
     await flushPromises();
     expect((store.status as any).syncFailed).toBe(true);
 
+    const emit = vi.spyOn(EVENTS, "emit");
+    emit.mockClear();
     store.sync();
     await flushPromises();
 
+    expect(emit).toHaveBeenCalledWith("clear-messages", "sync-failed");
     expect(store.status.inSync).toBe(false);
     expect(store.pendingToSync).toEqual({ transactions: 0, files: 0 });
     expect((store.status as any).syncFailed).toBe(false);

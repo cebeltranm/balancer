@@ -30,7 +30,8 @@
       </div>
     </div>
     <ConfirmPopup></ConfirmPopup>
-    <Toast />
+    <Toast position="bottom-right" />
+    <Toast :group="SYNC_FAILED_GROUP" position="bottom-right" />
     <Toast group="pwa-update" position="bottom-center">
       <template #message="slotProps">
         <div
@@ -52,7 +53,12 @@ import { initPWA } from "@/helpers/pwa";
 import { isDesktop } from "./helpers/browser";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
-import { EVENTS, CHECK_AUTHENTICATE } from "@/helpers/events";
+import {
+  EVENTS,
+  CHECK_AUTHENTICATE,
+  CLEAR_MESSAGES,
+  SYNC_FAILED_GROUP,
+} from "@/helpers/events";
 import packageJson from "../package.json";
 import { useStorageStore } from "@/stores/storage";
 import AppTopbar from "./layout/AppTopbar.vue";
@@ -120,7 +126,12 @@ EVENTS.on("message", (msg: any) => {
     detail: msg.message || "",
     life: msg.life ?? 3000,
     closable: msg.closable,
+    group: msg.group,
   });
+});
+
+EVENTS.on(CLEAR_MESSAGES, (group: string) => {
+  toast.removeGroup(group);
 });
 
 watch(needRefresh, (value) => {

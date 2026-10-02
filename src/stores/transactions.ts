@@ -117,12 +117,19 @@ export const useTransactionsStore = defineStore("transactions", () => {
         }, {}),
     );
     await storageStore.updatePendingToSync();
-    const transactionDate = parseLocalDateString(transaction.date);
-    await loadTransactionsForMonth(
-      transactionDate.getFullYear(),
-      transactionDate.getMonth() + 1,
-      true,
-    );
+    // The transaction is already queued locally. Refreshing the month from
+    // the provider may fail (e.g. server unreachable) and must not fail the
+    // save, so fall back to the cached month plus the pending queue.
+    const year = parseLocalDateString(transaction.date).getFullYear();
+    const month = parseLocalDateString(transaction.date).getMonth() + 1;
+    try {
+      await loadTransactionsForMonth(year, month, true);
+    } catch {
+      if (transactions.value[year]) {
+        delete transactions.value[year][month];
+      }
+      await loadTransactionsForMonth(year, month, false);
+    }
   }
 
   async function deleteTransaction(transaction: Transaction) {

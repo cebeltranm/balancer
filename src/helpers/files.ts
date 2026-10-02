@@ -33,6 +33,12 @@ export async function readJsonFile(fileName: any, cache: boolean = true) {
         life: 0,
       });
     }
+    // Uncached read while the provider is unreachable (network failure): report
+    // the file as unavailable instead of failing. Uncached reads that bypass
+    // the cache (sync, onboarding) keep throwing so they never act on missing data.
+    if (cache && error instanceof TypeError) {
+      return false;
+    }
     throw error;
   }
   if (data) {

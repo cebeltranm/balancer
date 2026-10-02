@@ -117,6 +117,32 @@ describe("transactions store", () => {
     expect(updatePendingToSync).toHaveBeenCalled();
   });
 
+  it("keeps a queued transaction saved and visible when refreshing from the provider fails", async () => {
+    vi.mocked(readJsonFile)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce([]);
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([
+      { id: 12, date: "2025-02-21", description: "offline", values: [] },
+    ] as any);
+
+    const store = useTransactionsStore();
+    await expect(
+      store.saveTransaction({
+        id: 12,
+        date: "2025-02-21",
+        description: "offline",
+        values: [],
+      } as any),
+    ).resolves.toBeUndefined();
+
+    expect(readJsonFile).toHaveBeenNthCalledWith(
+      2,
+      "transactions_2025_2.json",
+      true,
+    );
+    expect(store.transactions[2025][2].map((t: any) => t.id)).toEqual([12]);
+  });
+
   it("treats failed local transaction queue writes as blocking", async () => {
     const error = new Error("IndexedDB unavailable");
     vi.mocked(idb.saveTransaction).mockRejectedValue(error);

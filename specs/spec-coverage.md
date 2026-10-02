@@ -99,12 +99,12 @@
 - RESOLVED: Dashboard totals must remain split by currency and must never be converted (RT-015). Current dashboard code (`src/views/HomeView.vue`, `src/components/AccountValueCard.vue`) already satisfies this; converted totals are used only in reports that already depend on a global currency. Test coverage for the multi-currency card split is still missing.
 - RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
 - RESOLVED: Manual balance recalculation is required for authenticated users. Balance snapshots are derived cache, and the app must warn when source data needed for recalculation is missing.
-- UNCLEAR: Offline usage contract beyond cached app shell and already-cached IndexedDB data.
+- RESOLVED: Offline contract is app shell plus previously cached data plus queued local edits for supported write flows; fresh remote data requires connectivity (RT-024). Implemented and tested: reconnect handling and offline cache-miss behavior.
 
 ### Cross-Spec Contradictions / Tensions
 - CONFIRMED: No direct route-access contradiction was found; `/` and `/expenses` are consistently described as unprotected, while `/balance`, `/investments`, `/settings/general`, and `/settings/accounts` require authentication.
 - CONFIRMED: No direct data-file naming contradiction was found across product overview, data model, and feature specs.
-- INFERRED: There is a product tension between PWA "offline-ready assets" and storage sync requirements; app shell can be offline-ready while fresh remote JSON data cannot be guaranteed offline.
+- RESOLVED: PWA offline-ready assets and storage sync are reconciled by the RT-024 offline promise; fresh remote JSON data is not guaranteed offline.
 - RESOLVED: Account ids are durable references across historical files; archive/hide replaces hard deletion.
 - RESOLVED: Transaction edits intentionally continue to use delete-plus-new-id; stable audit identity across edits is out of scope unless a future audit/reconciliation feature changes the model.
 - UNCLEAR: Google Drive is listed as planned/unavailable; no feature spec should treat it as an implemented provider until product scope changes.
@@ -114,7 +114,7 @@
 - RESOLVED: Account lifecycle uses archive/hide as the normal path; hard deletion is blocked in all cases.
 - RESOLVED: Failed sync follows RT-002; provider login, WebAuthn, and Dropbox token refresh follow RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart; implemented and tested). External value providers remain UNCLEAR.
 - RESOLVED: First-run onboarding is the RT-023 checklist documented in `specs/features/authentication.md`, with no dedicated onboarding UI; implemented and tested.
-- UNCLEAR: What offline behavior does the product promise: app shell only, read-only cached data, queued edits, or full offline workflows?
+- RESOLVED: Offline promise is app shell, previously cached data, and queued local edits for supported write flows; not full offline workflows (RT-024).
 - RESOLVED: Balance snapshots are rebuildable cache and require an authenticated force-recalculate action with missing-source warnings. Current code satisfies this with store and rendered view coverage.
 - RESOLVED: Transaction edits continue using delete-plus-new-id. Current code satisfies this behavior; add dialog-level coverage to lock it down.
 

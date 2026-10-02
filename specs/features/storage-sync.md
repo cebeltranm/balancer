@@ -50,8 +50,12 @@
 - CONFIRMED: Queued transaction rows continue to use merge-by-id conflict handling until a richer conflict UI exists.
 
 ## Acceptance Criteria
+- CONFIRMED (RT-024): GIVEN queued transactions are staged by `syncTransactions()` (merged with the freshly read remote month), WHEN `syncFiles()` uploads the staged file, THEN no "Sync conflict" warning is shown (`skip_conflict_check: true`). Other whole-file edits keep the RT-001 warning.
+- CONFIRMED (RT-024): GIVEN the app is offline, WHEN balance is recalculated, THEN `balance_<year>.json` is only cached (`to_sync: false`, not queued); after reconnect, sync recalculates from the earliest changed month and uploads it (`to_sync: true`, `skip_conflict_check: true`) without a conflict warning.
+- CONFIRMED (RT-024): `HttpServer.getLastModification` returns the file's real modified time from `/list` (undefined if missing) instead of the current time, so local dev no longer reports every file as a conflict.
 - CONFIRMED: GIVEN queued IndexedDB transactions or files exist, WHEN pending counters are updated, THEN `pendingTransactions` and `pendingFiles` match the queue sizes.
 - CONFIRMED: GIVEN `status.offline` is true, WHEN pending counters become non-zero, THEN automatic sync does not start.
+- RESOLVED (RT-024): Offline promise is app shell, previously cached data, and queued local edits for supported write flows; fresh remote data requires connectivity. See `pwa.md` for criteria and gaps. Implemented: the storage store listens for browser `online`/`offline` events, refreshes store info on reconnect, and syncs queued changes.
 - CONFIRMED: GIVEN one explicit sync operation is running, WHEN another explicit sync operation is requested, THEN the later operation waits until the current operation finishes.
 - CONFIRMED: GIVEN pending transaction changes exist, WHEN sync succeeds, THEN affected monthly transaction files are staged, transaction queue entries are removed, and balance recalculation starts from the earliest changed month.
 - CONFIRMED: GIVEN logout succeeds, WHEN state reset completes, THEN provider credentials, IndexedDB, store info, pending counters, and authentication flags are cleared.

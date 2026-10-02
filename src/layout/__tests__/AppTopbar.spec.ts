@@ -13,16 +13,22 @@ vi.mock("@/components/TransactionTypeDialog.vue", () => ({
   }),
 }));
 
+const storageState = vi.hoisted(() => ({
+  status: {
+    inSync: false,
+    syncFailed: false,
+    loggedIn: false,
+    offline: false,
+  },
+}));
+
 vi.mock("@/stores/storage", () => ({
   useStorageStore: () => ({
     pendingToSync: {
       transactions: 0,
       files: 0,
     },
-    status: {
-      inSync: false,
-      syncFailed: false,
-    },
+    status: storageState.status,
     sync: vi.fn(),
   }),
 }));
@@ -86,5 +92,31 @@ describe("AppTopbar currencies", () => {
     expect(
       Array.from(root.querySelectorAll("li")).map((item) => item.textContent),
     ).toContain("MXN");
+  });
+
+  it("shows an offline indicator only when logged in and offline", () => {
+    const mountTopbar = () => {
+      root = document.createElement("div");
+      document.body.appendChild(root);
+      app = createApp(AppTopbar);
+      app.provide("CURRENCY", ref(Currency.USD));
+      app.component("Toolbar", toolbarStub);
+      app.component("Button", buttonStub);
+      app.component("Menu", menuStub);
+      app.mount(root);
+    };
+
+    storageState.status.loggedIn = true;
+    storageState.status.offline = true;
+    mountTopbar();
+    expect(root.querySelector('[data-testid="offline-indicator"]')).not.toBe(
+      null,
+    );
+    app?.unmount();
+    root.remove();
+
+    storageState.status.offline = false;
+    mountTopbar();
+    expect(root.querySelector('[data-testid="offline-indicator"]')).toBe(null);
   });
 });

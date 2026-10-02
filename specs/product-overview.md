@@ -181,4 +181,4 @@ Validation scripts defined in `package.json` are:
 - CONFIRMED: Account deletion/reference policy is archive/hide only; hard deletion is blocked so transactions, budgets, values, balances, dashboard, expenses, and investments can continue resolving historical account ids.
 - UNCLEAR: Error UX for sync, provider login, WebAuthn, and external value providers is not specified consistently.
 - RESOLVED: Missing conversion rates in expense and investment UI summaries show partial totals with a visible missing-rate indicator listing affected currencies/accounts.
-- UNCLEAR: Offline behavior needs a product-level promise separating offline app-shell availability from offline finance-data availability.
+- RESOLVED: Offline promise (RT-024): app shell plus previously cached data plus queued local edits for supported write flows; fresh remote data requires connectivity. Details in `features/pwa.md`.

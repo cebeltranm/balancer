@@ -110,8 +110,10 @@ export default class HttpServerStore {
       return true;
     }
   }
-  async getLastModification(_fileName: string) {
-    return new Date();
+  async getLastModification(fileName: string) {
+    const files = await this.listFiles();
+    const file = files?.find((f: any) => f.name === fileName);
+    return file ? new Date(file.lastModified) : undefined;
   }
 
   async listFiles() {

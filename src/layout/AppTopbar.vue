@@ -11,6 +11,16 @@
     </template>
 
     <template #end>
+      <span
+        v-if="isOffline"
+        class="pi pi-ban text-orange-500 pr-2"
+        role="status"
+        aria-label="Offline"
+        title="Offline: changes are saved locally and synced when back online"
+        data-testid="offline-indicator"
+      >
+        <span class="font-medium pl-1">Offline</span>
+      </span>
       <Button
         :icon="currencyIcon"
         variant="outlined"
@@ -90,6 +100,9 @@ const currencies = computed(() =>
   })),
 );
 
+const isOffline = computed(
+  () => !!storage.status.loggedIn && !!storage.status.offline,
+);
 const isPendingToSync = computed(
   () =>
     storage.pendingToSync.transactions > 0 || storage.pendingToSync.files > 0,
