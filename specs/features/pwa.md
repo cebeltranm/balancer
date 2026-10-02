@@ -42,7 +42,7 @@
 - RESOLVED: Supported queued write flows are transaction add/edit/delete (IndexedDB `transactions` queue) and whole-file saves for budget, values, and balance (IndexedDB `files` entries with `to_sync: true`).
 - RESOLVED: Fresh remote data requires connectivity: first load on a new device or browser, reading a file not yet in IndexedDB, provider login, and token refresh are not promised offline.
 - RESOLVED: Queued edits sync automatically when the provider is reachable; conflict and failure behavior follows `storage-sync.md` (RT-001, RT-002).
-- Code status: PARTIALLY SATISFIED. App shell precache and navigation fallback, cache-first reads, local queues, and sync suppression while offline exist. Gaps: no browser `online`/`offline` event handling (the offline flag is only refreshed via `refreshStoreInfo()`), no defined behavior for an uncached file read while offline, and no offline/pending-changes indicator beyond the Settings status text.
+- Code status: SATISFIED for the RT-024 promise. App shell precache and navigation fallback, cache-first reads, local queues, sync suppression while offline, browser `online`/`offline` handling in `useStorageStore()`, and unavailable (`false`) results for uncached network-failed reads are implemented and tested. Remaining out of scope: no offline/pending-changes indicator beyond the Settings status text, and no service-worker integration test.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN `initPWA()` runs, WHEN `useRegisterSW()` is called, THEN it is called with immediate registration.
@@ -54,20 +54,15 @@
 - CONFIRMED (code satisfies): GIVEN a JSON file exists in the IndexedDB cache, WHEN it is read, THEN cached data is returned without a provider request, online or offline.
 - CONFIRMED (code satisfies): GIVEN the user is offline and saves a supported write flow, WHEN the local write completes, THEN the change stays queued (`transactions` row or `to_sync: true` file) and the pending counters reflect it.
 - CONFIRMED (code satisfies): GIVEN `status.offline` is true, WHEN pending counters become non-zero, THEN sync does not start.
-- NOT YET SATISFIED: GIVEN the browser regains connectivity, WHEN the provider is reachable, THEN the offline flag clears and pending changes sync without a manual reload.
-- NOT YET SATISFIED: GIVEN the user is offline and reads a file that is not in IndexedDB, THEN the app shows an empty or unavailable state with a clear message instead of an unhandled error.
+- CONFIRMED (code satisfies): GIVEN the browser regains connectivity, WHEN the provider is reachable, THEN the offline flag clears and pending changes sync without a manual reload. The `offline` browser event sets `status.offline` to true.
+- CONFIRMED (code satisfies, scoped): GIVEN the user is offline and reads a cache-enabled file that is not in IndexedDB, WHEN the provider request fails with a network error (`TypeError`), THEN `readJsonFile` resolves `false` (file unavailable) instead of throwing. Reads that bypass the cache (sync, onboarding) still throw so they never act on missing data. A dedicated user-facing message is not implemented.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/helpers/__tests__/pwa.spec.ts` verifies `useRegisterSW()` is called with immediate registration and callbacks.
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No browser/service-worker integration tests.
-- Test expectations for RT-024 (to add; no app code changes needed for the first four):
-  - `src/helpers/__tests__/files.spec.ts`: cache hit makes no provider call; cache miss with provider failure follows the defined offline behavior.
-  - `src/stores/__tests__/storage.spec.ts`: `sync()` and automatic sync are skipped while `status.offline` is true and run once it clears.
-  - `src/stores/__tests__/transactions.spec.ts`, `budget.spec.ts`, `values.spec.ts`, `balance.spec.ts`: saves made while offline stay queued and increase pending counts.
-  - `src/helpers/__tests__/pwa.spec.ts` or a build-config test: precache `globPatterns` and navigation fallback are configured.
-  - If reconnect handling is added: a storage store test that an `online` event refreshes store info and triggers sync.
+- Test coverage for RT-024 (implemented): `files.spec.ts` (cache hit offline; uncached network failure resolves `false`), `storage.spec.ts` (sync skipped while offline; `online` event refreshes info and syncs). Queued offline saves are covered in the transactions and budget store specs. Still missing: values/balance offline-queue specs and a build-config or service-worker precache test.
 - CONFIRMED: No tests for update toast interaction in `App.vue`.
 - CONFIRMED: No tests for generated manifest or cache contents.
 

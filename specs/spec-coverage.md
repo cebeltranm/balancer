@@ -99,7 +99,7 @@
 - RESOLVED: Dashboard totals must remain split by currency and must never be converted (RT-015). Current dashboard code (`src/views/HomeView.vue`, `src/components/AccountValueCard.vue`) already satisfies this; converted totals are used only in reports that already depend on a global currency. Test coverage for the multi-currency card split is still missing.
 - RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
 - RESOLVED: Manual balance recalculation is required for authenticated users. Balance snapshots are derived cache, and the app must warn when source data needed for recalculation is missing.
-- RESOLVED: Offline contract is app shell plus previously cached data plus queued local edits for supported write flows; fresh remote data requires connectivity (RT-024). Code partially satisfies; reconnect handling and offline cache-miss behavior remain open.
+- RESOLVED: Offline contract is app shell plus previously cached data plus queued local edits for supported write flows; fresh remote data requires connectivity (RT-024). Implemented and tested: reconnect handling and offline cache-miss behavior.
 
 ### Cross-Spec Contradictions / Tensions
 - CONFIRMED: No direct route-access contradiction was found; `/` and `/expenses` are consistently described as unprotected, while `/balance`, `/investments`, `/settings/general`, and `/settings/accounts` require authentication.

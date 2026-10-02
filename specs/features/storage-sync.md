@@ -52,7 +52,7 @@
 ## Acceptance Criteria
 - CONFIRMED: GIVEN queued IndexedDB transactions or files exist, WHEN pending counters are updated, THEN `pendingTransactions` and `pendingFiles` match the queue sizes.
 - CONFIRMED: GIVEN `status.offline` is true, WHEN pending counters become non-zero, THEN automatic sync does not start.
-- RESOLVED (RT-024): Offline promise is app shell, previously cached data, and queued local edits for supported write flows; fresh remote data requires connectivity. See `pwa.md` for criteria and gaps. Reconnect handling (clearing the offline flag and resuming sync without reload) is not yet implemented.
+- RESOLVED (RT-024): Offline promise is app shell, previously cached data, and queued local edits for supported write flows; fresh remote data requires connectivity. See `pwa.md` for criteria and gaps. Implemented: the storage store listens for browser `online`/`offline` events, refreshes store info on reconnect, and syncs queued changes.
 - CONFIRMED: GIVEN one explicit sync operation is running, WHEN another explicit sync operation is requested, THEN the later operation waits until the current operation finishes.
 - CONFIRMED: GIVEN pending transaction changes exist, WHEN sync succeeds, THEN affected monthly transaction files are staged, transaction queue entries are removed, and balance recalculation starts from the earliest changed month.
 - CONFIRMED: GIVEN logout succeeds, WHEN state reset completes, THEN provider credentials, IndexedDB, store info, pending counters, and authentication flags are cleared.

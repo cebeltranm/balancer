@@ -247,6 +247,26 @@ export const useStorageStore = defineStore("storage", () => {
     clearAuthError();
   }
 
+  // Offline promise (RT-024): recover when connectivity changes.
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("online", async () => {
+      try {
+        const info = await refreshStoreInfo();
+        if (info.loggedIn && !info.offline) {
+          await updatePendingToSync();
+          if (pendingToSync.value.transactions || pendingToSync.value.files) {
+            sync();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to refresh storage after going online", error);
+      }
+    });
+    window.addEventListener("offline", () => {
+      status.value.offline = true;
+    });
+  }
+
   return {
     storeInfo,
     status,
