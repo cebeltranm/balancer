@@ -17,6 +17,9 @@ export function initPWA() {
         console.log(`SW Registered: ${r}`);
       }
     },
+    onRegisterError(error) {
+      console.error("SW registration failed", error);
+    },
     onOfflineReady() {
       console.log("onOfflineReady");
     },

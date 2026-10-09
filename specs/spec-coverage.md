@@ -62,7 +62,7 @@
 - INFERRED: Dashboard startup dependencies are inferred from `Auth.vue` loading behavior rather than a rendered dashboard test.
 - INFERRED: Account legacy/migration concerns are inferred from `public/accounts.json` and enum mismatches.
 - CONFIRMED: Missing exchange-rate behavior is specified by RT-011: expense and investment UI summaries must show partial totals with a visible missing-rate indicator listing affected currencies/accounts, and must not silently coerce missing rates to zero.
-- RESOLVED: Service-worker behavior is specified by RT-025 in `specs/features/pwa.md`: registration failure is console-only, and generated manifest/precache output should be asserted in build tests where practical. Code status: not yet satisfied (no `onRegisterError` handler; no build-output test).
+- RESOLVED: Service-worker behavior is specified by RT-025 in `specs/features/pwa.md`: registration failure is console-only, and generated manifest/precache output should be asserted in build tests where practical. Implemented: `onRegisterError` logs to console only (`src/helpers/pwa.ts`); tests in `pwa.spec.ts` and `pwaBuild.spec.ts`.
 - RESOLVED: WebAuthn failure handling is specified by RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart). Current code satisfies it (`Auth.vue`, `src/stores/storage.ts`, `dropbox.ts`) with tests in `Auth.spec.ts`, `dropbox.spec.ts`, and `storage.spec.ts`.
 - CONFIRMED: Versionless JSON compatibility is covered by `src/helpers/__tests__/persistedShapes.spec.ts` and persisted-family store tests for current names, additive defaults, and ignored deprecated structures.
 
