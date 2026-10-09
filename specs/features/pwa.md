@@ -30,7 +30,8 @@
 
 ## Error Handling
 - CONFIRMED: PWA callbacks log registration/offline/refresh events to console.
-- UNCLEAR: Registration failures are not explicitly handled in app code.
+- RESOLVED (RT-025): Service-worker registration failure is console-only. No user-facing error, toast, or retry UI is shown until product explicitly asks for user-facing PWA errors. A failed registration must not throw out of `initPWA()` or block app startup, and the app keeps working without offline/update support.
+- Code status (RT-025): NOT YET SATISFIED. `initPWA()` passes no `onRegisterError` handler, so a failure is not explicitly logged by app code (behavior is whatever `virtual:pwa-register/vue` does by default). Required follow-up: add `onRegisterError` that logs via `console.error` only.
 
 ## Edge Cases
 - CONFIRMED: Source service-worker variants exist, but active runtime behavior depends on VitePWA generation strategy/config.
@@ -50,7 +51,9 @@
 - CONFIRMED: GIVEN `needRefresh` becomes true, WHEN `App.vue` observes it, THEN a persistent update toast is displayed.
 - CONFIRMED: GIVEN the update toast is visible, WHEN the user clicks "Update now", THEN the toast is removed and `updateServiceWorker(true)` is invoked.
 - CONFIRMED: GIVEN the app is built with VitePWA config, WHEN the manifest is generated, THEN it contains app name/short name `Balancer` and configured 192/512 icons.
-- UNCLEAR: The expected user-facing behavior for service-worker registration failure is not specified.
+- RESOLVED (RT-025): GIVEN service-worker registration fails, WHEN `useRegisterSW` invokes `onRegisterError(error)`, THEN the error is logged to the console (`console.error`), nothing is thrown, and no toast or other user-facing UI is shown. Code status: NOT YET SATISFIED (no `onRegisterError` handler).
+- RESOLVED (RT-025): GIVEN a production build (`vite build`), WHEN the output is generated, THEN `manifest.webmanifest` contains name/short name `Balancer`, theme color `#ffffff`, and the 192/512 icons (including the `any maskable` 512 icon), and the service worker file exists and precaches `index.html` plus the built JS/CSS assets. Code status: SATISFIED by `vite.config.ts` configuration, but NOT COVERED by tests.
+- RESOLVED (RT-025): GIVEN the generated service worker, WHEN inspected, THEN it enables outdated-cache cleanup (`cleanupOutdatedCaches`). Code status: SATISFIED by configuration, NOT COVERED by tests.
 - CONFIRMED (code satisfies): GIVEN the app shell was precached, WHEN the user loads any app route offline, THEN the service worker serves `index.html` through the navigation fallback.
 - CONFIRMED (code satisfies): GIVEN a JSON file exists in the IndexedDB cache, WHEN it is read, THEN cached data is returned without a provider request, online or offline.
 - CONFIRMED (code satisfies): GIVEN the user is offline and saves a supported write flow, WHEN the local write completes, THEN the change stays queued (`transactions` row or `to_sync: true` file) and the pending counters reflect it.
@@ -65,7 +68,16 @@
 - CONFIRMED: No browser/service-worker integration tests.
 - Test coverage for RT-024 (implemented): `files.spec.ts` (cache hit offline; uncached network failure resolves `false`), `storage.spec.ts` (sync skipped while offline; `online` event refreshes info and syncs). Queued offline saves are covered in the transactions and budget store specs. Still missing: values/balance offline-queue specs and a build-config or service-worker precache test.
 - CONFIRMED: No tests for update toast interaction in `App.vue`.
-- CONFIRMED: No tests for generated manifest or cache contents.
+- CONFIRMED: No tests for generated manifest or cache contents (decision RT-025: add where practical, see Test Expectations below).
+
+## Test Expectations (RT-025)
+- `src/helpers/__tests__/pwa.spec.ts` (update): capture the options passed to the mocked `useRegisterSW`; assert `onRegisterError(new Error("x"))` logs via `console.error` (spy) and does not throw; assert `onRegistered` schedules a 120s update check when `__RELOAD_SW__` is `"true"` and only logs otherwise (where practical with the replaced constant).
+- New build-output test (e.g. `src/__tests__/pwaBuild.spec.ts`, where practical): run a Vite production build programmatically into a temporary `outDir` (never `dist/`) with an extended timeout, then assert:
+  - `manifest.webmanifest` has name/short name `Balancer`, theme color `#ffffff`, and the three configured icons with their sizes/types/purpose; do not normalize the intentional slash/no-slash icon `src` mix.
+  - the service worker file exists, its precache list includes `index.html` and at least one built `.js` and `.css` asset, and it references outdated-cache cleanup.
+  - assertions must not depend on content-hashed filenames or revision values.
+- Real service-worker runtime behavior (install/activate, offline navigation fallback in a browser) remains out of scope; no browser/service-worker integration tests are required by this decision.
+- Test-only work except the one small `onRegisterError` console handler; no change to user-visible behavior.
 
 ## Product Questions
 - RESOLVED (RT-024): Offline promise is app shell plus previously cached data plus queued local edits for supported write flows. Fresh remote data requires connectivity. Full offline workflows are not promised.
