@@ -31,6 +31,7 @@ Starts the local server to return files
 ```sh
 node server/index.js
 ```
+The local server is for development only. It stores JSON files in the git-ignored `.tmp/` folder and creates that folder automatically if it is missing.
 
 Run the development server:
 

@@ -38,7 +38,8 @@
 - CONFIRMED: Client removes token on 401.
 
 ## Edge Cases
-- CONFIRMED: Server does not create `.tmp/`; missing directory can make `/list` fail.
+- CONFIRMED: `server/index.js` creates `.tmp/` (recursively) on startup and before `GET /list` and JSON writes (`ensureTmpDir()`). `.tmp` is git-ignored, so a fresh clone relies on this. Development-only behavior; documented in README.
+- CONFIRMED (RT-027): Previously a missing `.tmp/` made `/list` and JSON writes return 500 (ENOENT); this is resolved.
 - CONFIRMED: The auth token is fixed and development-only.
 - CONFIRMED: `getLastModification()` in client helper returns current date rather than real server metadata for a specific file.
 
@@ -47,7 +48,17 @@
 - CONFIRMED: GIVEN the app host is not `localhost:3000`, WHEN storage providers are listed, THEN the Local HTTP server provider is not available.
 - CONFIRMED: GIVEN the client has logged in to the local server, WHEN it reads, writes, or lists files, THEN requests include `Authorization: Bearer balancer-local-dev-token`.
 - CONFIRMED: GIVEN an authorized JSON write request targets `/*.json`, WHEN the server handles it, THEN the request body is written under `.tmp/`.
-- UNCLEAR: Path traversal behavior for nested or malicious JSON paths is not specified.
+- UNCLEAR: Path traversal behavior for nested or malicious JSON paths is not specified (tracked as RT-028).
+
+### RT-027: `.tmp/` auto-creation (development-only)
+Implementation status: SATISFIED by current code (`ensureTmpDir()` in `server/index.js`), covered by `src/helpers/__tests__/localDevServer.spec.ts`. Exception: a startup-time creation failure (e.g. permissions) throws and stops the server rather than returning a 500; the 500 behavior applies only to `/list` and writes.
+- CONFIRMED: GIVEN `.tmp/` does not exist, WHEN the server starts, THEN it creates `.tmp/` (recursively) before listening, without error.
+- CONFIRMED: GIVEN `.tmp/` does not exist (e.g. deleted while the server runs), WHEN an authorized `GET /list` is received, THEN the server creates `.tmp/` and responds 200 with `[]`.
+- CONFIRMED: GIVEN `.tmp/` does not exist, WHEN an authorized `POST /<name>.json` is received, THEN the server creates `.tmp/`, writes the file, and responds 200.
+- CONFIRMED: GIVEN `.tmp/` already exists, WHEN the server starts or handles any request, THEN existing files are left untouched and no error occurs.
+- CONFIRMED: GIVEN `.tmp/` cannot be created (e.g. permissions), WHEN `/list` or a write is handled, THEN the existing 500 JSON error behavior applies.
+- CONFIRMED: Unauthorized requests still return 401; auto-creation does not bypass auth.
+- CONFIRMED: This behavior is development-only and is documented as such in the README. It does not change production/Dropbox storage behavior.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/helpers/__tests__/httpServer.spec.ts` covers ping/session info, token storage, authenticated reads/writes, 401 token removal, and logout.
@@ -57,7 +68,19 @@
 - CONFIRMED: No tests run the actual Express server.
 - CONFIRMED: No tests for `/list` filesystem failures or write failures.
 - CONFIRMED: No test verifies `.tmp` path traversal protections.
+- CONFIRMED: `.tmp/` auto-creation is covered by `localDevServer.spec.ts` (runs a copy of `server/index.js` as a child process); the creation-failure-returns-500 criterion is not tested.
+
+## Test Expectations (RT-027)
+- IMPLEMENTED (except the creation-failure case): Server-level tests (the server must be importable without auto-listening, or `.tmp` creation extracted into a testable helper such as `ensureTmpDir(dir)`), using a temporary directory rather than the real `.tmp/`:
+  - Helper/startup creates a missing directory, including nested parents.
+  - Helper/startup is a no-op when the directory exists and preserves existing files.
+  - `GET /list` with missing `.tmp/` and valid bearer token returns 200 and `[]`.
+  - `POST /<name>.json` with missing `.tmp/` returns 200 and the file exists with the serialized body.
+  - Requests without a valid token return 401 and do not create `.tmp/`.
+  - A creation failure surfaces as the existing 500 JSON response.
+- CONFIRMED: Existing client tests (`httpServer.spec.ts`, `storageIndex.spec.ts`) need no changes.
+- CONFIRMED: README documents that the local server auto-creates `.tmp/` and is development-only.
 
 ## Product Questions
-- UNCLEAR: Should the local server create `.tmp/` automatically when missing?
+- RESOLVED/IMPLEMENTED (RT-027): The local server creates `.tmp/` automatically when missing, on startup and before list/write operations; development-only.
 - UNCLEAR: Should the local server reject nested paths or normalize them to a safe file name?
