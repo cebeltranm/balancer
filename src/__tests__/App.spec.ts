@@ -97,8 +97,8 @@ const ButtonStub = defineComponent({
 });
 
 async function flush() {
+  // Microtask-only so it also works under fake timers.
   await nextTick();
-  await new Promise((resolve) => setTimeout(resolve, 0));
   await nextTick();
 }
 
@@ -235,6 +235,50 @@ describe("App PWA update prompt (RT-026)", () => {
     await flush();
 
     expect(updateToasts()).toHaveLength(2);
+  });
+
+  it("re-adds the prompt after the re-prompt delay while the update is still pending", async () => {
+    vi.useFakeTimers();
+    try {
+      await mountApp();
+      needRefresh.value = true;
+      await nextTick();
+      await nextTick();
+      (
+        root.querySelector(
+          '[data-testid="close-pwa-update"]',
+        ) as HTMLButtonElement
+      ).click();
+      await nextTick();
+      await nextTick();
+      expect(updateToasts()).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+      expect(updateToasts()).toHaveLength(2);
+      expect(mocks.updateServiceWorker).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not re-add the prompt after the delay once no update is pending", async () => {
+    vi.useFakeTimers();
+    try {
+      await mountApp();
+      needRefresh.value = true;
+      await nextTick();
+      await nextTick();
+      (
+        root.querySelector(
+          '[data-testid="close-pwa-update"]',
+        ) as HTMLButtonElement
+      ).click();
+      needRefresh.value = false;
+      await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+      expect(updateToasts()).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("Update now removes the toast group and applies the update once", async () => {
