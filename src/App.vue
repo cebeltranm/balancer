@@ -32,7 +32,11 @@
     <ConfirmPopup></ConfirmPopup>
     <Toast position="bottom-right" />
     <Toast :group="SYNC_FAILED_GROUP" position="bottom-right" />
-    <Toast group="pwa-update" position="bottom-center">
+    <Toast
+      group="pwa-update"
+      position="bottom-center"
+      @close="onUpdateToastClose"
+    >
       <template #message="slotProps">
         <div
           class="flex align-items-center justify-content-between gap-3 w-full"
@@ -78,6 +82,7 @@ provide("CURRENCY", CURRENCY);
 
 const { needRefresh, updateServiceWorker } = initPWA();
 const updateToastShown = ref(false);
+const UPDATE_REPROMPT_MS = 30 * 60 * 1000;
 
 const menu = [
   {
@@ -134,19 +139,26 @@ EVENTS.on(CLEAR_MESSAGES, (group: string) => {
   toast.removeGroup(group);
 });
 
-watch(needRefresh, (value) => {
-  if (value && !updateToastShown.value) {
-    updateToastShown.value = true;
-    toast.add({
-      group: "pwa-update",
-      severity: "info",
-      summary: "Update available",
-      detail: "A new version is available.",
-      life: 0,
-      closable: false,
-    });
-  }
-});
+function showUpdateToast() {
+  if (!needRefresh.value || updateToastShown.value) return;
+  updateToastShown.value = true;
+  toast.add({
+    group: "pwa-update",
+    severity: "info",
+    summary: "Update available",
+    detail: "A new version is available.",
+    life: 0,
+    closable: true,
+  });
+}
+
+watch(needRefresh, showUpdateToast);
+
+// Closing the toast never applies the update; ask again later while it is pending.
+function onUpdateToastClose() {
+  updateToastShown.value = false;
+  setTimeout(showUpdateToast, UPDATE_REPROMPT_MS);
+}
 
 function onUpdateNow() {
   toast.removeGroup("pwa-update");

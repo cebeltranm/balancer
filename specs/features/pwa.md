@@ -9,7 +9,7 @@
 - CONFIRMED: Dev PWA support is enabled during `vite serve` with module service worker and `navigateFallback: "index.html"`.
 - CONFIRMED: `src/helpers/pwa.ts` calls `useRegisterSW({ immediate: true, ... })`.
 - CONFIRMED: Because `reload` is true in `vite.config.ts`, `__RELOAD_SW__` is replaced with `"true"` and registered service workers are checked every 120 seconds.
-- CONFIRMED: `App.vue` displays a bottom-center PWA update toast when `needRefresh` becomes true.
+- CONFIRMED: `App.vue` displays a bottom-center, persistent, closable PWA update toast when `needRefresh` becomes true; closing it re-shows it after 30 minutes while the update is pending (RT-026).
 - CONFIRMED: Clicking "Update now" removes the toast and calls `updateServiceWorker(true)`.
 
 ## User Flows
@@ -68,7 +68,7 @@
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: No browser/service-worker integration tests.
 - Test coverage for RT-024 (implemented): `files.spec.ts` (cache hit offline; uncached network failure resolves `false`), `storage.spec.ts` (sync skipped while offline; `online` event refreshes info and syncs). Queued offline saves are covered in the transactions and budget store specs. Still missing: values/balance offline-queue specs and a build-config or service-worker precache test.
-- CONFIRMED: No tests for update toast interaction in `App.vue`.
+- CONFIRMED (RT-026 implemented): Update toast interaction (persistent, closable, re-prompt, "Update now") is covered by `src/__tests__/App.spec.ts` using a Toast stub; the real PrimeVue Toast close control is not browser-tested.
 - CONFIRMED (RT-025 implemented): Generated manifest and precache/cleanup output are covered by `src/helpers/__tests__/pwaBuild.spec.ts` (real Vite build into a temp dir).
 
 ## Test Expectations (RT-025)
@@ -80,6 +80,31 @@
 - Real service-worker runtime behavior (install/activate, offline navigation fallback in a browser) remains out of scope; no browser/service-worker integration tests are required by this decision.
 - Test-only work except the one small `onRegisterError` console handler; no change to user-visible behavior.
 
+## Update Prompt Dismissal (RT-026)
+- RESOLVED: Product decision: keep the update prompt persistent but non-blocking; allow normal toast close.
+- RESOLVED: Persistent means the toast has `life: 0` (no auto-dismiss) and returns while an update is still pending. Non-blocking means it is a non-modal toast: no mask, no dialog, and no forced reload, so data entry is never interrupted.
+- RESOLVED: Closing the toast never applies the update and never calls `updateServiceWorker`. Only "Update now" applies it (it may reload the page, so it stays user-initiated).
+- RESOLVED: After a close, the prompt reappears while `needRefresh` is still true. Trigger: the next full app load (the service worker keeps waiting), and a re-prompt during the same session after a delay or route change. The in-session interval is 30 minutes (implementation choice); it must not be so frequent that it interrupts entry. Reappearance never auto-applies the update.
+- Code status (RT-026): SATISFIED. `src/App.vue` adds the `pwa-update` toast with `life: 0` and `closable: true`; `@close` on `<Toast group="pwa-update">` resets `updateToastShown` and, after `UPDATE_REPROMPT_MS` (30 minutes), re-shows the toast only if `needRefresh` is still true. Closing never calls `updateServiceWorker`. Covered by `src/__tests__/App.spec.ts`. Not verified in a real browser: that the custom `#message` slot keeps the close control (tests use a Toast stub).
+
+### Acceptance Criteria (RT-026)
+- GIVEN `needRefresh` becomes true, WHEN `App.vue` observes it, THEN exactly one toast is added with `group: "pwa-update"`, `life: 0` and `closable: true`.
+- GIVEN the update toast is visible, WHEN the user is on any route or has a form open, THEN no modal, mask, focus trap or automatic reload occurs.
+- GIVEN the update toast is visible, WHEN the user closes it with the close control, THEN the toast is removed, `updateServiceWorker` is NOT called, and the update remains pending.
+- GIVEN the toast was closed and `needRefresh` is still true, WHEN the re-prompt condition occurs (next app load, or the in-session delay/route change), THEN the toast is shown again once; it never stacks duplicates.
+- GIVEN the update toast is visible, WHEN the user clicks "Update now", THEN the toast group is removed and `updateServiceWorker(true)` is called exactly once (unchanged behavior).
+- GIVEN `needRefresh` is false, WHEN the app runs, THEN no update toast is shown.
+
+### Test Expectations (RT-026)
+- Implemented in `src/__tests__/App.spec.ts`: mock `@/helpers/pwa` `initPWA` to return a writable `needRefresh` ref and an `updateServiceWorker` spy; mock `primevue/usetoast` with `add`/`removeGroup` spies.
+  - Setting `needRefresh = true` calls `toast.add` once with `group: "pwa-update"`, `life: 0`, `closable: true`; setting it again does not add a duplicate.
+  - Simulating the toast close resets the shown flag, does not call `updateServiceWorker`, and the re-prompt rule (use fake timers or a route change) adds the toast again while `needRefresh` is true, and not once `needRefresh` is false.
+  - Clicking "Update now" calls `removeGroup("pwa-update")` and `updateServiceWorker(true)` once.
+  - Mounted DOM check where practical: the `pwa-update` toast renders a close control and no modal/overlay element.
+- `src/helpers/__tests__/pwa.spec.ts`: no change expected (`onNeedRefresh` stays console-only).
+- After the tests exist, remove the "No tests for update toast interaction in `App.vue`" gap below.
+- Compatibility: no stored data, file format or API change. A user who keeps dismissing the prompt keeps running old cached code until they update or reload; the re-prompt rule limits that.
+
 ## Product Questions
 - RESOLVED (RT-024): Offline promise is app shell plus previously cached data plus queued local edits for supported write flows. Fresh remote data requires connectivity. Full offline workflows are not promised.
-- UNCLEAR: Should users be allowed to dismiss an update prompt without updating?
+- RESOLVED (RT-026): Users may dismiss the update prompt without updating. The prompt stays persistent but non-blocking, and normal toast close is allowed. See "Update Prompt Dismissal (RT-026)".
