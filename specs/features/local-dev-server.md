@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Provide a local JSON storage backend for development without Dropbox.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `server/index.js` starts an Express server on port `8181`.
 - CONFIRMED: The server uses CORS and JSON body parsing.
 - CONFIRMED: `GET /_ping` returns 200.
@@ -13,6 +13,11 @@
 - CONFIRMED: Static serving reads files from `.tmp/`.
 - CONFIRMED: Client helper `HttpServerStore` targets `http://localhost:8181/`.
 - CONFIRMED: Local HTTP provider is only exposed when app host is `localhost:3000`.
+- CONFIRMED: Contract status: satisfied for RT-027 (see the RT-027 notes); RT-028 is open and not yet satisfied or specified.
+
+## Product Contract
+- REQUIRED (RT-027): The local dev server creates `.tmp/` automatically when missing, and is development-only.
+- UNCLEAR (RT-028): Path safety for nested or malicious JSON paths is not decided; see Product Questions.
 
 ## User Flows
 - CONFIRMED: Run the local server separately.

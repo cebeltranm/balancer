@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Manage account definitions used by transactions, balances, budgets, values, and reports.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/settings/accounts` maps to `src/views/Accounts.vue` and requires authentication.
 - CONFIRMED: The page filters accounts by account group and active/inactive visibility.
 - CONFIRMED: Users can create, edit, hide, and unhide accounts.
@@ -12,6 +12,12 @@
 - CONFIRMED: Persisted accounts are saved to `accounts.json` keyed by account id, without an embedded `id`.
 - CONFIRMED: Account grouping is defined by `ACCOUNT_GROUP_TYPES` in `src/stores/accounts.ts`.
 - CONFIRMED: Expense accounts use category paths; non-expense accounts can use entity; investment accounts expose risk, symbol, logo, and class allocation.
+- CONFIRMED: Contract status: satisfied for RT-003, RT-005, RT-006, and RT-017; see Acceptance Criteria and Missing Tests for test gaps.
+
+## Product Contract
+- REQUIRED (RT-003): Accounts are archived (hidden), never hard-deleted, so historical account ids always resolve in transactions, budgets, values, and balances.
+- REQUIRED (RT-005, RT-006): Account entries with unsupported or malformed fields (including unsupported `AccountType` values) are rejected on load without replacing account state.
+- REQUIRED (RT-017): New or edited investment accounts must have a class allocation that sums to 100%; save is blocked otherwise.
 
 ## User Flows
 - CONFIRMED: Filter list by group and visibility.

@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Analyze investment accounts by category, asset class, region, type, risk, currency, and performance.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/investments` maps to `src/views/portafolio/index.vue` and requires authentication.
 - CONFIRMED: Display types are table, pie, and bar.
 - CONFIRMED: Pie grouping options are ByAssetClass, ByRegion, ByCategory, ByType, ByRisk, and ByCurrency.
@@ -11,6 +11,11 @@
 - CONFIRMED: Asset-class and region grouping use account `class` allocation weights and expected target composition from `config.inv_composition`.
 - CONFIRMED: `useTotalByCategory()` converts child values and investment flow fields into the global currency and computes gain/loss-like fields `gp` and `gp_value`.
 - CONFIRMED: `accountsGrupedByAttribute()` groups investments by a selected account attribute with a default fallback.
+- CONFIRMED: Contract status: satisfied for RT-017 and RT-011; some RT-017 tests are not yet added (see Missing Tests).
+
+## Product Contract
+- REQUIRED (RT-017): Investment accounts require a class allocation; legacy accounts with missing allocation are grouped under "Unknown" with a visible warning instead of being dropped.
+- REQUIRED (RT-011): Missing exchange rates produce partial totals with a visible missing-rate indicator naming the affected currencies/accounts; an explicit `0` rate is valid data.
 
 ## User Flows
 - CONFIRMED: Select period and display type.

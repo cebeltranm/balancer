@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Show a compact current-period finance summary on the home route.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/` renders `src/views/HomeView.vue`.
 - CONFIRMED: The dashboard reads the current period from `getCurrentPeriod()` and current-year balances from `useBalanceStore()`.
 - CONFIRMED: It always summarizes Expenses and Credit Cards.

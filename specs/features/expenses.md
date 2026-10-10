@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Report expense and income activity by account category over configurable periods.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/expenses` maps to `src/views/Expenses.vue` and is excluded from router authentication prompting.
 - CONFIRMED: Users can switch between table, treemap pie-like view, and stacked bar view.
 - CONFIRMED: Table view shows the latest five periods, current value, percent change vs prior periods, budget progress, and read-only budget comments.

@@ -3,13 +3,19 @@
 ## Goal
 - CONFIRMED: Manage storage status/actions, stock API configuration, and target investment composition.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/settings/general` maps to `src/views/Settings.vue` and requires authentication.
 - CONFIRMED: Settings shows current storage provider status, retry-login action, and clear-device-credentials action.
 - CONFIRMED: Users can edit `stock_api.type`, `stock_api.host`, and `stock_api.key`.
 - CONFIRMED: Users can edit target investment composition by asset class, region, and instrument type.
 - CONFIRMED: Composition is edited as percentages in the UI and saved as decimal weights in `config.json`.
 - CONFIRMED: Save preserves other existing config fields through spreading `configStore.config`.
+- CONFIRMED: Contract status: satisfied for RT-007, RT-018, and RT-019.
+
+## Product Contract
+- REQUIRED (RT-019): Zero-valued composition cells are omitted on save and read as zero when missing; existing files with explicit zeros stay valid.
+- REQUIRED (RT-018): Retry-login failures show provider-specific text when available, otherwise a generic retry-later message, and leave state unchanged.
+- REQUIRED (RT-007): Missing `config.json` is seeded with the minimum shape `{ "stock_api": {}, "inv_composition": {} }`; existing or invalid files are never overwritten.
 
 ## User Flows
 - CONFIRMED: Open settings and see storage connection summary.
