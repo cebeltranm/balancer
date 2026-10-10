@@ -80,8 +80,9 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 
 ### Budget (`specs/features/budget.md`)
 - Component — REQUIRED:
-  - GAP: Editing a budget cell and saving calls `setBudgetForYear()`.
-  - GAP: A failed local budget queue write shows an error and is not presented as saved.
+  - COVERED: Editing a budget cell marks the row pending, blocks navigation, and saving calls `setBudgetForYear()`; negative values are ignored (`src/views/__tests__/Budget.spec.ts`).
+  - COVERED (RT-009): A failed local budget queue write shows an error and keeps edits pending with Save available (`Budget.spec.ts`).
+  - GAP: Context menu actions (apply next, remove) update the row and mark it pending.
 - Unit — COVERED: load, group, save, and failed queue write (`src/stores/__tests__/budget.spec.ts`).
 - Manual: context menu and comments dialog interaction.
 
@@ -168,7 +169,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 
 ## Priority For Closing Gaps
 
-1. Budget component coverage (editing/save and failed-save UX) — no rendered coverage exists.
+1. Budget component coverage (editing/save and failed-save UX) — closed by `Budget.spec.ts`; context menu actions remain.
 2. Transactions component coverage (dialog validation, view list/open dialog).
 3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003).
 4. Remaining component gaps: Values save → balance recalculation, Dashboard auth visibility, Investments ByRegion and child views, Settings credential toast, sync-failed button.
