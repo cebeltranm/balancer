@@ -18,7 +18,8 @@ import {
 } from "@/types";
 
 const accountsStoreMocks = vi.hoisted(() => ({
-  saveAccount: vi.fn(async () => true),
+  saveAccount: vi.fn(async (_account: unknown) => true),
+  confirmRequire: vi.fn(),
 }));
 
 vi.mock("@/stores/accounts", () => ({
@@ -50,7 +51,7 @@ vi.mock("primevue/usetoast", () => ({
 }));
 
 vi.mock("primevue/useconfirm", () => ({
-  useConfirm: () => ({ require: vi.fn() }),
+  useConfirm: () => ({ require: accountsStoreMocks.confirmRequire }),
 }));
 
 function flattenVNodes(nodes: VNode[]): VNode[] {
@@ -285,6 +286,119 @@ describe("Accounts class allocation", () => {
       expect.objectContaining({
         id: "global_etf",
         class: { Equities: { Global: 0.6, US: 0.4 } },
+      }),
+    );
+  });
+});
+
+async function openInvestmentEditDialog(root: HTMLElement) {
+  const groupFilter = root.querySelector(
+    'select[aria-label="Account group filter"]',
+  ) as HTMLSelectElement;
+  groupFilter.value = AccountGroupType.Investments;
+  groupFilter.dispatchEvent(new Event("change"));
+  await flush();
+
+  findButton(root, "pi pi-pencil")?.dispatchEvent(
+    new MouseEvent("click", { bubbles: true }),
+  );
+  await flush();
+  return root.querySelector(".dialog") as HTMLElement;
+}
+
+describe("Accounts allocation validation (RT-017)", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    accountsStoreMocks.saveAccount.mockClear();
+  });
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+  });
+
+  it("blocks saving an investment whose class allocation does not sum to 100%", async () => {
+    app = await mountAccounts(root);
+    const dialog = await openInvestmentEditDialog(root);
+
+    const headers = Array.from(dialog.querySelectorAll("th")).map(
+      (th) => th.textContent,
+    );
+    const equitiesRow = Array.from(dialog.querySelectorAll("tbody tr")).find(
+      (row) => row.querySelector("td")?.textContent === "Equities",
+    );
+    const globalInput = equitiesRow
+      ?.querySelectorAll("td")
+      [headers.indexOf("Global")]?.querySelector("input") as HTMLInputElement;
+    globalInput.value = "50";
+    globalInput.dispatchEvent(new Event("input"));
+    await flush();
+
+    expect(dialog.textContent).toContain("Total allocation: 90.00%");
+    expect(dialog.textContent).toContain("Class allocation must sum 100%.");
+    const saveButton = findButton(dialog, "Save account");
+    expect(saveButton?.disabled).toBe(true);
+    saveButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flush();
+    expect(accountsStoreMocks.saveAccount).not.toHaveBeenCalled();
+  });
+});
+
+describe("Accounts lifecycle actions (RT-003)", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    accountsStoreMocks.saveAccount.mockClear();
+    accountsStoreMocks.confirmRequire.mockClear();
+  });
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+  });
+
+  it("offers hide instead of a hard-delete action in the list and edit dialog", async () => {
+    app = await mountAccounts(root);
+    const dialog = await openInvestmentEditDialog(root);
+
+    expect(findButton(root, "pi pi-eye-slash")).toBeTruthy();
+    const labels = Array.from(root.querySelectorAll("button")).map(
+      (button) => button.textContent || "",
+    );
+    expect(labels.some((label) => /trash|delete/i.test(label))).toBe(false);
+    expect(dialog.textContent).not.toMatch(/delete/i);
+  });
+
+  it("hides an account only after confirmation and keeps its id", async () => {
+    app = await mountAccounts(root);
+    const groupFilter = root.querySelector(
+      'select[aria-label="Account group filter"]',
+    ) as HTMLSelectElement;
+    groupFilter.value = AccountGroupType.Investments;
+    groupFilter.dispatchEvent(new Event("change"));
+    await flush();
+
+    findButton(root, "pi pi-eye-slash")?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
+    await flush();
+
+    expect(accountsStoreMocks.confirmRequire).toHaveBeenCalledTimes(1);
+    expect(accountsStoreMocks.saveAccount).not.toHaveBeenCalled();
+
+    await accountsStoreMocks.confirmRequire.mock.calls[0][0].accept();
+
+    expect(accountsStoreMocks.saveAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "global_etf",
+        hideSince: expect.any(Date),
       }),
     );
   });

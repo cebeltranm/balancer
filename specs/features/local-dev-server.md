@@ -68,11 +68,13 @@ Implementation status: SATISFIED by current code (`ensureTmpDir()` in `server/in
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/helpers/__tests__/httpServer.spec.ts` covers ping/session info, token storage, authenticated reads/writes, 401 token removal, and logout.
 - CONFIRMED: `src/helpers/__tests__/storageIndex.spec.ts` covers local provider availability on localhost.
+- CONFIRMED: `src/helpers/__tests__/localDevServer.spec.ts` runs the real server as a child process (RT-027).
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No tests run the actual Express server.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: `src/helpers/__tests__/localDevServer.spec.ts` runs a copy of `server/index.js` as a child process and covers `.tmp/` creation, `/list`, JSON writes, and unauthorized requests (RT-027).
 - CONFIRMED: No tests for `/list` filesystem failures or write failures.
-- CONFIRMED: No test verifies `.tmp` path traversal protections.
+- CONFIRMED: No test verifies `.tmp` path traversal protections; the expected behavior is pending RT-028.
 - CONFIRMED: `.tmp/` auto-creation is covered by `localDevServer.spec.ts` (runs a copy of `server/index.js` as a child process); the creation-failure-returns-500 criterion is not tested.
 
 ## Test Expectations (RT-027)

@@ -49,6 +49,8 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - [ ] Include persistence/sync expectations when the feature writes data.
 
 ## Test plan
+Required coverage levels and conventions are defined in `specs/testing-strategy.md`; add this feature's row to its matrix.
+
 - Unit:
 - Integration:
 - Manual:

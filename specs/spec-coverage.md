@@ -16,6 +16,7 @@
 - CONFIRMED: `specs/features/settings.md`
 - CONFIRMED: `specs/features/local-dev-server.md`
 - CONFIRMED: `specs/features/pwa.md`
+- CONFIRMED: `specs/testing-strategy.md` (RT-031)
 
 ## Main Files / Functions Mapped
 - CONFIRMED: Architecture maps to `src/main.ts`, `src/App.vue`, `src/router/index.ts`, `vite.config.ts`, `src/helpers/files.ts`, `src/helpers/idb.ts`, `src/helpers/sync.ts`, `src/helpers/storage/*`, `src/components/Auth.vue`.
@@ -79,8 +80,8 @@
 ### Testability
 - CONFIRMED: Feature specs now use observable Given/When/Then-style acceptance criteria for primary read, write, validation, route-gating, sync, and update flows.
 - CONFIRMED: Data-model specs identify exact file names, primary shapes, reference relationships, and persistence/cache flags that can be tested at store/helper level.
-- CONFIRMED: Current automated test mapping is strongest for stores and helpers.
-- UNCLEAR: Rendered component behavior, provider integration, generated PWA output, and end-to-end flows still need explicit test strategy before they are fully testable.
+- CONFIRMED: Current automated test mapping is strongest for stores and helpers, with rendered component tests for most views and real-process integration tests for the PWA build and local dev server.
+- RESOLVED (RT-031): Rendered component, integration, generated PWA, and manual coverage requirements are defined per feature in `specs/testing-strategy.md`, with a change gate before broad UI/code changes. Automated end-to-end browser testing is out of scope; real-browser flows use manual checklists.
 
 ### Acceptance Criteria Concreteness
 - CONFIRMED: Dashboard, transactions, accounts, expenses, investments, values, budget, balance, settings, storage sync, authentication, local dev server, and PWA specs include concrete observable criteria.
@@ -104,7 +105,7 @@
 - CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
 - RESOLVED: Lost local WebAuthn credential recovery uses the auth dialog Reset local credentials action, then re-registration, keeping provider credentials (RT-020). Implemented in the auth dialog.
 - RESOLVED: Missing exchange rates in expense and investment UI summaries require partial totals plus affected currency/account indicators. Current expense and investment code satisfies this with missing-rate metadata and visible indicators; balance recalculation separately warns about missing source data.
-- RESOLVED: Dashboard totals must remain split by currency and must never be converted (RT-015). Current dashboard code (`src/views/HomeView.vue`, `src/components/AccountValueCard.vue`) already satisfies this; converted totals are used only in reports that already depend on a global currency. Test coverage for the multi-currency card split is still missing.
+- RESOLVED: Dashboard totals must remain split by currency and must never be converted (RT-015). Current dashboard code (`src/views/HomeView.vue`, `src/components/AccountValueCard.vue`) already satisfies this; converted totals are used only in reports that already depend on a global currency. Multi-currency card split coverage is in `src/views/__tests__/HomeView.spec.ts`.
 - RESOLVED: Account deletion policy is archive/hide only. Hard deletion is blocked in all cases so historical account ids remain resolvable.
 - RESOLVED: Manual balance recalculation is required for authenticated users. Balance snapshots are derived cache, and the app must warn when source data needed for recalculation is missing.
 - RESOLVED: Offline contract is app shell plus previously cached data plus queued local edits for supported write flows; fresh remote data requires connectivity (RT-024). Implemented and tested: reconnect handling and offline cache-miss behavior.
@@ -117,7 +118,7 @@
 - RESOLVED: PWA offline-ready assets and storage sync are reconciled by the RT-024 offline promise; fresh remote JSON data is not guaranteed offline.
 - RESOLVED: Account ids are durable references across historical files; archive/hide replaces hard deletion.
 - RESOLVED: Transaction edits intentionally continue to use delete-plus-new-id; stable audit identity across edits is out of scope unless a future audit/reconciliation feature changes the model.
-- RESOLVED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist; no spec may treat it as an implemented provider. Current code satisfies this (option is unavailable and unselectable); dedicated tests are still to be added. See `features/storage-sync.md`.
+- RESOLVED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist; no spec may treat it as an implemented provider. Current code satisfies this (option is unavailable and unselectable); covered by `src/helpers/__tests__/storageIndex.spec.ts`. See `features/storage-sync.md`.
 
 ## Highest-Priority Product Owner Questions
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
@@ -135,4 +136,4 @@
 - CONFIRMED: `specs/compatibility.md` defining the versionless JSON compatibility policy, additive default requirements, ignored deprecated structures, prohibited renames, legacy account type handling, and account deletion/reference policy.
 - CONFIRMED: `specs/sync-conflicts.md` defining conflict resolution for multi-device edits.
 - CONFIRMED: `specs/security.md` defining local credential, provider token, and PWA cache security expectations.
-- CONFIRMED: `specs/testing-strategy.md` for rendered component, integration, and service-worker coverage beyond current unit tests.
+- RESOLVED (RT-031): `specs/testing-strategy.md` now exists and defines rendered component, integration, service-worker, and manual coverage.

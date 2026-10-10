@@ -74,9 +74,10 @@
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` covers generic external value sync errors for rejected provider requests, non-200 responses, malformed payloads, and multiple failures, plus successful MXN rate synchronization and persistence.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: Add store-level tests that verify the default fallback limit returns values within the permitted window and returns `0` outside it.
-- CONFIRMED: Add store-level tests that verify USD cross-rate fallback uses its documented bounded window.
-- CONFIRMED: Add UI or integration test coverage that verifies prior-month fallback does not emit a warning by itself.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: `src/stores/__tests__/values.spec.ts` verifies the default fallback window returns prior-month values within the window and `0` outside it.
+- CONFIRMED: `src/stores/__tests__/values.spec.ts` verifies USD cross-rate legs use bounded fallback windows.
+- CONFIRMED: `src/views/__tests__/Values.spec.ts` verifies prior-month fallback does not show a warning by itself.
 - CONFIRMED: No rendered `Values.vue` tests for manual editing, filtering, or pending-row styling; successful MXN external sync and save are covered.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
 

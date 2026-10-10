@@ -42,6 +42,7 @@
 - CONFIRMED: Missing budget months are treated as `null`/zero in display and grouping.
 - CONFIRMED: `FORM_WITH_PENDING_EVENTS` blocks navigation while unsaved budget edits are pending.
 - INFERRED: Save does not clear the pending form event directly; store watcher recalculation resets it after store update.
+- CONFIRMED: Any inline edit coerces the row's empty (`null`) months to `0` (`Number(null)`), so editing one cell of a partially filled row marks the row pending and saves `0` for its empty months, even when the edited value itself is rejected as negative.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN a yearly budget file is loaded, WHEN `values` or `comments` are missing, THEN the store treats the missing section as an empty object.
@@ -57,12 +58,13 @@
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/budget.spec.ts` covers load, grouping, comments, persistence, and pending sync update.
 - CONFIRMED: Budget store tests assert that rejected `idb.saveJsonFile()` calls propagate failure and do not update `budget`, `comments`, or pending sync counters.
-- REQUIRED: Budget view tests should assert that a rejected local queue write shows an error message, keeps `pendingToSave` true, keeps the navigation guard pending, and leaves Save available.
+- CONFIRMED: `src/views/__tests__/Budget.spec.ts` mounts `Budget.vue` and covers category/expense rows, Save disabled until an edit, pending row and navigation guard after an edit, the `setBudgetForYear()` payload, ignored negative values, and the RT-009 failed local queue write (error message, guard still pending, Save still available).
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered `Budget.vue` tests for editing, context menu, comments dialog, or navigation blocking.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: Rendered `Budget.vue` tests cover editing, pending/navigation state, and save (`Budget.spec.ts`); the context menu (apply next, remove) and comments dialog are not rendered in tests.
 - CONFIRMED: No tests for currency-converted budget totals.
-- CONFIRMED: Budget store tests cover local queue write failure state preservation; no rendered `Budget.vue` test covers the failure toast and pending UI.
+- CONFIRMED: Budget store tests cover local queue write failure state preservation; `Budget.spec.ts` covers the failure message and pending UI.
 
 ## Product Questions
 - RESOLVED: Local queue write failure is blocking. Show an error toast or dialog, keep budget edits pending, and do not mark the edit as saved.

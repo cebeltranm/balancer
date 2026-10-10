@@ -66,14 +66,15 @@
 - IMPLEMENTED (RT-017): `src/views/__tests__/PortfolioUnknownAllocation.spec.ts` covers the "Unknown" grouping and warning for legacy accounts with missing class allocation in the ByAssetClass pie view.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered portfolio view tests.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: Rendered portfolio coverage is limited to the ByAssetClass pie Unknown-allocation case (`PortfolioUnknownAllocation.spec.ts`); other groupings and displays are not rendered in tests.
 - CONFIRMED: `useTotalByCategory()` missing-rate conversion behavior is covered; broader performance calculations still need coverage.
 - CONFIRMED: No tests for chart/table child component rendering.
 - CONFIRMED: `useTotalByCategory()` tests prove missing conversion rates return partial converted totals, preserve missing-rate metadata, and do not flag explicit zero rates as missing.
 - CONFIRMED: Portfolio table, treemap, and bar views render missing-rate indicators from summary metadata; rendered child component tests remain a broader coverage gap.
 - IMPLEMENTED (RT-017): `src/views/__tests__/PortfolioUnknownAllocation.spec.ts` mounts the portfolio view (ByAssetClass, pie display) with a legacy account that has no `class` allocation and asserts its value is grouped under "Unknown" rather than dropped, and that its account id is present in the rendered output alongside Unknown/unallocated wording.
 - REQUIRED (RT-017, NOT YET ADDED): A focused `src/helpers/__tests__/investments.spec.ts`-level test for the ByRegion case specifically (currently only exercised indirectly via the portfolio-level test's ByAssetClass path), and a test proving a fully allocated account never produces an "Unknown" bucket.
-- REQUIRED (RT-017, NOT YET ADDED): `src/views/Accounts.vue` currently has no dedicated spec file; a test must assert an investment account with no allocation, or one summing to something other than 100%, is blocked from saving (this closes the same gap already noted in `specs/features/accounts.md`).
+- IMPLEMENTED (RT-017): `src/views/__tests__/AccountsClassAllocation.spec.ts` asserts an investment account whose allocation sums to something other than 100% shows the allocation error and cannot be saved.
 
 ## Product Questions
 - RESOLVED (RT-017): Should investment accounts with missing class allocation be blocked, excluded, or grouped as unknown? Decision: enforce required allocation in account setup for investment accounts going forward (implemented, see `specs/features/accounts.md`); analytics group legacy accounts with missing/empty allocation under an "Unknown" bucket with a visible warning, rather than excluding them (implemented in `src/views/portafolio/index.vue` and `src/views/portafolio/pie.vue`).

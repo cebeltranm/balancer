@@ -91,11 +91,15 @@
 - CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers logout, provider selection, and state reset.
 - CONFIRMED: `src/helpers/__tests__/httpServer.spec.ts` covers local token login/session/logout behavior.
 - CONFIRMED: `src/helpers/__tests__/storageIndex.spec.ts` covers provider selection.
+- CONFIRMED: `src/components/__tests__/Auth.spec.ts` covers RT-020 failure/recovery, RT-021 WebAuthn requirement, and RT-023 first-run seeding.
+- CONFIRMED: `src/router/__tests__/guard.spec.ts` covers auth checks for sensitive vs. unprotected routes (RT-021).
+- CONFIRMED: `src/helpers/__tests__/dropbox.spec.ts` covers Dropbox token refresh and rejected authorization codes (RT-020).
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `src/components/__tests__/Auth.spec.ts` renders `Auth.vue` and covers the RT-020 failure and recovery flows; other dialog flows (provider selection, initial file loading) remain untested.
 - CONFIRMED: WebAuthn is mocked for authenticate/register success and failure paths in `Auth.spec.ts`; no test covers a real browser credential API.
-- CONFIRMED: No router guard tests for protected/unprotected routes.
+- CONFIRMED: `src/router/__tests__/guard.spec.ts` covers the router guard for protected and unprotected routes (RT-021).
 - CONFIRMED: `src/helpers/__tests__/dropbox.spec.ts` covers token refresh success/failure and rejected authorization codes; the full OAuth redirect round trip is untested.
 - CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers `resetLocalCredentials()`, `authError` set/clear, and `restartProviderLogin()`.
 
