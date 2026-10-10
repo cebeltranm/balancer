@@ -48,8 +48,8 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Transactions (`specs/features/transactions.md`)
 - Component — REQUIRED:
   - COVERED: Edit as delete-original-plus-new-id, and local queue failure keeps the dialog from reporting success (`src/components/__tests__/TransactionEditDialog.spec.ts`).
-  - GAP: `TransactionEditDialog.vue` validation blocks saving invalid input (missing description, unbalanced or empty values).
-  - GAP: `Transactions.vue` lists the loaded month's transactions and opens the edit dialog for create and edit.
+  - COVERED: `TransactionEditDialog.vue` validation blocks saving a short description, a future date, a non-positive expense value, or values not summing to zero (`TransactionEditDialog.spec.ts`).
+  - COVERED: `Transactions.vue` lists the selected account's rows, hides deleted transactions, marks pending rows, opens the edit dialog, and deletes only after confirmation (`src/views/__tests__/Transactions.spec.ts`).
 - Integration — RECOMMENDED: edit-as-delete-plus-new-save followed by balance recalculation across the real transactions and balance stores.
 - Manual: date picker and autocomplete interaction in a real browser.
 
@@ -170,7 +170,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 ## Priority For Closing Gaps
 
 1. Budget component coverage (editing/save and failed-save UX) — closed by `Budget.spec.ts`; context menu actions remain.
-2. Transactions component coverage (dialog validation, view list/open dialog).
+2. Transactions component coverage (dialog validation, view list/open dialog) — closed by `Transactions.spec.ts` and `TransactionEditDialog.spec.ts`.
 3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003).
 4. Remaining component gaps: Values save → balance recalculation, Dashboard auth visibility, Investments ByRegion and child views, Settings credential toast, sync-failed button.
 5. Local dev server path traversal integration test, once RT-028 is decided.
