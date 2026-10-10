@@ -222,7 +222,9 @@ describe("Budget view (RT-009)", () => {
   });
 
   it("shows an error and keeps edits pending when the local queue write fails", async () => {
-    mocks.setBudgetForYear.mockRejectedValue(new Error("IndexedDB unavailable"));
+    mocks.setBudgetForYear.mockRejectedValue(
+      new Error("IndexedDB unavailable"),
+    );
     app = await mountBudget(root);
 
     editRent(2, 150);

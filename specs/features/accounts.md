@@ -63,16 +63,16 @@
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/accounts.spec.ts` covers load/parse, group helpers, active filtering, save serialization, hide/archive, unhide, and blocked hard deletion.
-- CONFIRMED: `src/views/__tests__/AccountsClassAllocation.spec.ts` mounts `Accounts.vue` and covers the Global geographic exposure column and saving Global weights.
+- CONFIRMED: `src/views/__tests__/AccountsClassAllocation.spec.ts` mounts `Accounts.vue` and covers the Global geographic exposure column, saving Global weights, blocked save for allocations not summing to 100% (RT-017), and hide-with-confirmation with no hard-delete action (RT-003).
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: Rendered `Accounts.vue` coverage is limited to the Global exposure column (`src/views/__tests__/AccountsClassAllocation.spec.ts`); validation, filters, and hide/restore affordances are not rendered in tests.
-- CONFIRMED: No test verifies investment allocation validation in the UI.
+- CONFIRMED: Rendered `Accounts.vue` tests do not cover field validation other than class allocation (id, name, category, entity, risk, hide date), the visibility filter, or restore of hidden accounts.
+- CONFIRMED: `AccountsClassAllocation.spec.ts` verifies an investment allocation that does not sum to 100% shows the error and disables Save (RT-017).
 - CONFIRMED: No migration test for legacy `public/accounts.json` account types.
 - CONFIRMED: Store tests assert that account hide/archive persists `hideSince` while preserving the account key.
 - CONFIRMED: Store tests assert that hard deletion is blocked and does not write an `accounts.json` payload with the account key removed.
-- CONFIRMED: The edit dialog no longer exposes a hard-delete action; rendered account-management coverage is still missing for this UI assertion.
+- CONFIRMED: `AccountsClassAllocation.spec.ts` verifies the list and edit dialog expose hide and no hard-delete action, and hiding requires confirmation and saves `hideSince` under the same id (RT-003).
 
 ## Product Questions
 - UNCLEAR: Should legacy account type strings be migrated, tolerated, or rejected during load?

@@ -64,8 +64,9 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Accounts (`specs/features/accounts.md`)
 - Component — REQUIRED:
   - COVERED: Global geographic exposure column and Global weights kept on save (`src/views/__tests__/AccountsClassAllocation.spec.ts`).
-  - GAP (RT-017): An investment account whose class allocation does not sum to 100% cannot be saved.
-  - GAP (RT-003): The edit dialog exposes hide/restore and no hard-delete action.
+  - COVERED (RT-017): An investment account whose class allocation does not sum to 100% cannot be saved (`AccountsClassAllocation.spec.ts`).
+  - COVERED (RT-003): The list and edit dialog expose hide and no hard-delete action; hiding requires confirmation and keeps the account id (`AccountsClassAllocation.spec.ts`).
+  - GAP: Restoring a hidden account requires confirmation and calls `removeAccountHideSince()`.
 - Unit — COVERED: hide/archive persists `hideSince`; hard delete is blocked (`src/stores/__tests__/accounts.spec.ts`).
 - Integration: none required.
 - Manual: none beyond general UI review.
@@ -171,7 +172,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 
 1. Budget component coverage (editing/save and failed-save UX) — closed by `Budget.spec.ts`; context menu actions remain.
 2. Transactions component coverage (dialog validation, view list/open dialog) — closed by `Transactions.spec.ts` and `TransactionEditDialog.spec.ts`.
-3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003).
+3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts`; restore remains.
 4. Remaining component gaps: Values save → balance recalculation, Dashboard auth visibility, Investments ByRegion and child views, Settings credential toast, sync-failed button.
 5. Local dev server path traversal integration test, once RT-028 is decided.
 6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload).
