@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Let users view, create, edit, delete, tag, and locally queue monthly transactions.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/Transactions` maps to `src/views/Transactions.vue`; the menu links to `/transactions`, relying on path matching behavior outside this spec.
 - CONFIRMED: Transactions are stored by month in `transactions_<year>_<month>.json`.
 - CONFIRMED: The transaction list filters transaction value rows by selected accounts and shows date, account, description, tags, value, edit/delete actions, selected total, and optional account balances.
@@ -13,6 +13,11 @@
 - CONFIRMED: The product decision for transaction edit identity is to continue using delete-plus-new-id. Code currently satisfies this requirement.
 - CONFIRMED: Deleting a transaction queues it in IndexedDB with `deleted: true`.
 - CONFIRMED: The store merges pending IndexedDB transactions over the remote monthly file on load.
+- CONFIRMED: Contract status: satisfied for RT-008 and RT-009; dialog-level test coverage is listed under Missing Tests.
+
+## Product Contract
+- REQUIRED (RT-008): Editing a transaction deletes the original id and saves a new transaction with a fresh id; stable ids across edits are out of scope.
+- REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep the form open with entered values, and do not mark the edit as saved.
 
 ## User Flows
 - CONFIRMED: Select accounts and period, then view matching transaction value rows.

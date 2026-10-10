@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Register the app as a PWA with offline-ready assets and update prompts.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: VitePWA config defines app manifest name/short name `Balancer`, white theme color, and 192/512 icons.
 - CONFIRMED: VitePWA includes favicon and PrimeIcons assets and uses Workbox cleanup/outdated cache behavior.
 - CONFIRMED: Dev PWA support is enabled during `vite serve` with module service worker and `navigateFallback: "index.html"`.
@@ -11,6 +11,12 @@
 - CONFIRMED: Because `reload` is true in `vite.config.ts`, `__RELOAD_SW__` is replaced with `"true"` and registered service workers are checked every 120 seconds.
 - CONFIRMED: `App.vue` displays a bottom-center, persistent, closable PWA update toast when `needRefresh` becomes true; closing it re-shows it after 30 minutes while the update is pending (RT-026).
 - CONFIRMED: Clicking "Update now" removes the toast and calls `updateServiceWorker(true)`.
+- CONFIRMED: Contract status: satisfied for RT-024, RT-025, and RT-026; tests in `pwa.spec.ts` and `pwaBuild.spec.ts`.
+
+## Product Contract
+- REQUIRED (RT-024): Offline promise is the app shell, previously cached data, and queued local edits for supported write flows; fresh remote data requires connectivity.
+- REQUIRED (RT-025): Service-worker registration failure is console-only and never blocks startup.
+- REQUIRED (RT-026): The update prompt is persistent but non-blocking; closing it never applies the update.
 
 ## User Flows
 - CONFIRMED: App loads and registers service worker immediately.

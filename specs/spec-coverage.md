@@ -62,7 +62,7 @@
 - CONFIRMED: `## Observed Implementation` records current code traceability: files, functions, tests, and quirks. Markers: `CONFIRMED`, `INFERRED`. It is never a requirement by itself.
 - CONFIRMED: Each Product Contract item should carry a contract status in Observed Implementation (`satisfied`, `partially satisfied`, `not satisfied`) with covering tests.
 - CONFIRMED: Acceptance criteria derive from the Product Contract. If Observed Implementation conflicts with the Product Contract, the code is a bug or a pending product decision.
-- CONFIRMED: The legacy heading `Current Implemented Behavior` is an accepted alias for `Observed Implementation`. Existing specs are not rewritten in bulk; they adopt the headings when next revised.
+- CONFIRMED: Every feature spec in `specs/features/` uses these headings; the former `Current Implemented Behavior` heading no longer exists.
 - CONFIRMED: Test expectations: tests cite the spec's Product Contract rather than implementation details; a Product Contract item without a covering test is listed under Missing Tests / Coverage Gaps.
 
 ## Specs With Weak Evidence
@@ -96,7 +96,7 @@
 ### Vague Versus Implementation-Heavy Areas
 - CONFIRMED: The specs intentionally name implementation files because they are reverse-engineered from the current app and used for traceability.
 - INFERRED: Some implementation detail is higher than ideal for future-facing specs, especially in architecture, storage sync, values external-provider behavior, and PWA generated output.
-- RESOLVED (RT-030): New or revised specs separate `## Product Contract` (intended behavior; `REQUIRED` / `RESOLVED (RT-xxx)`) from `## Observed Implementation` (current code traceability; `CONFIRMED` / `INFERRED`). See "Spec Convention" below. Current docs satisfy this for the template, `dashboard.md`, and `expenses.md` (which use the legacy heading `Current Implemented Behavior` as an accepted alias for `Observed Implementation`); other specs adopt it when next revised. No automated check exists yet.
+- RESOLVED (RT-030): New or revised specs separate `## Product Contract` (intended behavior; `REQUIRED` / `RESOLVED (RT-xxx)`) from `## Observed Implementation` (current code traceability; `CONFIRMED` / `INFERRED`). See "Spec Convention" below. Current docs satisfy this: the template and all 13 feature specs use both headings. No automated check exists yet.
 
 ### Missing Product Flows
 - RESOLVED: First-run onboarding follows the RT-023 checklist (storage login, seed accounts, register local credential, review/edit accounts, confirm base currency/config). Implemented: seeding, credential registration, account/config editing, README "First Run" section, and seeding tests exist; there is no base-currency setting by design.

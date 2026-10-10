@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Maintain exchange rates and asset prices used for conversions, asset valuation, and balance recalculation.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/settings/values` maps to `src/views/Values.vue`.
 - CONFIRMED: The view lists required non-USD currency rates and active investment/fixed-asset values for the selected month.
 - CONFIRMED: Users can edit values inline, save the selected month, and trigger external value sync.
@@ -14,6 +14,12 @@
 - CONFIRMED: Sync can fetch currency rates from fawazahmed0 currency APIs, crypto values in BTC, and stock prices from AlphaVantage, MarketStack, or RapidAPI/Yahoo Finance depending on `config.stock_api`.
 - CONFIRMED: Active MXN accounts produce a USD-to-MXN exchange-rate row that can be edited, synchronized, and saved with the `mxn` currency code.
 - CONFIRMED: RT-012 is implemented: external value sync failures are shown as one generic user-facing error.
+- CONFIRMED: Contract status: satisfied for RT-011, RT-012, and RT-013.
+
+## Product Contract
+- REQUIRED (RT-012): Any external value sync failure shows one generic error, not per row or per provider.
+- REQUIRED (RT-013): Value lookup falls back to prior months only up to `maxLevels` (default 3; non-USD cross-rate legs 2), with no warning solely because a prior-month value was used.
+- REQUIRED (RT-011): Missing rates are never silently coerced to zero; an explicit `0` is valid data.
 
 ## User Flows
 - CONFIRMED: Select month period and inspect current rates/prices with month-over-month and year-over-year deltas.

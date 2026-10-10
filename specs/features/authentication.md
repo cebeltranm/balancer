@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Gate sensitive app areas behind storage login and local device authentication.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `src/components/Auth.vue` coordinates storage-provider login, WebAuthn credential registration, WebAuthn authentication, initial file loading, and cache refresh.
 - CONFIRMED: Router emits `CHECK_AUTHENTICATE` for all routes except `/` and `/expenses`.
 - CONFIRMED: `App.vue` listens for `CHECK_AUTHENTICATE` and opens the auth dialog when `storageStore.status.authenticated` is false.
@@ -12,6 +12,13 @@
 - CONFIRMED: WebAuthn registration creates a public-key credential and stores local metadata in `localStorage.crlocal`.
 - CONFIRMED: WebAuthn authentication sets `storageStore.status.authenticated = true` and closes the dialog.
 - CONFIRMED: Logout clears provider credentials through the selected provider, clears IndexedDB, resets storage state, navigates home, and re-emits authentication check.
+- CONFIRMED: Contract status: satisfied for RT-020, RT-021, RT-023, and RT-029 as recorded in the per-criterion "Code status" notes below, including the noted `checkStore()` gap.
+
+## Product Contract
+- REQUIRED (RT-021): Local WebAuthn is mandatory for Dropbox-backed sensitive routes with no opt-out; the HTTP server bypass is development-only and available only on the local dev host.
+- REQUIRED (RT-020): WebAuthn, provider-login, and Dropbox token-refresh failures show a readable message with Retry, Reset local credentials, and Restart provider login; recovery never clears queued sync data and never silently redirects to provider sign-in.
+- REQUIRED (RT-023): First run follows the documented checklist (storage login, seed accounts, register local credential, review/edit accounts, confirm config); there is no dedicated onboarding UI.
+- REQUIRED (RT-029): Google Drive is unavailable and must not be treated as a supported provider.
 
 ## User Flows
 - CONFIRMED: First visit opens authentication dialog when storage login or local credentials are missing.

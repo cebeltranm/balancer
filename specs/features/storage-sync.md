@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Keep local IndexedDB changes and remote JSON storage synchronized across supported providers.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: Storage provider selection is handled by `src/helpers/storage/index.ts`.
 - CONFIRMED: Provider options include Dropbox, a non-selectable Google Drive entry (out of scope, RT-029), and local HTTP server only on `localhost:3000`.
 - CONFIRMED: `useStorageStore()` tracks `storeInfo`, selected provider, pending transactions/files, and status flags `inSync`, `offline`, `loggedIn`, `authenticated`.
@@ -13,6 +13,12 @@
 - CONFIRMED: Startup compares remote file modification timestamps with cached timestamps and reloads stale cached files by file prefix.
 - CONFIRMED: Code satisfies the RT-001 conflict policy: queued transaction rows merge by `id`, and whole-file conflicts use last writer wins with a visible warning.
 - CONFIRMED: Code satisfies RT-002 by keeping pending items queued after sync failure, setting shared sync-failed state, showing a persistent sync-failed toast, and keeping retry available from sync status.
+- CONFIRMED: Contract status: satisfied for RT-001, RT-002, and RT-029; Google Drive test coverage is still missing (see Missing Tests).
+
+## Product Contract
+- REQUIRED (RT-001): Transaction queue conflicts merge by id; whole-file conflicts use last writer wins with a visible warning.
+- REQUIRED (RT-002): Sync failures keep pending items queued, show a persistent sync-failed status/toast, and offer retry from sync status.
+- REQUIRED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist.
 
 ## User Flows
 - CONFIRMED: App starts and refreshes store info.

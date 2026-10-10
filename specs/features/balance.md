@@ -3,7 +3,7 @@
 ## Goal
 - CONFIRMED: Show calculated assets, liabilities, and net worth over recent periods.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/balance` maps to `src/views/Balance.vue` and requires authentication.
 - CONFIRMED: The view displays only when `storageStore.status.authenticated` is true.
 - CONFIRMED: The table groups balances into Assets and Liabilities, with categories for cash, receivables, investments, fixed assets, and liabilities.
@@ -11,6 +11,12 @@
 - CONFIRMED: Values are converted to the injected global currency using `valuesStore.getValue()`.
 - CONFIRMED: `useBalanceStore()` loads yearly `balance_<year>.json`, groups data by month/quarter/year, ensures current month balance, and recalculates balances from transactions/accounts/values.
 - CONFIRMED: Authenticated users can force recalculation from the selected period, and missing source data is surfaced as a warning after recalculation.
+- CONFIRMED: Contract status: satisfied (RT-010 is implemented in `src/stores/balance.ts` and `src/views/Balance.vue`, covered by `balance.spec.ts` and `Balance.spec.ts`).
+
+## Product Contract
+- REQUIRED (RT-010): Balance snapshots are derived cache, not durable financial records; authenticated users can force recalculation.
+- REQUIRED (RT-010): Recalculation with missing transaction, values, or rate/value source data shows a warning identifying the source and that totals may be incomplete.
+- REQUIRED: Hidden accounts inactive for the recalculated month produce no missing-source warnings, and a stored value or rate of `0` is valid data.
 
 ## User Flows
 - CONFIRMED: Select month, quarter, or year period.

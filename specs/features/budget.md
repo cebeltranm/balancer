@@ -3,13 +3,17 @@
 ## Goal
 - CONFIRMED: Maintain yearly monthly expense budgets and comments.
 
-## Current Implemented Behavior
+## Observed Implementation
 - CONFIRMED: `/settings/budget` maps to `src/views/Budget.vue`.
 - CONFIRMED: The view displays expense accounts grouped under category rows, with 12 editable monthly columns.
 - CONFIRMED: Users can edit monthly budget cells, apply a month value to subsequent months, remove a month value, and add comments.
 - CONFIRMED: Edited rows are marked pending and the router pending-change flag is emitted.
 - CONFIRMED: Saving writes `{ values, comments }` to `budget_<year>.json` in IndexedDB cache with `to_sync: true`.
 - CONFIRMED: Budget totals convert currencies through `valuesStore.joinValues()`.
+- CONFIRMED: Contract status: satisfied for RT-009 (see Existing Tests); comment-history metadata is still an open Product Question.
+
+## Product Contract
+- REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep budget edits pending, and do not mark the edit as saved.
 
 ## User Flows
 - CONFIRMED: Select budget year.
