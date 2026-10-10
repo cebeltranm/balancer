@@ -56,15 +56,15 @@
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/views/__tests__/HomeView.spec.ts` verifies the dashboard empty state and verifies that available cards hide the empty-state text.
+- CONFIRMED: `src/views/__tests__/HomeView.spec.ts` covers RT-015 per-currency card splitting and independence from the global `CURRENCY`.
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers grouped balance behavior.
 - CONFIRMED: `src/stores/__tests__/accounts.spec.ts` covers group-type helpers.
 - CONFIRMED: `src/helpers/__tests__/options.spec.ts` covers current period helper behavior.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: No test verifies authenticated vs unauthenticated dashboard group visibility.
-- REQUIRED (RT-015): Add a test to `src/views/__tests__/HomeView.spec.ts` asserting that current-month balances for the same account group in two different currencies (e.g. `usd` and `cop`) render as two separate cards rather than one summed/converted total.
-- REQUIRED (RT-015): Add a test to `src/views/__tests__/HomeView.spec.ts` asserting that two accounts in the same group and same currency are summed into a single card.
-- RECOMMENDED (RT-015): Add a test that mounts `HomeView.vue` with a global `CURRENCY` value provided/injected and asserts dashboard card amounts and currencies are unchanged, guarding against future accidental conversion.
+- IMPLEMENTED (RT-015): `src/views/__tests__/HomeView.spec.ts` asserts that same-group balances in two currencies render as separate cards, same-group same-currency accounts are summed into one card, and a global `CURRENCY` selection does not change card amounts or currencies.
 
 ## Product Questions
 - RESOLVED (RT-015): Dashboard totals must remain split by currency and must never be converted. Converted totals belong only in reports that already depend on a global currency. See Product Contract and Acceptance Criteria above.

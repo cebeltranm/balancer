@@ -89,14 +89,15 @@
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` and `src/stores/__tests__/storage.spec.ts` assert RT-002 failure reporting, queued pending state, persistent sync-failed notification metadata, and retry clearing behavior.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No Dropbox helper tests.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: `src/helpers/__tests__/dropbox.spec.ts` covers Dropbox auth failure and token refresh paths; Dropbox file read/write/list operations are not directly tested.
 - CONFIRMED: No integration tests across Auth startup refresh, sync, balance recalculation, and store reloads.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts the exact staged transaction merge payload for same-id replacement, deleted queued rows, and preserved remote rows.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts whole-file conflict detection, last-writer-wins upload, and visible warning state.
 - CONFIRMED: Sync helper tests prove failed file uploads are reported as failures and do not clear pending `to_sync` cache state.
 - CONFIRMED: Storage store tests prove failed sync sets shared sync-failed state, keeps pending counters, clears `inSync`, emits persistent failure metadata, and clears failure state after a successful retry.
 - CONFIRMED: The sync status button remains the retry action when sync has failed; no rendered component test currently covers the visual label/icon state.
-- REQUIRED (RT-029): Add to `src/helpers/__tests__/storageIndex.spec.ts`: (1) `googleDrive` option is `available: false, planned: true` on localhost and non-localhost; (2) a stored `"googleDrive"` selection falls back to the host default; (3) `setSelectedStorageProvider("googleDrive")` stores the host default; (4) `getStorage()` returns a `Dropbox` instance in that case. Optionally assert no Google Drive option is rendered in `Auth.vue`. Current `storageIndex.spec.ts` has no Google Drive assertions.
+- IMPLEMENTED (RT-029): `src/helpers/__tests__/storageIndex.spec.ts` asserts `googleDrive` is `available: false, planned: true` on localhost and non-localhost, a stored `"googleDrive"` selection falls back to the host default, `setSelectedStorageProvider("googleDrive")` stores the host default, and `getStorage()` returns Dropbox in that case. The optional `Auth.vue` rendering assertion is not added.
 
 ## Product Questions
 - RESOLVED: File conflicts use last writer wins with a visible warning; transaction queue conflicts merge by id until a richer conflict UI exists.

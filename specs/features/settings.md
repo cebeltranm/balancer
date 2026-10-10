@@ -80,6 +80,7 @@
 - CONFIRMED: `src/views/__tests__/Settings.spec.ts` covers retry-login success, failure, provider message, and Dropbox redirect.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `Settings.vue` rendered tests cover retry login only (`src/views/__tests__/Settings.spec.ts`); config/composition editing is untested.
 - CONFIRMED: Composition normalization/building is covered only through the mounted view (`src/views/__tests__/SettingsComposition.spec.ts`); there are no standalone helper tests.
 - CONFIRMED: No tests for the credential-clearing toast.

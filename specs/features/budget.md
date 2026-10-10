@@ -60,6 +60,7 @@
 - REQUIRED: Budget view tests should assert that a rejected local queue write shows an error message, keeps `pendingToSave` true, keeps the navigation guard pending, and leaves Save available.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: No rendered `Budget.vue` tests for editing, context menu, comments dialog, or navigation blocking.
 - CONFIRMED: No tests for currency-converted budget totals.
 - CONFIRMED: Budget store tests cover local queue write failure state preservation; no rendered `Budget.vue` test covers the failure toast and pending UI.

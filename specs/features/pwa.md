@@ -72,8 +72,9 @@
 - CONFIRMED (RT-025): `src/helpers/__tests__/pwaBuild.spec.ts` verifies the generated manifest, service-worker precache, and cache cleanup.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: No browser/service-worker integration tests.
-- Test coverage for RT-024 (implemented): `files.spec.ts` (cache hit offline; uncached network failure resolves `false`), `storage.spec.ts` (sync skipped while offline; `online` event refreshes info and syncs). Queued offline saves are covered in the transactions and budget store specs. Still missing: values/balance offline-queue specs and a build-config or service-worker precache test.
+- Test coverage for RT-024 (implemented): `files.spec.ts` (cache hit offline; uncached network failure resolves `false`), `storage.spec.ts` (sync skipped while offline; `online` event refreshes info and syncs). Queued offline saves are covered in the transactions and budget store specs. Still missing: values/balance offline-queue specs. The service-worker precache test is covered by `pwaBuild.spec.ts` (RT-025).
 - CONFIRMED (RT-026 implemented): Update toast interaction (persistent, closable, re-prompt, "Update now") is covered by `src/__tests__/App.spec.ts` using a Toast stub; the real PrimeVue Toast close control is not browser-tested.
 - CONFIRMED (RT-025 implemented): Generated manifest and precache/cleanup output are covered by `src/helpers/__tests__/pwaBuild.spec.ts` (real Vite build into a temp dir).
 

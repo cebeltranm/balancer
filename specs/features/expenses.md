@@ -60,16 +60,17 @@
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` covers conversion lookup and joining values.
 - CONFIRMED: `src/helpers/__tests__/groupData.spec.ts` covers period grouping.
 - CONFIRMED: `src/views/__tests__/ExpensesMissingRates.spec.ts` covers partial totals with a visible missing-rate indicator for affected currencies/accounts.
+- CONFIRMED: `src/views/__tests__/ExpensesIncomeVisibility.spec.ts` covers income visibility by authentication state (RT-016).
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: No rendered tests for table, treemap, or bar displays.
-- CONFIRMED: No tests for unauthenticated vs authenticated expenses visibility.
+- CONFIRMED: `src/views/__tests__/ExpensesIncomeVisibility.spec.ts` covers unauthenticated vs authenticated income visibility (RT-016).
 - CONFIRMED: No tests for budget progress rendering or comment dialog behavior.
 - CONFIRMED: Rendered expense summary coverage verifies missing conversion rates produce partial totals plus a visible missing-rate indicator with affected currencies/accounts.
 - CONFIRMED: Rendered expense summary coverage verifies explicit zero rates/values are not flagged as missing.
-- REQUIRED (RT-016): Add a rendered test mounting `Expenses.vue` with `storageStore.status.authenticated = false` and a mocked `accountsGroupByCategories` that honors the requested `groups` argument (returning an income entry only when `AccountGroupType.Incomes` is requested); assert no income category/row appears in the rendered table.
-- REQUIRED (RT-016): Add a rendered test with `storageStore.status.authenticated = true` using the same honoring mock; assert both income and expense categories/rows appear.
-- NOTE (RT-016): The existing `src/views/__tests__/ExpensesMissingRates.spec.ts` mocks `accountsGroupByCategories` to ignore its `groups` argument and always return expenses only, so it does not currently exercise or guard the authenticated/unauthenticated income-visibility branch.
+- IMPLEMENTED (RT-016): `src/views/__tests__/ExpensesIncomeVisibility.spec.ts` mounts `Expenses.vue` with a `accountsGroupByCategories` mock that honors its `groups` argument, and asserts income is hidden when unauthenticated and shown alongside expenses when authenticated.
+- NOTE (RT-016): `src/views/__tests__/ExpensesMissingRates.spec.ts` mocks `accountsGroupByCategories` to ignore its `groups` argument, so it does not guard the income-visibility branch; `ExpensesIncomeVisibility.spec.ts` does.
 
 ## Product Questions
 - RESOLVED (RT-016): Income is intentionally sensitive data, hidden until local device authentication succeeds — this is a privacy decision, not an artifact of the current data-loading flow. Unauthenticated users must never see income even if otherwise logged in to a storage provider. See Product Contract and Acceptance Criteria above.

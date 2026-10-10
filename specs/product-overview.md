@@ -144,7 +144,7 @@ The current suite is mostly unit-level and store/helper focused:
 - Helper specs cover options, file caching, IndexedDB wrappers, sync, browser helpers, storage provider selection, HTTP server storage client, PWA registration, group-data aggregation, and investment mapping.
 - Tests rely heavily on `vi.mock`, fake `fetch`, fake `localStorage`, mocked Pinia setup, and mocked storage/file helpers.
 
-There are no obvious end-to-end browser tests in the current project. UI behavior is covered indirectly through store/helper tests rather than rendered component flows.
+There are no end-to-end browser tests; automated end-to-end testing is out of scope (RT-031). Rendered component tests under `src/views/__tests__/`, `src/components/__tests__/`, `src/layout/__tests__/`, and `src/__tests__/` mount views with jsdom, and integration tests run a real Vite build and the local dev server. Required coverage per feature is defined in `specs/testing-strategy.md`.
 
 Validation scripts defined in `package.json` are:
 

@@ -63,9 +63,11 @@
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/accounts.spec.ts` covers load/parse, group helpers, active filtering, save serialization, hide/archive, unhide, and blocked hard deletion.
+- CONFIRMED: `src/views/__tests__/AccountsClassAllocation.spec.ts` mounts `Accounts.vue` and covers the Global geographic exposure column and saving Global weights.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered `Accounts.vue` tests for validation, filters, dialogs, or blocked delete affordances.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: Rendered `Accounts.vue` coverage is limited to the Global exposure column (`src/views/__tests__/AccountsClassAllocation.spec.ts`); validation, filters, and hide/restore affordances are not rendered in tests.
 - CONFIRMED: No test verifies investment allocation validation in the UI.
 - CONFIRMED: No migration test for legacy `public/accounts.json` account types.
 - CONFIRMED: Store tests assert that account hide/archive persists `hideSince` while preserving the account key.

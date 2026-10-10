@@ -68,15 +68,16 @@
 - CONFIRMED: `src/stores/__tests__/transactions.spec.ts` covers monthly load/merge, save queueing, and delete queueing.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` covers monthly merge and queue cleanup.
 - CONFIRMED: `src/helpers/__tests__/groupData.spec.ts` and `options.spec.ts` cover period mechanics used by related reporting.
-- REQUIRED: Transaction dialog tests should cover edit submit as delete-plus-new-id by asserting the original id is queued deleted and the replacement save uses a fresh id.
+- CONFIRMED: `src/components/__tests__/TransactionEditDialog.spec.ts` covers edit submit as delete-plus-new-id: the original transaction is deleted and the replacement save uses a fresh id.
 - REQUIRED: Sync tests should continue to assert that deleted queued transaction ids are omitted from staged monthly files and non-deleted queued replacement transactions are appended.
 - CONFIRMED: Transaction store tests assert that rejected `idb.saveTransaction()` calls propagate failure and do not call `updatePendingToSync()` or reload the month.
 - CONFIRMED: Transaction dialog tests assert that a rejected local queue write shows an error message and does not emit `update:transaction`.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No rendered tests for `Transactions.vue` or `TransactionEditDialog.vue`.
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
+- CONFIRMED: No rendered tests for `Transactions.vue`. `TransactionEditDialog.vue` rendered tests cover edit-as-delete-plus-new-id and local queue failure only (`src/components/__tests__/TransactionEditDialog.spec.ts`).
 - CONFIRMED: No direct tests for Zod validation rules in the transaction dialog.
-- CONFIRMED: No integration test covers edit-as-delete-plus-new-save and subsequent balance recalculation.
+- CONFIRMED: Edit-as-delete-plus-new-id is covered at dialog level; no integration test covers the subsequent balance recalculation across real stores.
 - CONFIRMED: Transaction edit dialog local queue failure UX is covered; transaction create, transfer, and expense dialog failure UX are not directly rendered in tests.
 
 ## Product Questions

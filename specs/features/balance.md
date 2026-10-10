@@ -68,6 +68,7 @@
 - CONFIRMED: `src/helpers/__tests__/groupData.spec.ts` covers month and quarter grouping.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: Rendered `Balance.vue` tests now cover RT-010 force recalculation and warning behavior.
 - CONFIRMED: No tests for full recalculation formulas across all account types.
 - CONFIRMED: No tests for recursive multi-month recalculation side effects.
