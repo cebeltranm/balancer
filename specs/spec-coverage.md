@@ -107,7 +107,7 @@
 - RESOLVED: PWA offline-ready assets and storage sync are reconciled by the RT-024 offline promise; fresh remote JSON data is not guaranteed offline.
 - RESOLVED: Account ids are durable references across historical files; archive/hide replaces hard deletion.
 - RESOLVED: Transaction edits intentionally continue to use delete-plus-new-id; stable audit identity across edits is out of scope unless a future audit/reconciliation feature changes the model.
-- UNCLEAR: Google Drive is listed as planned/unavailable; no feature spec should treat it as an implemented provider until product scope changes.
+- RESOLVED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist; no spec may treat it as an implemented provider. Current code satisfies this (option is unavailable and unselectable); dedicated tests are still to be added. See `features/storage-sync.md`.
 
 ## Highest-Priority Product Owner Questions
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.

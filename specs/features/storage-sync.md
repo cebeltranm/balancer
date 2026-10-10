@@ -5,7 +5,7 @@
 
 ## Current Implemented Behavior
 - CONFIRMED: Storage provider selection is handled by `src/helpers/storage/index.ts`.
-- CONFIRMED: Provider options include Dropbox, planned Google Drive, and local HTTP server only on `localhost:3000`.
+- CONFIRMED: Provider options include Dropbox, a non-selectable Google Drive entry (out of scope, RT-029), and local HTTP server only on `localhost:3000`.
 - CONFIRMED: `useStorageStore()` tracks `storeInfo`, selected provider, pending transactions/files, and status flags `inSync`, `offline`, `loggedIn`, `authenticated`.
 - CONFIRMED: `readJsonFile()` caches remote reads with `to_sync: false`; `writeJsonFile()` uploads and caches successful writes.
 - CONFIRMED: Pending transaction changes are stored in IndexedDB `transactions`; pending JSON file changes are stored in IndexedDB `files` with `to_sync: true`.
@@ -44,7 +44,7 @@
 
 ## Edge Cases
 - CONFIRMED: Stored local HTTP provider selection is ignored outside `localhost:3000`.
-- CONFIRMED: Google Drive is listed as planned/unavailable and cannot be selected.
+- RESOLVED (RT-029): Google Drive is out of scope. It is listed as unavailable (`available: false`, `planned: true`) and cannot be selected. It must not be treated as a supported provider until a Google Drive provider helper, an auth flow, and sync tests exist; adding those is a new product decision, not an implicit extension of this spec.
 - CONFIRMED: Dropbox expired access tokens can refresh from a refresh token.
 - CONFIRMED: Whole-file conflicts use last writer wins with a visible warning: if a cached `to_sync` file is uploaded after the remote file changed elsewhere, the local cached version still wins, and the user must be warned that the remote file was overwritten.
 - CONFIRMED: Queued transaction rows continue to use merge-by-id conflict handling until a richer conflict UI exists.
@@ -67,6 +67,12 @@
 - REQUIRED: GIVEN a shared sync-failed state is set, WHEN the app shell or sync status is visible, THEN the user sees a persistent sync-failed status/toast that is not automatically dismissed after a short timeout.
 - REQUIRED: GIVEN a sync-failed status is visible, WHEN the user chooses retry from sync status, THEN the app attempts sync again for the queued items.
 - REQUIRED: GIVEN a retry sync succeeds, WHEN pending counters are refreshed, THEN the sync-failed state and persistent sync-failed toast/status are cleared.
+- CONFIRMED (RT-029): GIVEN any host, WHEN `getAvailableStorageProviders()` is called, THEN the `googleDrive` option has `available: false` and `planned: true`, and Dropbox remains `available: true`.
+- CONFIRMED (RT-029): GIVEN `localStorage.storage_provider` is `"googleDrive"`, WHEN `getSelectedStorageProvider()` is called, THEN the host default is returned (`dropbox` outside `localhost:3000`, `httpServer` on it).
+- CONFIRMED (RT-029): GIVEN `setSelectedStorageProvider("googleDrive")` is called, THEN `googleDrive` is not persisted and the host default is stored instead.
+- CONFIRMED (RT-029): GIVEN the selected provider resolves to the default, WHEN `getStorage()` is called, THEN it never returns a Google Drive client (none exists) and returns `Dropbox` outside `localhost:3000`.
+- CONFIRMED (RT-029): GIVEN the auth dialog lists providers, THEN options that are unavailable or planned (Google Drive) are not offered (`src/components/Auth.vue` filters `available && !planned`).
+- REQUIRED (RT-029): Google Drive may move into scope only when all of these exist: a provider helper under `src/helpers/storage/` implementing the same read/write/metadata/list contract as Dropbox, an auth flow with token handling, and sync tests (read/write, expired credentials, sync failure/retry). Until then no spec may describe it as supported.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/storage.spec.ts` covers pending counters, serialized sync, info refresh, provider selection effects, and logout.
@@ -84,7 +90,9 @@
 - CONFIRMED: Sync helper tests prove failed file uploads are reported as failures and do not clear pending `to_sync` cache state.
 - CONFIRMED: Storage store tests prove failed sync sets shared sync-failed state, keeps pending counters, clears `inSync`, emits persistent failure metadata, and clears failure state after a successful retry.
 - CONFIRMED: The sync status button remains the retry action when sync has failed; no rendered component test currently covers the visual label/icon state.
+- REQUIRED (RT-029): Add to `src/helpers/__tests__/storageIndex.spec.ts`: (1) `googleDrive` option is `available: false, planned: true` on localhost and non-localhost; (2) a stored `"googleDrive"` selection falls back to the host default; (3) `setSelectedStorageProvider("googleDrive")` stores the host default; (4) `getStorage()` returns a `Dropbox` instance in that case. Optionally assert no Google Drive option is rendered in `Auth.vue`. Current `storageIndex.spec.ts` has no Google Drive assertions.
 
 ## Product Questions
 - RESOLVED: File conflicts use last writer wins with a visible warning; transaction queue conflicts merge by id until a richer conflict UI exists.
 - RESOLVED: RT-002 sync failures use a shared pattern: keep pending items queued, show a persistent sync-failed status/toast, and provide retry from sync status.
+- RESOLVED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist. Current code satisfies the behavior (unavailable, unselectable, falls back to the host default; no provider or auth code exists). Test coverage for it is not yet present (see Missing Tests).
