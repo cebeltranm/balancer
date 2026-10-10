@@ -56,7 +56,7 @@ The router also blocks navigation while forms report pending changes and emits a
 - `src/helpers/files.ts`: storage-backed JSON reads/writes with IndexedDB cache updates.
 - `src/helpers/idb.ts`: local IndexedDB database named `balancer`, with `transactions` and `files` object stores.
 - `src/helpers/sync.ts`: syncs queued transactions into monthly JSON files and uploads cached files marked `to_sync`.
-- `src/helpers/storage/index.ts`: selects Dropbox, local HTTP server, or planned Google Drive provider.
+- `src/helpers/storage/index.ts`: selects Dropbox or the local HTTP server; Google Drive is listed but unavailable and out of scope (RT-029).
 - `src/helpers/storage/dropbox.ts`: Dropbox OAuth, token refresh, JSON file read/write, metadata, and listing.
 - `src/helpers/storage/http_server.ts`: local development storage client for `http://localhost:8181`.
 - `src/helpers/groupData.ts`, `src/helpers/options.ts`, `src/helpers/investments.ts`, `src/helpers/date.ts`, and related files provide period grouping, date handling, option helpers, and investment transformations.
@@ -160,7 +160,7 @@ Validation scripts defined in `package.json` are:
 - Local device authentication uses WebAuthn as a local gate, but the durable app data is still protected mainly by storage-provider credentials and local storage/session storage tokens.
 - Dropbox credentials, local HTTP tokens, and local WebAuthn metadata are stored in browser storage. This is common for a client-only app but has the usual browser-storage exposure risks.
 - The local HTTP server uses a fixed development bearer token and writes to `.tmp/`; it should be treated as development-only.
-- Google Drive appears in the storage provider type/options as a planned integration, but it is not implemented.
+- Google Drive appears in the storage provider type/options but is unavailable and out of scope until a provider helper, auth flow, and sync tests exist (RT-029).
 - Stock API settings are configurable in `config.json`, but no clear live stock-price fetch path was identified in the core files reviewed.
 - Balance files are calculated snapshots saved back to storage. If transaction, value, or account data changes out of band, snapshots may need explicit recalculation to stay trustworthy.
 - PWA behavior is configured, but service-worker source files include multiple variants and only generated build output determines the active runtime behavior.
