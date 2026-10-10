@@ -10,14 +10,17 @@ In scope:
 Out of scope:
 - CONFIRMED: List tempting but intentionally excluded behavior.
 
-## Current behavior
-- CONFIRMED: Describe observed implemented behavior only.
-- INFERRED: Mark behavior derived from code paths but not directly verified.
-- UNCLEAR: Mark missing product intent or missing evidence.
+## Product Contract
+Intended behavior that must survive refactors. Anything not listed here is not a product requirement, even if the code currently does it.
+- REQUIRED: Describe the target product behavior in observable terms (no file, function, or component names).
+- RESOLVED (RT-xxx): Record a product decision and the triage ID that settled it.
+- UNCLEAR: State product decisions still needed before implementation. Remove or replace this marker once the decision is made.
 
-## Desired behavior
-- CONFIRMED: Describe the target product behavior when it is known.
-- UNCLEAR: State product decisions still needed before implementation.
+## Observed Implementation
+Current code traceability only. Nothing here is a requirement; if it conflicts with the Product Contract, the code is a bug or a pending product decision.
+- CONFIRMED: Describe observed implemented behavior, naming files, functions, and tests.
+- INFERRED: Mark behavior derived from code paths but not directly verified.
+- Contract status: State for each Product Contract item whether current code satisfies it (`satisfied`, `partially satisfied`, or `not satisfied`) and which tests cover it.
 
 ## API / CLI / UI contract
 - CONFIRMED: Name routes, controls, visible states, emitted events, files, commands, or response shapes that tests can observe.
@@ -41,7 +44,7 @@ Out of scope:
 - UNCLEAR: State when no observability requirement exists.
 
 ## Acceptance criteria
-- [ ] GIVEN <initial state>, WHEN <user/system action>, THEN <observable outcome>.
+- [ ] REQUIRED: GIVEN <initial state>, WHEN <user/system action>, THEN <observable outcome>. Criteria derive from the Product Contract, not from Observed Implementation.
 - [ ] Include at least one negative/error case when the feature accepts input.
 - [ ] Include persistence/sync expectations when the feature writes data.
 
