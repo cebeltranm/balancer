@@ -179,6 +179,6 @@ Validation scripts defined in `package.json` are:
 
 - CONFIRMED: Conflict resolution for concurrent edits is implemented for the current scope: transaction merge-by-id exists, and whole-file conflicts use last writer wins with a visible warning.
 - CONFIRMED: Account deletion/reference policy is archive/hide only; hard deletion is blocked so transactions, budgets, values, balances, dashboard, expenses, and investments can continue resolving historical account ids.
-- UNCLEAR: Error UX for sync, provider login, WebAuthn, and external value providers is not specified consistently.
+- RESOLVED (RT-035): Error UX is specified consistently. Sync failure follows RT-002, provider login, WebAuthn, and Dropbox token refresh follow RT-020, and external value providers follow RT-012. Shared defaults and approved overrides are in `specs/validation-and-errors.md` (RT-032); its Code Alignment Follow-Ups are implementation tasks, not open product decisions.
 - RESOLVED: Missing conversion rates in expense and investment UI summaries show partial totals with a visible missing-rate indicator listing affected currencies/accounts.
 - RESOLVED: Offline promise (RT-024): app shell plus previously cached data plus queued local edits for supported write flows; fresh remote data requires connectivity. Details in `features/pwa.md`.
