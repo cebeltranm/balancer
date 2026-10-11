@@ -94,7 +94,7 @@
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` verifies prior-month fallback does not show a warning by itself.
 - CONFIRMED: No rendered `Values.vue` tests for manual editing, filtering, or pending-row styling; successful MXN external sync and save are covered.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
-- GAP (RT-040): No test covers Values row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order stable under edit, and alphabetical Entity filter options. Add to `src/views/__tests__/Values.spec.ts` before the code change.
+- GAP (RT-040): No test covers Values row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order stable under edit, and alphabetical Entity filter options. Tests are in `src/views/__tests__/ValuesRowOrder.spec.ts` (its own file because the accounts mock is per file); 8 of 9 fail until the code change.
 
 ## Product Questions
 - RESOLVED: RT-012 external value sync failures should be shown as a single generic error, not per row or per provider.

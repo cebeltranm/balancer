@@ -147,5 +147,5 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
   - Ordering is display-only and fixed (no sortable columns). Inactive and hidden accounts remain excluded. Editing never reorders rows. Persisted files, `activeAccounts()`, and sync are unchanged.
   - Entity filter options are alphabetical because they are built from the ordered rows; other filter lists keep their current order.
   - Rule placement: a line in `specs/features/values.md` only. Promote to a shared ordering section if another screen adopts it.
-  - Code status: not implemented. Next: tests in `Values.spec.ts`, then a sorted display copy in `Values.vue`.
+  - Code status: not implemented. Tests: `ValuesRowOrder.spec.ts`. Next: a sorted display copy in `Values.vue`.
 - **Bucket / confidence:** Code change / High.
