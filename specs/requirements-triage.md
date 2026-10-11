@@ -13,7 +13,7 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
 | RT-033 | Budget comments | `features/budget.md` Product Questions; `data-model.md` budget section | Should budget comments keep author/time metadata, or are plain strings enough? | Keep message plus creation time (`{ m, d }`), no author. Make it the documented shape and accept legacy plain strings on load. | Code change likely | High | Open |
 | RT-034 | Legacy account types | `features/accounts.md` Product Questions; `data-model.md` `accounts.json` section | Should legacy account type strings be migrated, tolerated, or rejected on load? | Migrate a fixed alias list (`cash`, `SavingAccount`) in memory on load. Keep rejecting any other unknown type. | Code change likely | Medium | Open |
 | RT-035 | Error UX consistency | `product-overview.md` Highest-Risk Product Decisions; `spec-coverage.md` Highest-Priority Product Owner Questions | Is error UX for sync, provider login, WebAuthn, and external value providers specified consistently? | Yes. Mark it resolved and point to RT-002, RT-012, RT-020, and `validation-and-errors.md`. | Document only | High | Resolved |
-| RT-036 | Failed sync recovery | `spec-coverage.md` Missing Product Flows; `product-overview.md` Migration / Compatibility | What recovery applies when sync fails after local writes were accepted? | Already decided by RT-002 (and RT-020 for credentials). Mark it resolved. | Document only | High | Open |
+| RT-036 | Failed sync recovery | `spec-coverage.md` Missing Product Flows; `product-overview.md` Migration / Compatibility | What recovery applies when sync fails after local writes were accepted? | Already decided by RT-002 (and RT-020 for credentials). Mark it resolved. | Document only | High | Resolved |
 | RT-037 | Generated service worker | `architecture.md` PWA Behavior | How is runtime service-worker behavior after VitePWA generation specified? | Already decided by RT-025 (build-output test plus console-only registration errors). Mark it resolved. | Document only | High | Open |
 
 Two more open questions turned up during the review. They are not marked `UNCLEAR` in any spec yet, but they need the same kind of decision:
@@ -89,6 +89,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Risk if left unclear:** Same as RT-035: a product decision looks open when it is not, and `product-overview.md` contradicts `features/authentication.md`.
 - **Proposed answer:** Replace both markers with `RESOLVED` lines that point to RT-002, RT-020, and RT-024. If the product wants more than that (for example, a list of failed files, or discarding a single queued edit), open a new triage item for it.
 - **Bucket / confidence:** Document only / High.
+- **Decision:** RESOLVED (RT-036). Accepted as proposed. `specs/spec-coverage.md` and `specs/product-overview.md` now point to RT-002, RT-024, and RT-020 instead of the `UNCLEAR`/"unspecified" wording. Richer recovery (a failed-file list, discarding a queued edit) needs a new triage item.
 
 ## RT-037: Runtime behavior of the generated service worker (stale marker)
 
