@@ -128,7 +128,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Local Dev Server (`specs/features/local-dev-server.md`)
 - Integration — REQUIRED:
   - COVERED (RT-027): Real `server/index.js` child process creates `.tmp/`, serves `/list`, writes files, rejects unauthorized requests (`src/helpers/__tests__/localDevServer.spec.ts`).
-  - PENDING (RT-028): Path traversal outside `.tmp/` — required once RT-028 is decided; the current server does not reject it, so no test can assert rejection yet.
+  - COVERED (RT-028): Path traversal, nested paths, backslash, NUL byte, and malformed encoding are rejected with 400 and nothing is written outside `.tmp/` (`src/helpers/__tests__/localDevServer.spec.ts`).
   - RECOMMENDED: `/list` and write filesystem failures return errors; `.tmp/` creation failure returns 500.
 - Unit — COVERED: HTTP storage client (`httpServer.spec.ts`).
 
@@ -174,5 +174,5 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 2. Transactions component coverage (dialog validation, view list/open dialog) — closed by `Transactions.spec.ts` and `TransactionEditDialog.spec.ts`.
 3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts`; restore remains.
 4. Remaining component gaps: Values save → balance recalculation, Dashboard auth visibility, Investments ByRegion and child views, Settings credential toast, sync-failed button.
-5. Local dev server path traversal integration test, once RT-028 is decided.
+5. Local dev server path traversal integration test — closed by `localDevServer.spec.ts` (RT-028).
 6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload).

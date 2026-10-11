@@ -58,14 +58,35 @@ app.get("/list", requireAuth, function (request, response) {
   }
 });
 
+// RT-028: only flat, safe `.json` names are written, directly under `.tmp/`.
+const SAFE_JSON_NAME = /^[A-Za-z0-9._-]+\.json$/;
+
+function safeJsonTarget(requestPath) {
+  let name;
+  try {
+    name = decodeURIComponent(requestPath.slice(1));
+  } catch {
+    return null;
+  }
+  if (!SAFE_JSON_NAME.test(name) || name.includes("..")) {
+    return null;
+  }
+  const target = path.resolve(TMP_DIR, name);
+  return path.dirname(target) === path.resolve(TMP_DIR) ? target : null;
+}
+
 app.post(/\/.*\.json$/, requireAuth, function (req, res) {
+  const target = safeJsonTarget(req.path);
+  if (!target) {
+    return res.status(400).json({ error: "Invalid file name" }).end();
+  }
   try {
     ensureTmpDir();
   } catch (err) {
     console.log(err);
     return res.status(500).send(JSON.stringify(err)).end();
   }
-  fs.writeFile(TMP_DIR + req.path, JSON.stringify(req.body), function (err) {
+  fs.writeFile(target, JSON.stringify(req.body), function (err) {
     console.log("Saved file ", req.path);
     if (err) {
       console.log(err);
