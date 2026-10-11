@@ -11,8 +11,9 @@
 - CONFIRMED: Saving writes `{ values, comments }` to `budget_<year>.json` in IndexedDB cache with `to_sync: true`.
 - CONFIRMED: Budget totals convert currencies through `valuesStore.joinValues()`.
 - CONFIRMED: `src/components/CommentsDialog.vue` creates each comment as `{ m: <text>, d: Date.now() }` (`addComment`), edits only `m` (`updateComment`), and uses `d` as the list key and as the id for edit and delete (`deleteComment` removes every comment whose `d` matches). `src/views/Budget.vue` (`addComments`) stores the emitted array unchanged, so saved files already contain `{ m, d }` objects. No author is stored.
-- CONFIRMED: `src/stores/budget.ts` types comments as `string[]` (`YearlyCommentsData`, `GroupedCommentsData`) and `loadBudgetForYear()` assigns `data.comments` without normalization. A plain-string comment therefore reaches `CommentsDialog` unchanged, where `comment.m` and `comment.d` are `undefined`: the row renders blank and cannot be edited, and several such rows share the same `undefined` key.
-- CONFIRMED: Contract status: satisfied for RT-009 (see Existing Tests). RT-033: partially satisfied. The UI already creates and edits comments in the `{ m, d }` shape without an author; legacy plain-string normalization on load, the store types, single-comment edit/delete when `d` values repeat, and the RT-033 tests are not implemented.
+- CONFIRMED: `src/stores/budget.ts` types comments as `BudgetComment[]` (`{ m, d }`, defined in `src/types.ts`) and `loadBudgetForYear()` passes `data.comments` through `normalizeBudgetComments()` (`src/helpers/persistedShapes.ts`): strings become `{ m, d: 0 }`, objects with a string `m` are kept unchanged, and other entries (numbers, null, objects without `m`) are dropped.
+- CONFIRMED: `CommentsDialog.vue` identifies a comment by its position in the list (not by `d`) for the list key, edit, and delete, so comments that share `d` are edited and deleted individually.
+- CONFIRMED: Contract status: satisfied for RT-009 and RT-033 (see Existing Tests).
 
 ## Product Contract
 - REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep budget edits pending, and do not mark the edit as saved.
@@ -62,25 +63,25 @@
 - CONFIRMED: GIVEN the local budget queue write fails, WHEN failure handling completes, THEN `budgetStore.budget[year]` and `budgetStore.comments[year]` are not replaced with the failed values.
 - CONFIRMED: GIVEN the local budget queue write fails, WHEN failure handling completes, THEN `FORM_WITH_PENDING_EVENTS` remains true and the Save action remains available.
 - CONFIRMED: GIVEN the local budget queue write fails, WHEN failure handling completes, THEN pending sync counters are not updated for that failed write.
-- RESOLVED (RT-033): GIVEN the user adds a comment to a month cell, WHEN the comments are saved, THEN the stored comment is `{ m: <text>, d: <creation epoch ms> }` with no author field. Code status: SATISFIED (`CommentsDialog.vue` `addComment`); no test.
-- RESOLVED (RT-033): GIVEN an existing comment, WHEN the user edits its text, THEN `m` changes and `d` keeps its original value. Code status: SATISFIED (`updateComment`); no test.
-- RESOLVED (RT-033): GIVEN `budget_<year>.json` stores a month's comments as plain strings, WHEN the year is loaded, THEN each string is read as `{ m: <string>, d: 0 }` and the comment text is shown in the budget comments dialog and the read-only expenses popover. Code status: NOT SATISFIED (no normalization in `loadBudgetForYear()`; the rows render blank).
-- RESOLVED (RT-033): GIVEN a month's comments mix plain strings and `{ m, d }` objects, WHEN the year is loaded, THEN strings become `{ m, d: 0 }`, objects keep their `m` and `d`, and the original order is preserved. Code status: NOT SATISFIED.
-- RESOLVED (RT-033): GIVEN a year was loaded with legacy plain-string comments, WHEN that year's budget is saved, THEN `budget_<year>.json` is written with every comment in the `{ m, d }` shape. Code status: NOT SATISFIED (depends on load normalization).
-- RESOLVED (RT-033): GIVEN a year with legacy plain-string comments, WHEN it is loaded and not saved, THEN the file is not rewritten and no sync is queued. Code status: SATISFIED (load does not write).
-- REQUIRED (RT-033): GIVEN a month cell holds several comments with the same `d` (for example, legacy comments with `d: 0`), WHEN the user edits or deletes one of them, THEN only that comment changes and the others are kept. Code status: NOT SATISFIED (`deleteComment()` filters by `d` and removes every match; edit mode and list keys also use `d`).
-- RESOLVED (RT-033): GIVEN comments exist across months in a grouped period, WHEN grouped comments are requested, THEN the result is the concatenated `{ m, d }` objects of the included months. Code status: SATISFIED at runtime; the store types still say `string[]`.
+- RESOLVED (RT-033): GIVEN the user adds a comment to a month cell, WHEN the comments are saved, THEN the stored comment is `{ m: <text>, d: <creation epoch ms> }` with no author field. Code status: SATISFIED (`CommentsDialog.vue` `addComment`); covered by `CommentsDialog.spec.ts`.
+- RESOLVED (RT-033): GIVEN an existing comment, WHEN the user edits its text, THEN `m` changes and `d` keeps its original value. Code status: SATISFIED (`updateComment`); covered by `CommentsDialog.spec.ts`.
+- RESOLVED (RT-033): GIVEN `budget_<year>.json` stores a month's comments as plain strings, WHEN the year is loaded, THEN each string is read as `{ m: <string>, d: 0 }` and the comment text is shown in the budget comments dialog and the read-only expenses popover. Code status: SATISFIED (`normalizeBudgetComments()`); covered by `budget.spec.ts` and `persistedShapes.spec.ts`.
+- RESOLVED (RT-033): GIVEN a month's comments mix plain strings and `{ m, d }` objects, WHEN the year is loaded, THEN strings become `{ m, d: 0 }`, objects keep their `m` and `d`, and the original order is preserved. Code status: SATISFIED (`budget.spec.ts`).
+- RESOLVED (RT-033): GIVEN a year was loaded with legacy plain-string comments, WHEN that year's budget is saved, THEN `budget_<year>.json` is written with every comment in the `{ m, d }` shape. Code status: SATISFIED (`budget.spec.ts`).
+- RESOLVED (RT-033): GIVEN a year with legacy plain-string comments, WHEN it is loaded and not saved, THEN the file is not rewritten and no sync is queued. Code status: SATISFIED (load does not write); covered by `budget.spec.ts`.
+- REQUIRED (RT-033): GIVEN a month cell holds several comments with the same `d` (for example, legacy comments with `d: 0`), WHEN the user edits or deletes one of them, THEN only that comment changes and the others are kept. Code status: SATISFIED (`CommentsDialog.vue` identifies comments by list position); covered by `CommentsDialog.spec.ts`.
+- RESOLVED (RT-033): GIVEN comments exist across months in a grouped period, WHEN grouped comments are requested, THEN the result is the concatenated `{ m, d }` objects of the included months. Code status: SATISFIED (`budget.spec.ts`; store types are `BudgetComment[]`).
 
 ## Existing Tests Related To This Feature
-- CONFIRMED: `src/stores/__tests__/budget.spec.ts` covers load, grouping, comments, persistence, and pending sync update.
+- CONFIRMED: `src/stores/__tests__/budget.spec.ts` covers load, grouping, comments (including the RT-033 `{ m, d }` shape and legacy-string normalization), persistence, and pending sync update. `src/components/__tests__/CommentsDialog.spec.ts` covers add, edit, delete, and shared-`d` comments.
 - CONFIRMED: Budget store tests assert that rejected `idb.saveJsonFile()` calls propagate failure and do not update `budget`, `comments`, or pending sync counters.
 - CONFIRMED: `src/views/__tests__/Budget.spec.ts` mounts `Budget.vue` and covers category/expense rows, Save disabled until an edit, pending row and navigation guard after an edit, the `setBudgetForYear()` payload, ignored negative values, and the RT-009 failed local queue write (error message, guard still pending, Save still available).
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: Rendered `Budget.vue` tests cover editing, pending/navigation state, and save (`Budget.spec.ts`); the context menu (apply next, remove) and comments dialog are not rendered in tests.
+- CONFIRMED: Rendered `Budget.vue` tests cover editing, pending/navigation state, and save (`Budget.spec.ts`); the context menu (apply next, remove) is not rendered in tests, and the comments dialog is mocked there (it is tested on its own in `CommentsDialog.spec.ts`).
 - CONFIRMED: No tests for currency-converted budget totals.
-- CONFIRMED: RT-033 test expectations (none implemented yet):
+- CONFIRMED: RT-033 tests (implemented in `budget.spec.ts`, `persistedShapes.spec.ts`, and `CommentsDialog.spec.ts`):
   - `src/stores/__tests__/budget.spec.ts`: change the comment fixtures from plain strings (`["note"]`, `["a", "b", "c"]`, `["ok"]`, `["existing"]`) to `{ m, d }` objects.
   - `src/stores/__tests__/budget.spec.ts`: loading plain-string comments yields `{ m: <string>, d: 0 }`; a mixed array keeps order, converts strings, and leaves objects (including their `d`) unchanged; `setBudgetForYear()` after a legacy load writes only `{ m, d }` objects; grouping concatenates `{ m, d }` objects across months.
   - Load-normalizer unit tests if the normalizer lives in `src/helpers/persistedShapes.ts`, following the existing `normalize*` helper tests.

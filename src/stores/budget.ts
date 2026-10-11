@@ -1,17 +1,23 @@
 import { defineStore } from "pinia";
 import { ref, type Ref, toRaw } from "vue";
 import { readJsonFile } from "@/helpers/files";
-import type { Period, PeriodParams } from "@/types";
+import type { BudgetComment, Period, PeriodParams } from "@/types";
 import { useAccountsStore } from "@/stores/accounts";
 import { useStorageStore } from "@/stores/storage";
 import { groupDataByPeriods } from "@/helpers/groupData";
 import * as idb from "@/helpers/idb";
-import { assertRecordFile } from "@/helpers/persistedShapes";
+import {
+  assertRecordFile,
+  normalizeBudgetComments,
+} from "@/helpers/persistedShapes";
 
 type YearlyBudgetData = Record<string, Record<number, number>>;
 type GroupedBudgetData = Record<string, number[]>;
-type YearlyCommentsData = Record<string, Record<number, string[] | undefined>>;
-type GroupedCommentsData = Record<string, string[][]>;
+type YearlyCommentsData = Record<
+  string,
+  Record<number, BudgetComment[] | undefined>
+>;
+type GroupedCommentsData = Record<string, BudgetComment[][]>;
 
 export const useBudgetStore = defineStore("budget", () => {
   const budget: Ref<Record<number, YearlyBudgetData>> = ref({});
@@ -35,7 +41,9 @@ export const useBudgetStore = defineStore("budget", () => {
           .reduce((ant, v) => ant + v, 0),
     );
 
-    const groupedComments: GroupedCommentsData = groupDataByPeriods<string[]>(
+    const groupedComments: GroupedCommentsData = groupDataByPeriods<
+      BudgetComment[]
+    >(
       type,
       numPeriods,
       params,
@@ -44,7 +52,7 @@ export const useBudgetStore = defineStore("budget", () => {
         months
           .map((m) => comments.value?.[year]?.[key]?.[m] || [])
           .filter((m) => m?.length > 0)
-          .reduce((ant, v) => [...ant, ...v], [] as string[]),
+          .reduce((ant, v) => [...ant, ...v], [] as BudgetComment[]),
     );
     return { budget: groupedBudget, comments: groupedComments };
   }
@@ -59,7 +67,7 @@ export const useBudgetStore = defineStore("budget", () => {
     const data = (await readJsonFile(`budget_${year}.json`, !reload)) || {};
     assertRecordFile(`budget_${year}.json`, data);
     budget.value[year] = data.values || {};
-    comments.value[year] = data.comments || {};
+    comments.value[year] = normalizeBudgetComments(data.comments);
     return budget.value[year] || {};
   }
 

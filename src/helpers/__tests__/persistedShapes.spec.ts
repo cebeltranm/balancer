@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AccountType } from "@/types";
 import {
   createEmptyBalanceEntry,
+  normalizeBudgetComments,
   normalizeAccount,
   normalizeConfig,
   normalizeTransaction,
@@ -89,5 +90,25 @@ describe("persisted shape normalizers", () => {
         },
       },
     });
+  });
+
+  it("normalizes budget comments: strings become { m, d: 0 }, objects are kept, junk is dropped (RT-033)", () => {
+    expect(
+      normalizeBudgetComments({
+        food: {
+          1: ["legacy", { m: "kept", d: 42 }, 7, null, { d: 1 }],
+          2: "not-a-list",
+        },
+        bad: "not-months",
+      }),
+    ).toEqual({
+      food: {
+        1: [
+          { m: "legacy", d: 0 },
+          { m: "kept", d: 42 },
+        ],
+      },
+    });
+    expect(normalizeBudgetComments(undefined)).toEqual({});
   });
 });

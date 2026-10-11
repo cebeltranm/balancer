@@ -116,7 +116,7 @@
 - CONFIRMED: Purpose is yearly budget values and budget comments by expense account.
 - RESOLVED (RT-033): Shape is `{ values: { [accountId]: { [monthNumber]: number } }, comments: { [accountId]: { [monthNumber]: BudgetComment[] } } }`, where `BudgetComment` is `{ m: string, d: number }`: `m` is the comment text and `d` is the creation time in epoch milliseconds (unchanged by edits). There is no author field.
 - RESOLVED (RT-033): Legacy files may store a month's comments as plain strings. On load each string is read as `{ m: <string>, d: 0 }` (`d: 0` means creation time unknown); objects keep their `m` and `d`. The file is rewritten in the object shape only on the next save of that year. `d` is not unique within a month, so it must not be the only identity used to edit or delete a comment.
-- CONFIRMED: Code status for RT-033: the budget UI already writes `{ m, d }` objects; `src/stores/budget.ts` still types comments as `string[]` and does not normalize legacy strings on load. See `specs/features/budget.md`.
+- CONFIRMED: Code status for RT-033: satisfied. `src/stores/budget.ts` normalizes comments on load via `normalizeBudgetComments()` in `src/helpers/persistedShapes.ts`; entries that are neither a string nor an object with a string `m` are dropped.
 - CONFIRMED: Missing `values` or `comments` are treated as empty objects.
 - CONFIRMED: Budget grouping sums values across month/quarter/year periods and concatenates comments.
 - CONFIRMED: Budget UI edits month cells, can apply a month value to subsequent months, remove a month value, and add/remove comment arrays.
