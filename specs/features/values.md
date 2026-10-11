@@ -14,18 +14,24 @@
 - CONFIRMED: Sync can fetch currency rates from fawazahmed0 currency APIs, crypto values in BTC, and stock prices from AlphaVantage, MarketStack, or RapidAPI/Yahoo Finance depending on `config.stock_api`.
 - CONFIRMED: Active MXN accounts produce a USD-to-MXN exchange-rate row that can be edited, synchronized, and saved with the `mxn` currency code.
 - CONFIRMED: RT-012 is implemented: external value sync failures are shown as one generic user-facing error.
-- CONFIRMED: Contract status: satisfied for RT-011, RT-012, and RT-013.
+- CONFIRMED: Rows are currently shown in unsorted order: Currency rows first in the order the currencies first appear among active accounts, then investment/fixed-asset rows in `accounts.json` key order (`Values.vue` `recalculateValues()`). No column is sortable.
+- CONFIRMED: Contract status: satisfied for RT-011, RT-012, and RT-013. RT-040 (row order) is NOT YET IMPLEMENTED: the code does not sort rows.
 
 ## Product Contract
 - REQUIRED (RT-012): Any external value sync failure shows one generic error, not per row or per provider.
 - REQUIRED (RT-013): Value lookup falls back to prior months only up to `maxLevels` (default 3; non-USD cross-rate legs 2), with no warning solely because a prior-month value was used.
 - REQUIRED (RT-011): Missing rates are never silently coerced to zero; an explicit `0` is valid data.
+- RESOLVED (RT-040): The Values table has one fixed default row order. Currency rows form a block at the top, ordered by currency code. Investment and fixed-asset rows follow, ordered by `entity`, then `name`, then account `id`. Accounts with no entity (missing or blank) come after all accounts that have an entity, ordered by `name`, then `id`.
+- RESOLVED (RT-040): Text comparison uses `localeCompare` with `{ sensitivity: "base", numeric: true }`, so case and accents are ignored and digit runs compare numerically ("Fund 2" before "Fund 10"). `id` breaks ties so the order is stable.
+- RESOLVED (RT-040): Ordering is display-only. It does not change `accounts.json`, `activeAccounts()` or its other callers, the keys written to `values_<year>.json`, or sync behavior. Hidden or inactive accounts stay excluded as before. Editing a value never reorders rows. There are no user-sortable columns.
+- RESOLVED (RT-040): The Entity and Type filter option lists are built from the ordered rows, so Entity options are alphabetical by the same comparison. Type options keep first-appearance order in the ordered rows.
 
 ## User Flows
 - CONFIRMED: Select month period and inspect current rates/prices with month-over-month and year-over-year deltas.
 - CONFIRMED: Edit a non-negative value, mark the row pending, and save.
 - CONFIRMED: Click sync to attempt external currency/crypto/stock updates.
 - CONFIRMED: Filter the table by entity or type.
+- RESOLVED (RT-040): Rows appear in the fixed order defined in the Product Contract.
 
 ## Inputs And Outputs
 - CONFIRMED: Inputs are account metadata, existing yearly values, selected period, external API responses, and stock API settings.
@@ -67,6 +73,14 @@
 - CONFIRMED: GIVEN the user triggers external value sync, WHEN any external provider returns a 200 response with missing or malformed expected data, THEN the values view shows one generic external value sync error.
 - CONFIRMED: GIVEN multiple providers fail during one external value sync attempt, THEN the values view shows only one generic error and does not expose per-row or per-provider failure details.
 - CONFIRMED: GIVEN an active MXN account and a successful currency-provider response containing `usd.mxn`, WHEN the user synchronizes and saves values, THEN the MXN rate is persisted as `{ usd: { mxn: number } }`.
+- RESOLVED (RT-040): GIVEN active accounts for currencies MXN and COP and several investment accounts, WHEN the values view renders, THEN the Currency rows appear first, ordered by currency code (COP before MXN), followed by the investment and fixed-asset rows.
+- RESOLVED (RT-040): GIVEN investment accounts with entities "Zeta Bank" and "alpha bank" (accounts.json order: Zeta first), WHEN rendered, THEN "alpha bank" rows come before "Zeta Bank" rows, and within one entity rows are ordered by name.
+- RESOLVED (RT-040): GIVEN accounts whose entity or name differ only by case or accents ("Álamo" and "alamo"), WHEN rendered, THEN they compare as equal and `id` decides their order.
+- RESOLVED (RT-040): GIVEN two accounts of the same entity named "Fund 2" and "Fund 10", WHEN rendered, THEN "Fund 2" appears before "Fund 10".
+- RESOLVED (RT-040): GIVEN accounts with a missing or blank entity, WHEN rendered, THEN they appear after every account that has an entity, ordered by name.
+- RESOLVED (RT-040): GIVEN two accounts with the same entity and name, WHEN rendered, THEN the one with the lower `id` appears first on every render.
+- RESOLVED (RT-040): GIVEN the user edits a value, WHEN the edit completes, THEN row order is unchanged.
+- RESOLVED (RT-040): GIVEN rows are displayed in sorted order, WHEN the user saves, THEN the persisted values contain the same ids and numbers as before, and the Entity filter options are in alphabetical order.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` covers value lookup, zero handling, load/save, join values, and current-month bootstrap.
@@ -80,7 +94,9 @@
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` verifies prior-month fallback does not show a warning by itself.
 - CONFIRMED: No rendered `Values.vue` tests for manual editing, filtering, or pending-row styling; successful MXN external sync and save are covered.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
+- GAP (RT-040): No test covers Values row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order stable under edit, and alphabetical Entity filter options. Add to `src/views/__tests__/Values.spec.ts` before the code change.
 
 ## Product Questions
 - RESOLVED: RT-012 external value sync failures should be shown as a single generic error, not per row or per provider.
+- RESOLVED: RT-040 Values rows use one fixed default order (Currency block by code, then entity, then name, then id; no-entity rows last), compared with `localeCompare(..., { sensitivity: "base", numeric: true })`.
 - RESOLVED: RT-013 values fallback window uses the current implementation rule: `getValue()` searches the selected month and prior months up to `maxLevels` attempts, with the default `maxLevels = 3`; non-USD cross-rate legs use `maxLevels = 2`. The app must not show a warning solely because the selected period used a prior-month value.
