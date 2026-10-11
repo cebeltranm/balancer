@@ -158,8 +158,14 @@ describe("local dev server (RT-027, RT-028)", () => {
 
   describe("JSON write path safety (RT-028)", () => {
     // Anything outside `.tmp/` that a traversal could create.
-    const outside = () => listAll(root).filter((f) => !f.startsWith(".tmp"));
-    const serverFiles = ["node_modules", "server", "server/index.js"];
+    const outside = () => [
+      ...fs
+        .readdirSync(root)
+        .filter((f) => ![".tmp", "node_modules", "server"].includes(f)),
+      ...fs
+        .readdirSync(path.join(root, "server"))
+        .filter((f) => f !== "index.js"),
+    ];
 
     async function expectRejected(rawPath: string) {
       await startServer();
@@ -168,7 +174,7 @@ describe("local dev server (RT-027, RT-028)", () => {
       expect(res.status).toBe(400);
       expect(JSON.parse(res.body)).toHaveProperty("error");
       expect(listAll(tmpDir)).toEqual(before);
-      expect(outside().filter((f) => !serverFiles.includes(f))).toEqual([]);
+      expect(outside()).toEqual([]);
       expect(fs.existsSync(path.join(path.dirname(root), "escape.json"))).toBe(
         false,
       );
