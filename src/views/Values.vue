@@ -14,7 +14,7 @@
   </Toolbar>
   <div class="values">
     <DataTable
-      :value="values"
+      :value="sortedValues"
       @cell-edit-complete="onValueEdit"
       responsiveLayout="scroll"
       :resizableColumns="true"
@@ -170,10 +170,46 @@ const filters = ref({
   type: { value: null, matchMode: FilterMatchMode.IN },
 });
 
+function compareText(left = "", right = "") {
+  return left.localeCompare(right, undefined, {
+    sensitivity: "base",
+    numeric: true,
+  });
+}
+
+// Display order (RT-040): Currency rows by code, then rows with an entity by
+// entity/name/id, then rows without an entity by name/id.
+function compareRows(left: any, right: any) {
+  const leftIsCurrency = left.type === "Currency";
+  const rightIsCurrency = right.type === "Currency";
+  if (leftIsCurrency || rightIsCurrency) {
+    if (leftIsCurrency !== rightIsCurrency) {
+      return leftIsCurrency ? -1 : 1;
+    }
+    return compareText(left.currency, right.currency);
+  }
+  const leftEntity = left.entity?.trim() ?? "";
+  const rightEntity = right.entity?.trim() ?? "";
+  if (!leftEntity !== !rightEntity) {
+    return leftEntity ? -1 : 1;
+  }
+  return (
+    compareText(leftEntity, rightEntity) ||
+    compareText(left.name, right.name) ||
+    compareText(left.id, right.id)
+  );
+}
+
+// Sorted copy for display only; rows are shared with `values`, which keeps
+// the saved payload and sync lookups in their original order.
+const sortedValues = computed(() => [...values.value].sort(compareRows));
+
 const entities = computed(() => [
-  ...new Set(values.value.map((v) => v.entity)),
+  ...new Set(sortedValues.value.map((v) => v.entity)),
 ]);
-const types = computed(() => [...new Set(values.value.map((v) => v.type))]);
+const types = computed(() => [
+  ...new Set(sortedValues.value.map((v) => v.type)),
+]);
 
 watch(
   () => valuesStore.values,

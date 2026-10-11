@@ -39,6 +39,7 @@
 - CONFIRMED: Account/data-model/account behavior is covered by `src/stores/__tests__/accounts.spec.ts`.
 - CONFIRMED: Transaction load/save/delete and sync merge behavior is covered by `src/stores/__tests__/transactions.spec.ts` and `src/helpers/__tests__/sync.spec.ts`.
 - CONFIRMED: Values lookup/bootstrap/save behavior is covered by `src/stores/__tests__/values.spec.ts`.
+- CONFIRMED: Values row order (RT-040) is covered by `src/views/__tests__/ValuesRowOrder.spec.ts`.
 - CONFIRMED: Budget load/group/save behavior is covered by `src/stores/__tests__/budget.spec.ts`.
 - CONFIRMED: Balance grouping/current-month recalculation behavior is covered by `src/stores/__tests__/balance.spec.ts`.
 - CONFIRMED: Config composition and save behavior is covered by `src/stores/__tests__/config.spec.ts`.

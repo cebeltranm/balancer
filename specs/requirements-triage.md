@@ -15,6 +15,7 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
 | RT-035 | Error UX consistency | `product-overview.md` Highest-Risk Product Decisions; `spec-coverage.md` Highest-Priority Product Owner Questions | Is error UX for sync, provider login, WebAuthn, and external value providers specified consistently? | Yes. Mark it resolved and point to RT-002, RT-012, RT-020, and `validation-and-errors.md`. | Document only | High | Resolved |
 | RT-036 | Failed sync recovery | `spec-coverage.md` Missing Product Flows; `product-overview.md` Migration / Compatibility | What recovery applies when sync fails after local writes were accepted? | Already decided by RT-002 (and RT-020 for credentials). Mark it resolved. | Document only | High | Resolved |
 | RT-037 | Generated service worker | `architecture.md` PWA Behavior | How is runtime service-worker behavior after VitePWA generation specified? | Already decided by RT-025 (build-output test plus console-only registration errors). Mark it resolved. | Document only | High | Resolved |
+| RT-040 | Values row order | `features/values.md` Product Contract | In what order does the Values table list rows? | Currency rows first by currency code, then investment/fixed-asset rows by entity (no entity last), then name, then id. Comparison ignores case and accents and is numeric-aware. | Code change | High | Resolved |
 
 Two more open questions turned up during the review. They are not marked `UNCLEAR` in any spec yet, but they need the same kind of decision:
 
@@ -128,3 +129,23 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Risk if left unclear:** Contributors may edit or test files that never run, or assume custom service-worker logic exists. That conflicts with the RT-025 statement that generated output is the contract.
 - **Proposed answer:** Record them as unused examples and out of scope in `specs/architecture.md` and `spec-coverage.md`. Remove them, and the commented config, in a separate cleanup task if the product agrees.
 - **Bucket / confidence:** Document only / Medium.
+
+## RT-040: Values table row order
+
+- **Question:** In what order should the Values table list its rows?
+- **Current behavior:**
+  - `src/views/Values.vue` `recalculateValues()` builds Currency rows first (in the order currencies first appear among active accounts), then investment and fixed-asset rows. Their order comes from `accountsStore.activeAccounts()`, which follows `Object.keys(accounts.json)`.
+  - No column is `sortable` and nothing sorts the rows.
+  - `activeAccounts()` is shared with `transactionForms.ts`, `portafolio/index.vue`, and `accountsGroupByCategories()`, so it must not be sorted.
+  - `save()` builds the `values_<year>.json` payload by iterating the rows, so sorting the row array itself would change persisted key order.
+- **Evidence:** `src/views/Values.vue`; `src/stores/accounts.ts` (`activeAccounts`); `src/views/__tests__/Values.spec.ts` (no ordering test).
+- **Risk if left unclear:** Sorting in the wrong layer would reorder accounts in other screens or the persisted file, and ties, case, accents, and numeric names would order unpredictably.
+- **Decision:** RESOLVED (RT-040). Accepted as follows:
+  - Currency rows form a block at the top, sorted by currency code. Investment and fixed-asset rows follow, sorted by entity, then name, then account id.
+  - Rows with no (or blank) entity come after all rows with an entity, sorted by name, then id.
+  - Comparison uses `localeCompare` with `{ sensitivity: "base", numeric: true }`.
+  - Ordering is display-only and fixed (no sortable columns). Inactive and hidden accounts remain excluded. Editing never reorders rows. Persisted files, `activeAccounts()`, and sync are unchanged.
+  - Entity filter options are alphabetical because they are built from the ordered rows; other filter lists keep their current order.
+  - Rule placement: a line in `specs/features/values.md` only. Promote to a shared ordering section if another screen adopts it.
+  - Code status: satisfied. `compareRows()` and the `sortedValues` display copy in `src/views/Values.vue`; tests in `src/views/__tests__/ValuesRowOrder.spec.ts`.
+- **Bucket / confidence:** Code change / High.
