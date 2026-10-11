@@ -10,7 +10,7 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
 
 | ID | Area | Spec locations | Question | Proposed answer | Bucket | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| RT-033 | Budget comments | `features/budget.md` Product Questions; `data-model.md` budget section | Should budget comments keep author/time metadata, or are plain strings enough? | Keep message plus creation time (`{ m, d }`), no author. Make it the documented shape and accept legacy plain strings on load. | Code change likely | High | Open |
+| RT-033 | Budget comments | `features/budget.md` Product Questions; `data-model.md` budget section | Should budget comments keep author/time metadata, or are plain strings enough? | Keep message plus creation time (`{ m, d }`), no author. Make it the documented shape and accept legacy plain strings on load. | Code change likely | High | Resolved |
 | RT-034 | Legacy account types | `features/accounts.md` Product Questions; `data-model.md` `accounts.json` section | Should legacy account type strings be migrated, tolerated, or rejected on load? | Migrate a fixed alias list (`cash`, `SavingAccount`) in memory on load. Keep rejecting any other unknown type. | Code change likely | Medium | Open |
 | RT-035 | Error UX consistency | `product-overview.md` Highest-Risk Product Decisions; `spec-coverage.md` Highest-Priority Product Owner Questions | Is error UX for sync, provider login, WebAuthn, and external value providers specified consistently? | Yes. Mark it resolved and point to RT-002, RT-012, RT-020, and `validation-and-errors.md`. | Document only | High | Resolved |
 | RT-036 | Failed sync recovery | `spec-coverage.md` Missing Product Flows; `product-overview.md` Migration / Compatibility | What recovery applies when sync fails after local writes were accepted? | Already decided by RT-002 (and RT-020 for credentials). Mark it resolved. | Document only | High | Resolved |
@@ -41,6 +41,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
   - REQUIRED: On load, a plain-string comment is read as `{ m: <string>, d: 0 }` (versionless compatibility, see RT-004). It is written back in the object shape on the next save of that year.
   - Update `specs/data-model.md`, the budget store types, and the budget tests to match. Add a `CommentsDialog` component test for add, edit, and delete.
 - **Bucket / confidence:** Code change likely (types, a load normalizer, tests) / High.
+- **Decision:** RESOLVED (RT-033). Accepted as proposed, with legacy plain strings read as `{ m: <string>, d: 0 }`. Because several legacy comments in one cell then share `d: 0`, `specs/features/budget.md` also requires that editing or deleting a comment changes only that comment. `specs/features/budget.md` (Product Contract, Acceptance Criteria, Missing Tests, Product Questions) and `specs/data-model.md` (`budget_<year>.json`) now carry `RESOLVED (RT-033)` instead of the `UNCLEAR` marker. Code status: partially satisfied. Remaining implementation: comment types in `src/stores/budget.ts`, a load normalizer, single-comment edit/delete in `src/components/CommentsDialog.vue`, updated `budget.spec.ts`, and a new `CommentsDialog.spec.ts`.
 
 ## RT-034: Legacy account type strings
 
