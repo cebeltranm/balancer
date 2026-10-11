@@ -51,7 +51,7 @@ On first use, complete these steps in order:
 
 ## Spec-Driven Development
 
-Product behavior is defined in [`specs/`](specs/). Every change starts from a spec: fixes cite the Product Contract line they restore, small changes edit the feature spec in the same PR, and new features get their own spec PR before any code. See [`specs/README.md`](specs/README.md) for the full workflow.
+Product behavior is defined in [`specs/`](specs/). Every change starts from a spec: fixes cite the Product Contract line they restore, small changes edit the feature spec in the same PR, and new features get their own spec PR before any code. See the "Spec-driven workflow" section of [`AGENTS.md`](AGENTS.md) for the full workflow.
 
 ## Scripts
 
