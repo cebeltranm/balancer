@@ -34,6 +34,13 @@ This repository contains the Balancer application built with Vue 3, TypeScript, 
 - Do not modify deployment or release behavior unless explicitly asked.
 - Do not add new production dependencies unless necessary for the task.
 
+## Spec-driven workflow
+- Product behavior is defined in `specs/`. Follow `specs/README.md` for every change.
+- Read the relevant specs before changing code.
+- Do not implement behavior that is not described in a spec. Update the spec first.
+- If a spec is ambiguous, stop and list the questions, or record them in `specs/requirements-triage.md`.
+- Keep the spec, tests, and code in agreement in the same PR.
+
 ## Project structure
 - Main application entry: `src/main.ts`
 - Root app component: `src/App.vue`
@@ -45,6 +52,7 @@ This repository contains the Balancer application built with Vue 3, TypeScript, 
 - Helpers/utilities: `src/helpers/`
 - Plugins: `src/plugins/`
 - Shared types: `src/types.ts`
+- Specs: `specs/`
 - Static/public assets: `public/`
 - Server-related code: `server/`
 

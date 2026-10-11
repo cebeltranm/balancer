@@ -49,6 +49,10 @@ On first use, complete these steps in order:
 4. **Review/edit accounts**: open Accounts and adjust the seeded accounts (names, types, currencies, hide/unhide). The seed is a starting template.
 5. **Confirm base currency/config**: check each account's currency and review `config.json` in Settings (`stock_api`, `inv_composition`). There is no separate base-currency setting.
 
+## Spec-Driven Development
+
+Product behavior is defined in [`specs/`](specs/). Every change starts from a spec: fixes cite the Product Contract line they restore, small changes edit the feature spec in the same PR, and new features get their own spec PR before any code. See [`specs/README.md`](specs/README.md) for the full workflow.
+
 ## Scripts
 
 - `npm run dev`: start local dev server
