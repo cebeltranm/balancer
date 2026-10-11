@@ -14,8 +14,8 @@
 - CONFIRMED: Sync can fetch currency rates from fawazahmed0 currency APIs, crypto values in BTC, and stock prices from AlphaVantage, MarketStack, or RapidAPI/Yahoo Finance depending on `config.stock_api`.
 - CONFIRMED: Active MXN accounts produce a USD-to-MXN exchange-rate row that can be edited, synchronized, and saved with the `mxn` currency code.
 - CONFIRMED: RT-012 is implemented: external value sync failures are shown as one generic user-facing error.
-- CONFIRMED: Rows are currently shown in unsorted order: Currency rows first in the order the currencies first appear among active accounts, then investment/fixed-asset rows in `accounts.json` key order (`Values.vue` `recalculateValues()`). No column is sortable.
-- CONFIRMED: Contract status: satisfied for RT-011, RT-012, and RT-013. RT-040 (row order) is NOT YET IMPLEMENTED: the code does not sort rows.
+- CONFIRMED: RT-040 is implemented: `Values.vue` binds the table to `sortedValues`, a sorted copy of the rows (`compareRows()`): Currency rows by currency code, then rows with an entity by entity, name, id, then rows without an entity by name, id, using `localeCompare` with `{ sensitivity: "base", numeric: true }`. `values` itself, `save()`, sync, and `activeAccounts()` keep their original order. The Entity and Type filter options are built from `sortedValues`. No column is sortable.
+- CONFIRMED: Contract status: satisfied for RT-011, RT-012, RT-013, and RT-040 (row order).
 
 ## Product Contract
 - REQUIRED (RT-012): Any external value sync failure shows one generic error, not per row or per provider.
@@ -85,6 +85,7 @@
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` covers value lookup, zero handling, load/save, join values, and current-month bootstrap.
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers value-dependent balance recalculation paths indirectly.
+- CONFIRMED: `src/views/__tests__/ValuesRowOrder.spec.ts` covers RT-040 row order (see Missing Tests / Coverage Gaps).
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` covers generic external value sync errors for rejected provider requests, non-200 responses, malformed payloads, and multiple failures, plus successful MXN rate synchronization and persistence.
 
 ## Missing Tests / Coverage Gaps
@@ -94,7 +95,7 @@
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` verifies prior-month fallback does not show a warning by itself.
 - CONFIRMED: No rendered `Values.vue` tests for manual editing, filtering, or pending-row styling; successful MXN external sync and save are covered.
 - CONFIRMED: No test verifies balance recalculation is called by the values view save action.
-- GAP (RT-040): No test covers Values row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order stable under edit, and alphabetical Entity filter options. Tests are in `src/views/__tests__/ValuesRowOrder.spec.ts` (its own file because the accounts mock is per file); 8 of 9 fail until the code change.
+- CONFIRMED (RT-040): `src/views/__tests__/ValuesRowOrder.spec.ts` verifies the Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, id tie-break, order unchanged by an edit, unchanged saved payload, and Entity/Type filter options built from the ordered rows.
 
 ## Product Questions
 - RESOLVED: RT-012 external value sync failures should be shown as a single generic error, not per row or per provider.

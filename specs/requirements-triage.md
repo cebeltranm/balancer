@@ -15,7 +15,7 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
 | RT-035 | Error UX consistency | `product-overview.md` Highest-Risk Product Decisions; `spec-coverage.md` Highest-Priority Product Owner Questions | Is error UX for sync, provider login, WebAuthn, and external value providers specified consistently? | Yes. Mark it resolved and point to RT-002, RT-012, RT-020, and `validation-and-errors.md`. | Document only | High | Resolved |
 | RT-036 | Failed sync recovery | `spec-coverage.md` Missing Product Flows; `product-overview.md` Migration / Compatibility | What recovery applies when sync fails after local writes were accepted? | Already decided by RT-002 (and RT-020 for credentials). Mark it resolved. | Document only | High | Resolved |
 | RT-037 | Generated service worker | `architecture.md` PWA Behavior | How is runtime service-worker behavior after VitePWA generation specified? | Already decided by RT-025 (build-output test plus console-only registration errors). Mark it resolved. | Document only | High | Resolved |
-| RT-040 | Values row order | `features/values.md` Product Contract | In what order does the Values table list rows? | Currency rows first by currency code, then investment/fixed-asset rows by entity (no entity last), then name, then id. Comparison ignores case and accents and is numeric-aware. | Code change | High | Resolved (code pending) |
+| RT-040 | Values row order | `features/values.md` Product Contract | In what order does the Values table list rows? | Currency rows first by currency code, then investment/fixed-asset rows by entity (no entity last), then name, then id. Comparison ignores case and accents and is numeric-aware. | Code change | High | Resolved |
 
 Two more open questions turned up during the review. They are not marked `UNCLEAR` in any spec yet, but they need the same kind of decision:
 
@@ -147,5 +147,5 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
   - Ordering is display-only and fixed (no sortable columns). Inactive and hidden accounts remain excluded. Editing never reorders rows. Persisted files, `activeAccounts()`, and sync are unchanged.
   - Entity filter options are alphabetical because they are built from the ordered rows; other filter lists keep their current order.
   - Rule placement: a line in `specs/features/values.md` only. Promote to a shared ordering section if another screen adopts it.
-  - Code status: not implemented. Tests: `ValuesRowOrder.spec.ts`. Next: a sorted display copy in `Values.vue`.
+  - Code status: satisfied. `compareRows()` and the `sortedValues` display copy in `src/views/Values.vue`; tests in `src/views/__tests__/ValuesRowOrder.spec.ts`.
 - **Bucket / confidence:** Code change / High.

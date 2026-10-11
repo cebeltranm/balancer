@@ -76,7 +76,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - COVERED: External provider failures show one generic error; prior-month fallback shows no warning; MXN sync and save (`src/views/__tests__/Values.spec.ts`).
   - GAP: Saving values triggers balance recalculation.
   - GAP: Manual editing and pending-row indication.
-  - GAP (RT-040): Row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order unchanged after an edit, alphabetical Entity filter options (`ValuesRowOrder.spec.ts`).
+  - COVERED (RT-040): Row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order unchanged after an edit, alphabetical Entity filter options (`ValuesRowOrder.spec.ts`).
 - Unit — COVERED: default and USD cross-rate fallback windows (`src/stores/__tests__/values.spec.ts`).
 - Manual: real external rate/stock providers respond and are parsed (requires network; never automated).
 
