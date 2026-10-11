@@ -1,7 +1,7 @@
 <template>
   <Popover v-if="props.readOnly" ref="readOnlyList">
     <ul class="m-0 p-1 flex flex-column gap-2 w-full">
-      <template v-for="comment in comments" :key="comment.d">
+      <template v-for="(comment, index) in comments" :key="index">
         <li
           :class="[
             'p-2 hover:surface-hover flex align-items-center justify-content-between border-bottom-1 surface-border',
@@ -10,7 +10,7 @@
           <p
             class="flex-grow-1 flex"
             @click="
-              editing = comment.d;
+              editing = index;
               value = comment.m;
             "
           >
@@ -33,13 +33,13 @@
     }"
   >
     <ul class="m-0 p-1 flex flex-column gap-2 w-full">
-      <template v-for="comment in comments" :key="comment.d">
+      <template v-for="(comment, index) in comments" :key="index">
         <li
           :class="[
             'p-2 hover:surface-hover flex align-items-center justify-content-between border-bottom-1 surface-border',
           ]"
         >
-          <div v-if="editing === comment.d" class="flex-grow-1 flex">
+          <div v-if="editing === index" class="flex-grow-1 flex">
             <Textarea
               class="mr-2"
               v-model="value"
@@ -52,32 +52,32 @@
             v-else
             class="flex-grow-1 flex"
             @click="
-              editing = comment.d;
+              editing = index;
               value = comment.m;
             "
           >
             {{ comment.m }}
           </p>
           <div class="flex-none flex">
-            <!-- <Button v-if="editing !== comment.d" icon="pi pi-file-edit" size="small" aria-label="Filter" @click="editing=comment.d;value = comment.m"/> -->
+            <!-- <Button v-if="editing !== index" icon="pi pi-file-edit" size="small" aria-label="Filter" @click="editing=comment.d;value = comment.m"/> -->
             <Button
-              v-if="editing !== comment.d"
+              v-if="editing !== index"
               icon="pi pi-eraser"
               size="small"
               severity="danger"
               aria-label="Filter"
-              @click="deleteComment(comment.d)"
+              @click="deleteComment(index)"
             />
 
             <Button
-              v-if="editing == comment.d"
+              v-if="editing === index"
               icon="pi pi-check"
               size="small"
               aria-label="Filter"
-              @click="editing = updateComment(comment.d)"
+              @click="updateComment(index)"
             />
             <Button
-              v-if="editing == comment.d"
+              v-if="editing === index"
               icon="pi pi-times"
               size="small"
               severity="danger"
@@ -91,7 +91,7 @@
         </li>
       </template>
       <li
-        v-if="!editing"
+        v-if="editing === undefined"
         :class="[
           'p-2 hover:surface-hover flex align-items-center justify-content-between',
         ]"
@@ -128,6 +128,7 @@
 <script lang="ts" setup>
 import { ref, toRaw } from "vue";
 import type { Ref } from "vue";
+import type { BudgetComment } from "@/types";
 
 const emit = defineEmits(["update:modelValue"]);
 
@@ -139,12 +140,12 @@ const readOnlyList = ref();
 
 const visible = ref(false);
 const value: any = ref("");
-const comments: Ref<any[]> = ref([]);
-const editing: any = ref("");
+const comments: Ref<BudgetComment[]> = ref([]);
+const editing: Ref<number | undefined> = ref(undefined);
 
 function handleSubmit() {
   if (value.value && value.value.trim() !== "") {
-    if (editing.value) {
+    if (editing.value !== undefined) {
       updateComment(editing.value);
     } else {
       addComment();
@@ -160,23 +161,23 @@ function addComment() {
     value.value = "";
   }
 }
-function deleteComment(d: any) {
-  comments.value = comments.value.filter((c) => c.d !== d);
+function deleteComment(index: number) {
+  comments.value = comments.value.filter((_, i) => i !== index);
 }
-function updateComment(d: any) {
+function updateComment(index: number) {
   if (value.value && value.value.trim() !== "") {
-    const comment = comments.value.find((c) => c.d === d);
+    const comment = comments.value[index];
     if (comment) {
       comment.m = value.value;
     }
     editing.value = undefined;
     value.value = "";
   } else {
-    deleteComment(d);
+    deleteComment(index);
   }
 }
 
-function show(c: any[], $event?: any) {
+function show(c: BudgetComment[], $event?: any) {
   comments.value = c || [];
   value.value = "";
   editing.value = undefined;

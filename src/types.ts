@@ -118,3 +118,8 @@ export interface BalanceEntry {
   out_local: number;
   units: number;
 }
+
+export interface BudgetComment {
+  m: string;
+  d: number;
+}

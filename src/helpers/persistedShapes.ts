@@ -1,4 +1,9 @@
-import type { Account, BalanceEntry, Transaction } from "@/types";
+import type {
+  Account,
+  BalanceEntry,
+  BudgetComment,
+  Transaction,
+} from "@/types";
 import { PersistedFileError } from "./persistedFileErrors";
 
 export type StoredAccount = Omit<Account, "id" | "activeFrom" | "hideSince"> & {
@@ -116,6 +121,40 @@ export function normalizeTransaction(transaction: any): Transaction {
     normalized.to_sync = transaction.to_sync;
   }
 
+  return normalized;
+}
+
+// RT-033: legacy plain-string comments load as { m, d: 0 }; { m, d } objects
+// are kept unchanged; entries that are neither are dropped.
+export function normalizeBudgetComments(
+  comments: any,
+): Record<string, Record<number, BudgetComment[] | undefined>> {
+  if (!isRecord(comments)) {
+    return {};
+  }
+  const normalized: Record<string, Record<number, BudgetComment[]>> = {};
+  for (const [accountId, months] of Object.entries(comments)) {
+    if (!isRecord(months)) {
+      continue;
+    }
+    normalized[accountId] = {};
+    for (const [month, list] of Object.entries(months)) {
+      if (!Array.isArray(list)) {
+        continue;
+      }
+      normalized[accountId][Number(month)] = list.flatMap(
+        (comment): BudgetComment[] => {
+          if (typeof comment === "string") {
+            return [{ m: comment, d: 0 }];
+          }
+          if (isRecord(comment) && typeof comment.m === "string") {
+            return [comment as BudgetComment];
+          }
+          return [];
+        },
+      );
+    }
+  }
   return normalized;
 }
 
