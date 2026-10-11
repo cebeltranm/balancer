@@ -13,11 +13,11 @@
 - CONFIRMED: Static serving reads files from `.tmp/`.
 - CONFIRMED: Client helper `HttpServerStore` targets `http://localhost:8181/`.
 - CONFIRMED: Local HTTP provider is only exposed when app host is `localhost:3000`.
-- CONFIRMED: Contract status: satisfied for RT-027 (see the RT-027 notes); RT-028 is open and not yet satisfied or specified.
+- CONFIRMED: Contract status: satisfied for RT-027 (see the RT-027 notes); RT-028 is decided but NOT yet satisfied by current code (see the RT-028 notes).
 
 ## Product Contract
 - REQUIRED (RT-027): The local dev server creates `.tmp/` automatically when missing, and is development-only.
-- UNCLEAR (RT-028): Path safety for nested or malicious JSON paths is not decided; see Product Questions.
+- REQUIRED (RT-028): JSON writes must only ever produce a flat, safe `.json` file directly under `.tmp/`. Path traversal, nested paths, and unsafe file names are rejected (not rewritten); nothing is written outside `.tmp/`.
 
 ## User Flows
 - CONFIRMED: Run the local server separately.
@@ -53,7 +53,7 @@
 - CONFIRMED: GIVEN the app host is not `localhost:3000`, WHEN storage providers are listed, THEN the Local HTTP server provider is not available.
 - CONFIRMED: GIVEN the client has logged in to the local server, WHEN it reads, writes, or lists files, THEN requests include `Authorization: Bearer balancer-local-dev-token`.
 - CONFIRMED: GIVEN an authorized JSON write request targets `/*.json`, WHEN the server handles it, THEN the request body is written under `.tmp/`.
-- UNCLEAR: Path traversal behavior for nested or malicious JSON paths is not specified (tracked as RT-028).
+- REQUIRED (RT-028): See "RT-028: JSON write path safety" below. Current code does not satisfy it.
 
 ### RT-027: `.tmp/` auto-creation (development-only)
 Implementation status: SATISFIED by current code (`ensureTmpDir()` in `server/index.js`), covered by `src/helpers/__tests__/localDevServer.spec.ts`. Exception: a startup-time creation failure (e.g. permissions) throws and stops the server rather than returning a 500; the 500 behavior applies only to `/list` and writes.
@@ -65,6 +65,27 @@ Implementation status: SATISFIED by current code (`ensureTmpDir()` in `server/in
 - CONFIRMED: Unauthorized requests still return 401; auto-creation does not bypass auth.
 - CONFIRMED: This behavior is development-only and is documented as such in the README. It does not change production/Dropbox storage behavior.
 
+### RT-028: JSON write path safety
+Implementation status: NOT SATISFIED by current code. `app.post(/\/.*\.json$/, …)` in `server/index.js` writes to `TMP_DIR + req.path` with no decoding, validation, or containment check. Current client usage (`HttpServerStore.writeJsonFile`) only sends flat names such as `config.json`, so valid traffic is unaffected.
+
+Decision: reject path traversal and nested paths with a 400 JSON error, and only accept safe flat `.json` file names under `.tmp/`. Rejection is explicit; the server never silently renames or rewrites a name.
+
+Safe file name rule (applied to the percent-decoded request path, after removing the single leading `/`):
+- Matches `^[A-Za-z0-9._-]+\.json$`.
+- Contains no `/`, `\`, NUL byte, or `..` sequence anywhere in the name.
+- The resolved target (`path.resolve(TMP_DIR, name)`) has `TMP_DIR` as its parent directory (defence in depth).
+- A malformed percent-encoding is rejected with 400.
+
+Acceptance criteria:
+- REQUIRED: GIVEN an authorized `POST /<name>.json` with a safe flat name, WHEN handled, THEN the serialized body is written to `.tmp/<name>.json` and the response is 200 (unchanged behavior, e.g. `config.json`, `values_2025.json`).
+- REQUIRED: GIVEN an authorized write whose path contains `..` (raw or percent-encoded, e.g. `/..%2f..%2fescape.json`), WHEN handled, THEN the response is 400 JSON `{ "error": … }` and no file is created outside `.tmp/`.
+- REQUIRED: GIVEN an authorized write to a nested path (`/sub/x.json`, `/sub%2fx.json`) or one containing a backslash, WHEN handled, THEN the response is 400, and no file or subdirectory is created in `.tmp/`.
+- REQUIRED: GIVEN an authorized write with a malformed percent-encoding or a NUL byte in the name, WHEN handled, THEN the response is 400 and nothing is written.
+- REQUIRED: GIVEN an unauthorized write with an unsafe path, WHEN handled, THEN the response is 401 (auth runs before validation) and nothing is written.
+- REQUIRED: Rejected requests do not alter existing `.tmp/` files.
+- CONFIRMED: Non-`.json` write paths are already not routed to the write handler (they fall through to the static handler), and static reads rely on `express.static` containment. Neither changes.
+- CONFIRMED: Development-only; no change to Dropbox or any production storage behavior.
+
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/helpers/__tests__/httpServer.spec.ts` covers ping/session info, token storage, authenticated reads/writes, 401 token removal, and logout.
 - CONFIRMED: `src/helpers/__tests__/storageIndex.spec.ts` covers local provider availability on localhost.
@@ -74,7 +95,7 @@ Implementation status: SATISFIED by current code (`ensureTmpDir()` in `server/in
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `src/helpers/__tests__/localDevServer.spec.ts` runs a copy of `server/index.js` as a child process and covers `.tmp/` creation, `/list`, JSON writes, and unauthorized requests (RT-027).
 - CONFIRMED: No tests for `/list` filesystem failures or write failures.
-- CONFIRMED: No test verifies `.tmp` path traversal protections; the expected behavior is pending RT-028.
+- CONFIRMED: No test verifies `.tmp` path traversal protections yet. The expected behavior is now decided (RT-028, see Test Expectations (RT-028)); the tests are required but not yet written.
 - CONFIRMED: `.tmp/` auto-creation is covered by `localDevServer.spec.ts` (runs a copy of `server/index.js` as a child process); the creation-failure-returns-500 criterion is not tested.
 
 ## Test Expectations (RT-027)
@@ -88,6 +109,18 @@ Implementation status: SATISFIED by current code (`ensureTmpDir()` in `server/in
 - CONFIRMED: Existing client tests (`httpServer.spec.ts`, `storageIndex.spec.ts`) need no changes.
 - CONFIRMED: README documents that the local server auto-creates `.tmp/` and is development-only.
 
+## Test Expectations (RT-028)
+- REQUIRED (not yet implemented): Extend `src/helpers/__tests__/localDevServer.spec.ts` (same child-process harness, temporary project root) with a RT-028 `describe`. Use `node:http` with a raw request path for traversal cases, because `fetch` normalizes `..` segments before sending:
+  - `POST /..%2f..%2fescape.json` returns 400 and no `escape.json` exists in the temporary root or its parent.
+  - Raw `POST /../escape.json` is rejected (400, or the framework's equivalent 4xx) and nothing is written outside `.tmp/`.
+  - `POST /sub/x.json` and `POST /sub%2fx.json` return 400 and `.tmp/` contains no `sub/` or `x.json`.
+  - A backslash name (`..%5Cx.json`) and a malformed encoding (`/%E0%A4%A.json`) return 400.
+  - A valid `POST /data.json` still returns 200 and writes the body (also covered by the RT-027 test).
+  - An unauthorized traversal attempt returns 401 and writes nothing.
+  - An existing `.tmp/` file is unchanged after a rejected request.
+- CONFIRMED: Existing client tests (`httpServer.spec.ts`, `storageIndex.spec.ts`) need no changes, because the client only sends flat names.
+- CONFIRMED: README should note that the dev server only accepts flat `.json` names; update it when the code change lands.
+
 ## Product Questions
 - RESOLVED/IMPLEMENTED (RT-027): The local server creates `.tmp/` automatically when missing, on startup and before list/write operations; development-only.
-- UNCLEAR: Should the local server reject nested paths or normalize them to a safe file name?
+- RESOLVED (RT-028, code change pending): The local server rejects path traversal and nested paths with 400 and accepts only safe flat `.json` file names under `.tmp/`; it does not silently rewrite names.
