@@ -101,7 +101,7 @@
 
 ### Missing Product Flows
 - RESOLVED: First-run onboarding follows the RT-023 checklist (storage login, seed accounts, register local credential, review/edit accounts, confirm base currency/config). Implemented: seeding, credential registration, account/config editing, README "First Run" section, and seeding tests exist; there is no base-currency setting by design.
-- UNCLEAR: Failed sync and retry recovery after local writes have been accepted.
+- RESOLVED (RT-036): Failed sync and retry recovery after local writes have been accepted follows RT-002 (queued `to_sync` data stays queued, persistent grouped toast, user-initiated retry from the sync status action) and RT-024 (queued edits sync on reconnect). Credential recovery follows RT-020. Implemented and tested in `sync.spec.ts` and `storage.spec.ts`.
 - CONFIRMED: Multi-device conflict policy is specified; richer conflict review and recovery remain out of scope until product requests a fuller conflict UI.
 - RESOLVED: Lost local WebAuthn credential recovery uses the auth dialog Reset local credentials action, then re-registration, keeping provider credentials (RT-020). Implemented in the auth dialog.
 - RESOLVED: Missing exchange rates in expense and investment UI summaries require partial totals plus affected currency/account indicators. Current expense and investment code satisfies this with missing-rate metadata and visible indicators; balance recalculation separately warns about missing source data.
@@ -123,7 +123,7 @@
 ## Highest-Priority Product Owner Questions
 - RESOLVED: Conflict resolution uses transaction merge-by-id for queued transaction rows and last writer wins with a visible warning for whole-file conflicts.
 - RESOLVED: Account lifecycle uses archive/hide as the normal path; hard deletion is blocked in all cases.
-- RESOLVED: Failed sync follows RT-002; provider login, WebAuthn, and Dropbox token refresh follow RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart; implemented and tested). External value providers remain UNCLEAR.
+- RESOLVED: Failed sync follows RT-002; provider login, WebAuthn, and Dropbox token refresh follow RT-020 (shared auth error state with retry, reset local credentials, and provider-login restart; implemented and tested). External value providers follow RT-012 (one generic error, no per-provider detail). Shared defaults and overrides are in `specs/validation-and-errors.md` (RT-035).
 - RESOLVED: First-run onboarding is the RT-023 checklist documented in `specs/features/authentication.md`, with no dedicated onboarding UI; implemented and tested.
 - RESOLVED: Offline promise is app shell, previously cached data, and queued local edits for supported write flows; not full offline workflows (RT-024).
 - RESOLVED: Balance snapshots are rebuildable cache and require an authenticated force-recalculate action with missing-source warnings. Current code satisfies this with store and rendered view coverage.
