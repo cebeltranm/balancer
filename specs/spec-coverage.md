@@ -87,7 +87,7 @@
 - CONFIRMED: Dashboard, transactions, accounts, expenses, investments, values, budget, balance, settings, storage sync, authentication, local dev server, and PWA specs include concrete observable criteria.
 - CONFIRMED: Acceptance criteria that involve persistence name the affected JSON file or IndexedDB state.
 - CONFIRMED: Acceptance criteria that involve validation include the invalid input and expected blocking behavior where current behavior is known.
-- UNCLEAR: Error criteria remain intentionally incomplete where the product has not defined user-visible failure states.
+- RESOLVED (RT-032): Shared error criteria (severity, inline/toast/dialog, retry, logging) are defined in `specs/validation-and-errors.md`; feature specs follow them unless they name an override. Code partially satisfies them; follow-ups are listed in that spec.
 
 ### INFERRED / UNCLEAR Hygiene
 - CONFIRMED: Inferred statements are marked with `INFERRED` when they are derived from code paths or cross-file reasoning rather than explicit product intent.
@@ -132,7 +132,7 @@
 ## Recommended Next Specs To Write
 - CONFIRMED: `specs/features/transaction-dialogs.md` for transaction type-specific dialog components and expected flow, if those components are still intended to be active.
 - CONFIRMED: `specs/features/selectors-and-shared-components.md` for account selector, period selector, comments dialog, and account value cards.
-- CONFIRMED: `specs/validation-and-errors.md` consolidating visible validation rules and user-facing error expectations.
+- RESOLVED (RT-032): `specs/validation-and-errors.md` now exists with the default validation and error rules and the approved feature overrides.
 - CONFIRMED: `specs/compatibility.md` defining the versionless JSON compatibility policy, additive default requirements, ignored deprecated structures, prohibited renames, legacy account type handling, and account deletion/reference policy.
 - CONFIRMED: `specs/sync-conflicts.md` defining conflict resolution for multi-device edits.
 - CONFIRMED: `specs/security.md` defining local credential, provider token, and PWA cache security expectations.

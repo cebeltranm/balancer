@@ -33,6 +33,7 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - CONFIRMED: List each rule with the invalid input and expected user/system response.
 
 ## Error handling
+- REQUIRED: Follow the defaults in `specs/validation-and-errors.md`. Any case that differs must say it overrides a named rule there.
 - CONFIRMED: List each recoverable error and expected user-visible state.
 - UNCLEAR: Mark errors that are logged or swallowed without a specified user experience.
 
