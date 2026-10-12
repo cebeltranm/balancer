@@ -78,6 +78,7 @@ import {
   type PeriodOption,
 } from "@/types";
 import { getCurrentPeriod, getPeriodDate } from "@/helpers/options.js";
+import { sortTreeByName } from "@/helpers/ordering";
 import {
   mapInvestmentsBySubCategory,
   accountsGrupedByAttribute,
@@ -206,7 +207,7 @@ const accountsGroupBy = computed(() => {
           ),
       };
     }
-    return (
+    const groups =
       (inv?.Investments &&
         Object.keys(inv.Investments).map((key) =>
           totalByCategory(
@@ -216,8 +217,9 @@ const accountsGroupBy = computed(() => {
             displayType.value,
           ),
         )) ||
-      []
-    );
+      [];
+    // RT-041: only the table display is ordered (display-only copy).
+    return displayType.value === "table" ? sortTreeByName(groups) : groups;
   }
   const accounts = investmentAccounts.value;
   switch (typeInvestment.value) {

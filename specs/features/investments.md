@@ -11,10 +11,13 @@
 - CONFIRMED: Asset-class and region grouping use account `class` allocation weights and expected target composition from `config.inv_composition`.
 - CONFIRMED: `useTotalByCategory()` converts child values and investment flow fields into the global currency and computes gain/loss-like fields `gp` and `gp_value`.
 - CONFIRMED: `accountsGrupedByAttribute()` groups investments by a selected account attribute with a default fallback.
-- CONFIRMED: Contract status: satisfied for RT-017 and RT-011; some RT-017 tests are not yet added (see Missing Tests).
+- CONFIRMED: RT-041 is implemented: `accountsGroupBy` in `src/views/portafolio/index.vue` passes the table-display groups through `sortTreeByName()` (`src/helpers/ordering.ts`), a sorted copy: categories and entity groups first, then accounts, each by name, at every level. Pie and bar keep the order from `Object.keys(accounts.json)` through `accountsGroupByCategories()` and `useTotalByCategory()`.
+- CONFIRMED: Contract status: satisfied for RT-017 and RT-011; some RT-017 tests are not yet added (see Missing Tests). RT-041 (table order): satisfied.
 
 ## Product Contract
 - REQUIRED (RT-017): Investment accounts require a class allocation; legacy accounts with missing allocation are grouped under "Unknown" with a visible warning instead of being dropped.
+- RESOLVED (RT-041): In the table display only, entities and categories come first, sorted by group name, and accounts follow, sorted by account `name`, at every nesting level. Accounts with no entity therefore come after all entity groups. Ordering follows `specs/architecture.md` List Ordering: `localeCompare` with `{ sensitivity: "base", numeric: true }`, empty names last, ties by id.
+- RESOLVED (RT-041): The order is display-only. It does not change `accounts.json`, `activeAccounts()`, `accountsGroupByCategories()`, totals, the bar series, or sync. Hidden or inactive accounts stay excluded. The pie display (all groupings) and the bar display keep their current order.
 - REQUIRED (RT-011): Missing exchange rates produce partial totals with a visible missing-rate indicator naming the affected currencies/accounts; an explicit `0` rate is valid data.
 
 ## User Flows
@@ -56,9 +59,19 @@
 - IMPLEMENTED (RT-017 decision): GIVEN one or more accounts are grouped under "Unknown" in ByAssetClass or ByRegion view, WHEN the portfolio summary renders, THEN the UI displays a visible warning naming the affected accounts, similar in presentation to the existing missing-rate indicator.
 - REQUIRED (RT-017 decision, IMPLEMENTED): GIVEN a new or edited investment account, WHEN the user attempts to save with no class allocation entered, THEN save is blocked the same as an allocation that does not sum to 100% (see `specs/features/accounts.md` acceptance criteria).
 - REQUIRED: GIVEN an investment account or grouped category uses a non-global currency and no exchange rate is available for the displayed period, WHEN the table, treemap, or bar summary renders, THEN the converted total is shown as a partial total and the UI displays a missing-rate indicator naming the affected currency and account/category.
+- RESOLVED (RT-041): GIVEN accounts "Zeta" and "alpha" in one entity (accounts.json order: Zeta first), WHEN the table renders, THEN "alpha" comes before "Zeta".
+- RESOLVED (RT-041): GIVEN entities "Zeta Bank" and "alpha bank", WHEN the table renders, THEN the "alpha bank" group comes before the "Zeta Bank" group.
+- RESOLVED (RT-041): GIVEN accounts named "Fund 10" and "Fund 2", WHEN the table renders, THEN "Fund 2" comes first.
+- RESOLVED (RT-041): GIVEN accounts whose names differ only by case or accents ("Álamo" and "alamo"), WHEN the table renders, THEN they compare as equal and the id decides.
+- RESOLVED (RT-041): GIVEN an account with an empty name, WHEN the table renders, THEN it comes after named accounts in its group, ordered by id.
+- RESOLVED (RT-041): GIVEN accounts with no entity and entity groups, WHEN the table renders, THEN every entity group comes before the no-entity accounts, which are sorted by name then id.
+- RESOLVED (RT-041): GIVEN nested `category` groups, WHEN the table renders, THEN sub-categories come first, sorted by name, then accounts, sorted by name.
+- RESOLVED (RT-041): GIVEN accounts in different currencies in one group, WHEN the table renders, THEN they sort by name only and are not merged or converted by the sort.
+- RESOLVED (RT-041): GIVEN the table is sorted, WHEN totals are computed, THEN they equal the totals of the unsorted data, and the pie display keeps its original order.
 - REQUIRED: GIVEN a conversion rate or asset value is explicitly stored as `0`, WHEN investment summaries are rendered, THEN the zero value is treated as present data and is not reported as missing.
 
 ## Existing Tests Related To This Feature
+- CONFIRMED (RT-041): `src/views/__tests__/PortfolioRowOrder.spec.ts` and `src/helpers/__tests__/ordering.spec.ts` cover the table order.
 - CONFIRMED: `src/helpers/__tests__/investments.spec.ts` covers nested expected mapping and grouping by attribute.
 - CONFIRMED: `src/stores/__tests__/config.spec.ts` covers composition grouping by asset class and region.
 - CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers investment flow aggregation.
@@ -66,6 +79,7 @@
 - IMPLEMENTED (RT-017): `src/views/__tests__/PortfolioUnknownAllocation.spec.ts` covers the "Unknown" grouping and warning for legacy accounts with missing class allocation in the ByAssetClass pie view.
 
 ## Missing Tests / Coverage Gaps
+- CONFIRMED (RT-041): `src/views/__tests__/PortfolioRowOrder.spec.ts` verifies groups before accounts, no-entity accounts last, case/accent/numeric collation, id tie-break, empty names last, nested categories, unchanged total, and unchanged pie order. `src/helpers/__tests__/ordering.spec.ts` covers the comparator and tree sort.
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: Rendered portfolio coverage is limited to the ByAssetClass pie Unknown-allocation case (`PortfolioUnknownAllocation.spec.ts`); other groupings and displays are not rendered in tests.
 - CONFIRMED: `useTotalByCategory()` missing-rate conversion behavior is covered; broader performance calculations still need coverage.
@@ -77,4 +91,5 @@
 - IMPLEMENTED (RT-017): `src/views/__tests__/AccountsClassAllocation.spec.ts` asserts an investment account whose allocation sums to something other than 100% shows the allocation error and cannot be saved.
 
 ## Product Questions
+- RESOLVED (RT-041): In what order does the Investments table list entity groups, categories, and accounts? Decision: categories and entity groups first, then accounts, each by name (case/accent-insensitive, numeric-aware, empty last, id tie-break); table display only.
 - RESOLVED (RT-017): Should investment accounts with missing class allocation be blocked, excluded, or grouped as unknown? Decision: enforce required allocation in account setup for investment accounts going forward (implemented, see `specs/features/accounts.md`); analytics group legacy accounts with missing/empty allocation under an "Unknown" bucket with a visible warning, rather than excluding them (implemented in `src/views/portafolio/index.vue` and `src/views/portafolio/pie.vue`).

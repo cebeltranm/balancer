@@ -100,6 +100,8 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - COVERED (RT-017): Legacy account with no class allocation grouped under Unknown with a visible warning (`src/views/__tests__/PortfolioUnknownAllocation.spec.ts`, ByAssetClass).
   - GAP (RT-017): ByRegion Unknown grouping, and a fully allocated account never produces an Unknown bucket.
   - GAP: Table and bar child views render missing-rate indicators.
+  - COVERED (RT-041): Table order: groups then accounts by name, no-entity accounts last, case/accent/numeric collation, empty names last, totals and pie order unchanged (`PortfolioRowOrder.spec.ts`).
+- Unit — COVERED (RT-041): shared comparator and tree sort (`src/helpers/__tests__/ordering.spec.ts`).
 - Unit — COVERED: investment mapping and grouping (`src/helpers/__tests__/investments.spec.ts`); missing-rate totals (`src/composables/__tests__/totalByCategory.spec.ts`).
 - Manual: pie, treemap, and bar charts render correctly.
 

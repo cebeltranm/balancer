@@ -40,6 +40,12 @@
 - CONFIRMED: The HTTP server provider auto-authenticates the app after login without WebAuthn.
 - INFERRED: WebAuthn is a local UI gate, not encryption for JSON files or provider credentials.
 
+## List Ordering
+- RESOLVED (RT-040, RT-041): Screens that sort a list for display use `localeCompare` with `{ sensitivity: "base", numeric: true }` (case and accents ignored, digit runs numeric: "Fund 2" before "Fund 10"), and break ties by account id so the order is stable.
+- RESOLVED (RT-041): Empty names sort after non-empty names, then by id.
+- RESOLVED (RT-040, RT-041): Ordering is applied in the view and is display-only. It never changes `accounts.json`, `activeAccounts()`, `accountsGroupByCategories()` or other store getters, persisted files, totals, or sync.
+- RESOLVED (RT-040, RT-041): Feature specs name the lists they order and reference this section: `features/values.md` (RT-040) and `features/investments.md` (RT-041, table display only).
+
 ## Main Risks And Assumptions
 - CONFIRMED: `syncCachedFiles()` in `Auth.vue` uses `Object.keys(...).forEach(async ...)`, so refresh tasks are launched without being awaited as a group.
 - CONFIRMED: `accounts.json` in `public/` includes legacy-looking account type strings (`cash`, `SavingAccount`) that do not match `AccountType` enum values.
@@ -56,6 +62,8 @@
 - CONFIRMED: GIVEN a future storage change is proposed, WHEN it affects an existing persisted JSON file, THEN it must preserve the existing file name and top-level structure, provide defaults for any additive structures, and ignore removed structures.
 - CONFIRMED: GIVEN concurrent edits affect queued transaction rows, WHEN sync stages the affected monthly transaction file, THEN transaction rows are merged by id.
 - CONFIRMED: GIVEN concurrent edits affect a whole JSON file, WHEN the local cached file is uploaded after a newer remote write, THEN the local file wins and the app shows a visible conflict warning.
+
+- RESOLVED (RT-041): GIVEN a list is ordered for display, WHEN it is rendered, THEN the order follows List Ordering and the underlying stores, files, and totals are unchanged.
 
 ## Cross-Spec Consistency Notes
 - CONFIRMED: `product-overview.md`, `architecture.md`, and `storage-sync.md` consistently describe Dropbox as the normal provider and the local HTTP provider as development-only.
