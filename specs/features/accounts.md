@@ -13,10 +13,14 @@
 - CONFIRMED: Account grouping is defined by `ACCOUNT_GROUP_TYPES` in `src/stores/accounts.ts`.
 - CONFIRMED: Expense accounts use category paths; non-expense accounts can use entity; investment accounts expose risk, symbol, logo, and class allocation.
 - CONFIRMED: Contract status: satisfied for RT-003, RT-005, RT-006, and RT-017; see Acceptance Criteria and Missing Tests for test gaps.
+- CONFIRMED: Contract status for RT-034: NOT satisfied. `loadAccounts()` in `src/stores/accounts.ts` validates `type` against `VALID_ACCOUNT_TYPES` and `normalizeAccount()` in `src/helpers/persistedShapes.ts` copies `type` unchanged, so there is no alias map. `cash` and `SavingAccount` are rejected as `malformed_file` today. The rejection half (RT-005) is satisfied.
 
 ## Product Contract
 - REQUIRED (RT-003): Accounts are archived (hidden), never hard-deleted, so historical account ids always resolve in transactions, budgets, values, and balances.
 - REQUIRED (RT-005, RT-006): Account entries with unsupported or malformed fields (including unsupported `AccountType` values) are rejected on load without replacing account state.
+- RESOLVED (RT-034): On load, a fixed, case-sensitive alias list is mapped to current `AccountType` values in memory: `cash` → `Cash`, `SavingAccount` → `BankAccount`. The list contains only strings the app itself shipped in `public/accounts.json` before RT-006. It is not extended without a new RT decision.
+- RESOLVED (RT-034): Loading never writes `accounts.json`. The migrated type is persisted only when the user next saves an account through the normal save path.
+- RESOLVED (RT-034): Any other unsupported `type` (including near-misses such as `CASH`, `savingaccount`, or `Cash Account`) is still rejected as `malformed_file` for the whole file (RT-005, RT-006 unchanged).
 - REQUIRED (RT-017): New or edited investment accounts must have a class allocation that sums to 100%; save is blocked otherwise.
 
 ## User Flows
@@ -47,7 +51,7 @@
 - CONFIRMED: Account active status is month-granular for visibility.
 - CONFIRMED: `activeAccounts()` includes accounts whose `activeFrom` month is <= target month and whose `hideSince` month is > target month.
 - CONFIRMED: Empty category and class fields are omitted on save.
-- INFERRED: Legacy account types not in `AccountType` may load but not group correctly.
+- RESOLVED (RT-034): Legacy aliases are migrated on load; all other types in an account entry reject the whole file. No account loads with a type outside `AccountType`, so grouping is never affected by legacy strings.
 
 ## Acceptance Criteria
 - CONFIRMED: GIVEN a new account form with a missing, duplicate, or non-`/^[a-z0-9_]+$/i` id, WHEN the user attempts to save, THEN save is blocked and an inline validation error is shown.
@@ -56,6 +60,11 @@
 - CONFIRMED: GIVEN a valid account save, WHEN `accounts.json` is written, THEN persisted date fields are `YYYY-MM-DD` strings and the saved account payload does not include an embedded `id`.
 - CONFIRMED: GIVEN an existing account, WHEN the edit dialog is opened, THEN id, group, type, and currency controls are disabled.
 - CONFIRMED: GIVEN the user creates an account denominated in Mexican pesos, WHEN the currency is selected, THEN the account is saved with the stable lowercase currency code `mxn`.
+- RESOLVED (RT-034): GIVEN `accounts.json` contains an entry with `"type": "cash"`, WHEN accounts load, THEN the account is loaded with type `Cash` and is grouped as a cash/bank account.
+- RESOLVED (RT-034): GIVEN `accounts.json` contains an entry with `"type": "SavingAccount"`, WHEN accounts load, THEN the account is loaded with type `BankAccount` and is grouped accordingly.
+- RESOLVED (RT-034): GIVEN a file with legacy alias types, WHEN accounts load, THEN no write to `accounts.json` occurs.
+- RESOLVED (RT-034): GIVEN a loaded account that was migrated from an alias, WHEN the user saves any account, THEN the persisted `accounts.json` contains the migrated type for that account (`Cash` or `BankAccount`), not the alias.
+- RESOLVED (RT-034): GIVEN `accounts.json` contains an entry whose `type` is not a current `AccountType` value and not one of the two aliases (for example `Cash Account`, `CASH`, `savingaccount`), WHEN accounts load, THEN a `PersistedFileError` with code `malformed_file` is thrown and no accounts are loaded.
 - REQUIRED: GIVEN an existing active account, WHEN the user wants to remove it from normal use, THEN the app hides/archives the account by setting `hideSince` and keeps the account id in `accounts.json`.
 - REQUIRED: GIVEN an existing hidden account, WHEN historical transactions, budgets, values, or balances reference that account id, THEN the account definition remains available for lookup and reporting.
 - REQUIRED: GIVEN any existing account, WHEN normal app code attempts hard deletion, THEN the account is not removed from `accounts.json`.
@@ -69,10 +78,10 @@
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: Rendered `Accounts.vue` tests do not cover field validation other than class allocation (id, name, category, entity, risk, hide date), the visibility filter, or restore of hidden accounts.
 - CONFIRMED: `AccountsClassAllocation.spec.ts` verifies an investment allocation that does not sum to 100% shows the error and disables Save (RT-017).
-- CONFIRMED: No migration test for legacy `public/accounts.json` account types.
+- GAP (RT-034): No migration test for legacy account types. Required store tests in `src/stores/__tests__/accounts.spec.ts` (cite RT-034 in names): `cash` loads as `Cash`; `SavingAccount` loads as `BankAccount`; migrated accounts resolve the expected group via `getAccountGroupType`; loading does not write the file; after `saveAccount()` the written payload carries the migrated type; near-misses (`CASH`, `savingaccount`, `Cash Account`) are rejected as `malformed_file`. Keep the existing rejection test ("rejects unsupported account type values…") unchanged. An optional unit test for the alias map belongs in `src/helpers/__tests__/persistedShapes.spec.ts` if the map lives in `persistedShapes.ts`.
 - CONFIRMED: Store tests assert that account hide/archive persists `hideSince` while preserving the account key.
 - CONFIRMED: Store tests assert that hard deletion is blocked and does not write an `accounts.json` payload with the account key removed.
 - CONFIRMED: `AccountsClassAllocation.spec.ts` verifies the list and edit dialog expose hide and no hard-delete action, and hiding requires confirmation and saves `hideSince` under the same id (RT-003).
 
 ## Product Questions
-- UNCLEAR: Should legacy account type strings be migrated, tolerated, or rejected during load?
+- RESOLVED (RT-034): Legacy account type strings are migrated through the fixed alias list (`cash`, `SavingAccount`) in memory on load; everything else is rejected. No open questions remain.
