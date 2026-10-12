@@ -22,7 +22,7 @@
 - REQUIRED (RT-013): Value lookup falls back to prior months only up to `maxLevels` (default 3; non-USD cross-rate legs 2), with no warning solely because a prior-month value was used.
 - REQUIRED (RT-011): Missing rates are never silently coerced to zero; an explicit `0` is valid data.
 - RESOLVED (RT-040): The Values table has one fixed default row order. Currency rows form a block at the top, ordered by currency code. Investment and fixed-asset rows follow, ordered by `entity`, then `name`, then account `id`. Accounts with no entity (missing or blank) come after all accounts that have an entity, ordered by `name`, then `id`.
-- RESOLVED (RT-040): Text comparison uses `localeCompare` with `{ sensitivity: "base", numeric: true }`, so case and accents are ignored and digit runs compare numerically ("Fund 2" before "Fund 10"). `id` breaks ties so the order is stable.
+- RESOLVED (RT-040): The shared comparison rules are in `specs/architecture.md` List Ordering. Text comparison uses `localeCompare` with `{ sensitivity: "base", numeric: true }`, so case and accents are ignored and digit runs compare numerically ("Fund 2" before "Fund 10"). `id` breaks ties so the order is stable.
 - RESOLVED (RT-040): Ordering is display-only. It does not change `accounts.json`, `activeAccounts()` or its other callers, the keys written to `values_<year>.json`, or sync behavior. Hidden or inactive accounts stay excluded as before. Editing a value never reorders rows. There are no user-sortable columns.
 - RESOLVED (RT-040): The Entity and Type filter option lists are built from the ordered rows, so Entity options are alphabetical by the same comparison. Type options keep first-appearance order in the ordered rows.
 

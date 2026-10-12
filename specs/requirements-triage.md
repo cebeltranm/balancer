@@ -16,6 +16,7 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
 | RT-036 | Failed sync recovery | `spec-coverage.md` Missing Product Flows; `product-overview.md` Migration / Compatibility | What recovery applies when sync fails after local writes were accepted? | Already decided by RT-002 (and RT-020 for credentials). Mark it resolved. | Document only | High | Resolved |
 | RT-037 | Generated service worker | `architecture.md` PWA Behavior | How is runtime service-worker behavior after VitePWA generation specified? | Already decided by RT-025 (build-output test plus console-only registration errors). Mark it resolved. | Document only | High | Resolved |
 | RT-040 | Values row order | `features/values.md` Product Contract | In what order does the Values table list rows? | Currency rows first by currency code, then investment/fixed-asset rows by entity (no entity last), then name, then id. Comparison ignores case and accents and is numeric-aware. | Code change | High | Resolved |
+| RT-041 | Portfolio table account order | `features/investments.md` Product Contract; `architecture.md` List ordering | In what order does the Investments table list entity groups, categories, and accounts? | Categories and entity groups first by name, then accounts by name, at every level; empty names last; ties by id. Comparison ignores case and accents and is numeric-aware. Table display only; display-only ordering. | Code change | High | Resolved |
 
 Two more open questions turned up during the review. They are not marked `UNCLEAR` in any spec yet, but they need the same kind of decision:
 
@@ -146,6 +147,28 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
   - Comparison uses `localeCompare` with `{ sensitivity: "base", numeric: true }`.
   - Ordering is display-only and fixed (no sortable columns). Inactive and hidden accounts remain excluded. Editing never reorders rows. Persisted files, `activeAccounts()`, and sync are unchanged.
   - Entity filter options are alphabetical because they are built from the ordered rows; other filter lists keep their current order.
-  - Rule placement: a line in `specs/features/values.md` only. Promote to a shared ordering section if another screen adopts it.
+  - Rule placement: a line in `specs/features/values.md` only. Promoted to the shared "List ordering" section in `specs/architecture.md` when RT-041 adopted the same comparison for the Investments table.
   - Code status: satisfied. `compareRows()` and the `sortedValues` display copy in `src/views/Values.vue`; tests in `src/views/__tests__/ValuesRowOrder.spec.ts`.
+- **Bucket / confidence:** Code change / High.
+
+## RT-041: Investments table account order
+
+- **Question:** In what order should the Investments table (`/investments`, table display) list entity groups, categories, and accounts?
+- **Current behavior:**
+  - `src/views/portafolio/index.vue` `accountsGroupBy` maps `Object.keys(accountsStore.accountsGroupByCategories(...).Investments)` through `totalByCategory()`. Entity groups, category groups, and their children follow `Object.keys(accounts.json)` insertion order.
+  - `table.vue` columns are not `sortable`; nothing sorts the rows.
+  - `accountsGroupByCategories()` and `activeAccounts()` are shared with Assets, Budget, Expenses, `AccountsSelector`, `Values`, and `transactionForms.ts`, so they must not be sorted.
+  - `getTotal` and the bar series sum the groups, so they do not depend on order.
+- **Evidence:** `src/views/portafolio/index.vue`; `src/stores/accounts.ts` (`accountsGroupByCategories`, `getCategoryEntry`); `src/composables/totalByCategory.ts`; `src/views/__tests__/PortfolioUnknownAllocation.spec.ts` (no ordering test).
+- **Risk if left unclear:** Sorting in the store would reorder other screens; ties, case, accents, numeric names, and empty names would order unpredictably.
+- **Decision:** RESOLVED (RT-041). Accepted as follows:
+  - Applies to the table display only. Pie (every grouping, including ByCategory) and bar keep their current order.
+  - "Name" is the account `name`. Entity and category groups sort by their group name.
+  - At every nesting level, categories and entity groups come first, sorted by name; accounts follow, sorted by name. Accounts with no entity therefore come after all entity groups.
+  - Comparison uses `localeCompare` with `{ sensitivity: "base", numeric: true }`; ties break by id (the node key). Empty names sort last, then by id.
+  - Hidden and inactive accounts stay excluded by `activeAccounts()`.
+  - Ordering is display-only: `accounts.json`, `activeAccounts()`, `accountsGroupByCategories()`, totals, and sync are unchanged. Accounts in different currencies are never merged or converted by the sort.
+  - Treemap duplicate-name suffixes may shift; this does not apply to the table.
+  - Rule placement: shared "List ordering" section in `specs/architecture.md`, referenced by `values.md` and `investments.md`.
+  - Code status: satisfied. `sortTreeByName()` in `src/helpers/ordering.ts`, applied in `accountsGroupBy` in `src/views/portafolio/index.vue`; tests in `src/views/__tests__/PortfolioRowOrder.spec.ts` and `src/helpers/__tests__/ordering.spec.ts`.
 - **Bucket / confidence:** Code change / High.
