@@ -43,6 +43,20 @@ export const ACCOUNT_GROUP_TYPES: Record<AccountGroupType, AccountType[]> = {
 
 const VALID_ACCOUNT_TYPES = new Set(Object.values(AccountType));
 
+// RT-034: types the app shipped in `public/accounts.json` before RT-006.
+const LEGACY_ACCOUNT_TYPE_ALIASES: Record<string, AccountType> = {
+  cash: AccountType.Cash,
+  SavingAccount: AccountType.BankAccount,
+};
+
+function migrateLegacyAccountType(account: StoredAccount): StoredAccount {
+  const alias =
+    account && Object.hasOwn(LEGACY_ACCOUNT_TYPE_ALIASES, account.type)
+      ? LEGACY_ACCOUNT_TYPE_ALIASES[account.type]
+      : undefined;
+  return alias ? { ...account, type: alias } : account;
+}
+
 function validateStoredAccount(id: string, account: StoredAccount) {
   if (
     !account ||
@@ -257,8 +271,9 @@ export const useAccountsStore = defineStore("accounts", () => {
     const nAccounts = Object.keys(lAccounts)
       .filter((id) => id != "default")
       .reduce((ant: any, id: string) => {
-        validateStoredAccount(id, lAccounts[id]);
-        ant[id] = normalizeAccount(id, lAccounts[id]);
+        const stored = migrateLegacyAccountType(lAccounts[id]);
+        validateStoredAccount(id, stored);
+        ant[id] = normalizeAccount(id, stored);
         return ant;
       }, {});
     accounts.value = nAccounts;

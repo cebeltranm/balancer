@@ -52,7 +52,7 @@
 - REQUIRED: Hard deletion of account keys is blocked in all cases from normal app code, regardless of whether references are currently known.
 - CONFIRMED: Current code blocks store-level hard deletion and does not expose a hard-delete action in account management.
 - CONFIRMED: Account entries with an unsupported `type` are rejected on load (`malformed_file`); they do not load and do not reach grouping.
-- RESOLVED (RT-034): Legacy `type` values are migrated in memory on load by a fixed, case-sensitive alias list: `cash` → `Cash`, `SavingAccount` → `BankAccount`. The file is not rewritten on load; the migrated value is persisted only on the next account save. Any other unsupported `type` is still rejected. Code status: not yet implemented (see `features/accounts.md`).
+- RESOLVED (RT-034): Legacy `type` values are migrated in memory on load by a fixed, case-sensitive alias list: `cash` → `Cash`, `SavingAccount` → `BankAccount`. The file is not rewritten on load; the migrated value is persisted only on the next account save. Any other unsupported `type` is still rejected. Code status: satisfied (`src/stores/accounts.ts`; see `features/accounts.md`).
 
 ## `config.json`
 - CONFIRMED: File name pattern is exactly `config.json`.

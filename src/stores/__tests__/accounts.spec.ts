@@ -171,23 +171,26 @@ describe("accounts store", () => {
       expect(payload.old_saving.type).toBe(AccountType.BankAccount);
     });
 
-    it.each(["CASH", "savingaccount", "Cash Account", "Savingaccount", " cash"])(
-      "RT-034: rejects near-miss type %j as malformed_file",
-      async (type) => {
-        vi.mocked(readJsonFile).mockResolvedValue({
-          bad: { name: "Bad", type, currency: "usd" },
-        });
+    it.each([
+      "CASH",
+      "savingaccount",
+      "Cash Account",
+      "Savingaccount",
+      " cash",
+    ])("RT-034: rejects near-miss type %j as malformed_file", async (type) => {
+      vi.mocked(readJsonFile).mockResolvedValue({
+        bad: { name: "Bad", type, currency: "usd" },
+      });
 
-        const store = useAccountsStore();
+      const store = useAccountsStore();
 
-        await expect(store.loadAccounts(true)).rejects.toMatchObject({
-          code: "malformed_file",
-          fileName: "accounts.json",
-          recoverable: true,
-        });
-        expect(store.accounts).toEqual({});
-      },
-    );
+      await expect(store.loadAccounts(true)).rejects.toMatchObject({
+        code: "malformed_file",
+        fileName: "accounts.json",
+        recoverable: true,
+      });
+      expect(store.accounts).toEqual({});
+    });
 
     it("RT-034: one unsupported type still rejects the whole file even when aliases are present", async () => {
       vi.mocked(readJsonFile).mockResolvedValue({

@@ -69,9 +69,9 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - GAP: Restoring a hidden account requires confirmation and calls `removeAccountHideSince()`.
 - Unit — COVERED: hide/archive persists `hideSince`; hard delete is blocked (`src/stores/__tests__/accounts.spec.ts`).
 - Unit — REQUIRED (RT-034):
-  - GAP: `cash` → `Cash` and `SavingAccount` → `BankAccount` on load, with correct grouping (`src/stores/__tests__/accounts.spec.ts`).
-  - GAP: Loading legacy aliases does not write `accounts.json`; the next `saveAccount()` persists the migrated type.
-  - GAP: Near-miss types (`CASH`, `savingaccount`, `Cash Account`) are rejected as `malformed_file`.
+  - COVERED: `cash` → `Cash` and `SavingAccount` → `BankAccount` on load, with correct grouping (`src/stores/__tests__/accounts.spec.ts`).
+  - COVERED: Loading legacy aliases does not write `accounts.json`; the next `saveAccount()` persists the migrated type.
+  - COVERED: Near-miss types (`CASH`, `savingaccount`, `Cash Account`) are rejected as `malformed_file`.
   - COVERED (RT-005): Unsupported type rejected without loading state (existing "rejects unsupported account type values…" test).
 - Integration: none required.
 - Manual: none beyond general UI review.
