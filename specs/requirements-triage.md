@@ -23,7 +23,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 | ID | Area | Spec locations | Question | Proposed answer | Bucket | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | RT-038 | Quick-add transaction dialogs | `spec-coverage.md` Code Areas Without Specs and Recommended Next Specs | Are the top-bar Expense and Transfer quick-add dialogs a supported flow? | Yes. Spec them in `features/transaction-dialogs.md` and hold them to the same rules as `TransactionEditDialog`. | Document only (then tests) | Medium | Resolved |
-| RT-039 | Unused worker sources | `spec-coverage.md` Code Areas Without Specs; `AGENTS.md` sensitive areas | Are `claims-sw.ts`, `prompt-sw.ts`, `worker.js`, and `workerImport.js` part of the product? | No. Mark them unused and out of scope; remove them in a separate cleanup task. | Document only | Medium | Open |
+| RT-039 | Unused worker sources | `spec-coverage.md` Code Areas Without Specs; `AGENTS.md` sensitive areas | Are `claims-sw.ts`, `prompt-sw.ts`, `worker.js`, and `workerImport.js` part of the product? | No. Mark them unused and out of scope; remove them in a separate cleanup task. | Document only | Medium | Resolved |
 | RT-042 | Transaction description minimum | `features/transaction-dialogs.md`; `features/transactions.md`; `data-model.md` | Which minimum description length applies to the Expense and general transaction forms? | 1 character (non-empty) in both. | Code change | High | Resolved |
 | RT-043 | Quick-add field scope | `features/transaction-dialogs.md` | Is it intended that the quick-add forms omit tags and units? | Yes. Tags, units, and extra entries use the General option. | Document only | High | Resolved |
 
@@ -124,7 +124,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Bucket / confidence:** Document only, then tests / Medium.
 - **Decision:** RESOLVED (RT-038). Accepted as proposed. `specs/features/transaction-dialogs.md` specifies the picker and the Expense and Transfer forms and holds them to the same rules as the general transaction form. Two follow-up decisions are RT-042 and RT-043. The component tests are `GAP` rows in the `specs/testing-strategy.md` matrix, to be written in an "Implement RT-038" PR.
 
-## RT-039: Unused service-worker and worker sources (not yet marked UNCLEAR)
+## RT-039: Unused service-worker and worker sources
 
 - **Open question:** `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are listed as sensitive in `AGENTS.md` and described "only at a high level" in `spec-coverage.md`. It is not stated whether they are part of the product.
 - **Current behavior:**
@@ -134,6 +134,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Risk if left unclear:** Contributors may edit or test files that never run, or assume custom service-worker logic exists. That conflicts with the RT-025 statement that generated output is the contract.
 - **Proposed answer:** Record them as unused examples and out of scope in `specs/architecture.md` and `spec-coverage.md`. Remove them, and the commented config, in a separate cleanup task if the product agrees.
 - **Bucket / confidence:** Document only / Medium.
+- **Decision:** RESOLVED (RT-039). Accepted as proposed. `claims-sw.ts`, `prompt-sw.ts`, `worker.js`, and `workerImport.js` are unused and out of scope; the generated VitePWA service worker is the only service-worker contract. `specs/architecture.md`, `specs/product-overview.md`, `specs/features/pwa.md`, `specs/spec-coverage.md`, and `AGENTS.md` now say so. Code status: pending removal. Follow-up cleanup task (separate PR, no behavior change): delete the four files, the commented `SW === 'true'` block in `vite.config.ts`, and the `src/worker.js` override in `eslint.config.mjs`, then remove them from `AGENTS.md` sensitive areas. Validate with `npm run build`, `type-check`, `lint`, and `test`.
 
 ## RT-040: Values table row order
 
