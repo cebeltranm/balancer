@@ -20,8 +20,8 @@ This repository contains the Balancer application built with Vue 3, TypeScript, 
 - Do not switch package managers.
 
 ## Node version
-- Use Node `v22.16.0` for this project.
-- Before running checks/build/tests, run: `source ~/.nvm/nvm.sh && nvm use v22.16.0`.
+- Use Node `v24.21.0` for this project.
+- Before running checks/build/tests, run: `source ~/.nvm/nvm.sh && nvm use v24.21.0`.
 - If `.nvmrc` exists, keep it aligned with the required Node version.
 
 ## Working agreements
