@@ -336,7 +336,8 @@ async function save() {
       }, {}),
       comments.value,
     );
-  } catch {
+  } catch (error) {
+    console.error("Failed to save budget locally", error);
     EVENTS.emit("message", {
       severity: "error",
       summary: "Budget not saved",

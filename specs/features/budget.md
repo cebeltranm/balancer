@@ -13,10 +13,11 @@
 - CONFIRMED: `src/components/CommentsDialog.vue` creates each comment as `{ m: <text>, d: Date.now() }` (`addComment`), edits only `m` (`updateComment`), and uses `d` as the list key and as the id for edit and delete (`deleteComment` removes every comment whose `d` matches). `src/views/Budget.vue` (`addComments`) stores the emitted array unchanged, so saved files already contain `{ m, d }` objects. No author is stored.
 - CONFIRMED: `src/stores/budget.ts` types comments as `BudgetComment[]` (`{ m, d }`, defined in `src/types.ts`) and `loadBudgetForYear()` passes `data.comments` through `normalizeBudgetComments()` (`src/helpers/persistedShapes.ts`): strings become `{ m, d: 0 }`, objects with a string `m` are kept unchanged, and other entries (numbers, null, objects without `m`) are dropped.
 - CONFIRMED: `CommentsDialog.vue` identifies a comment by its position in the list (not by `d`) for the list key, edit, and delete, so comments that share `d` are edited and deleted individually.
-- CONFIRMED: Contract status: satisfied for RT-009 and RT-033 (see Existing Tests).
+- CONFIRMED: Contract status: satisfied for RT-009, RT-033, and RT-044 (see Existing Tests).
 
 ## Product Contract
 - REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep budget edits pending, and do not mark the edit as saved.
+- RESOLVED (RT-044): The failed local queue write is also logged with `console.error`, following the default Logging rule in `specs/validation-and-errors.md`.
 - RESOLVED (RT-033): A budget comment is `{ m: string, d: number }`. `m` is the comment text. `d` is the creation time in epoch milliseconds, set when the comment is added and never changed by editing.
 - RESOLVED (RT-033): Comments have no author field. An author may be added later as an optional field without changing the shape.
 - RESOLVED (RT-033): A legacy plain-string comment is accepted on load and read as `{ m: <string>, d: 0 }`. `d: 0` means "creation time unknown". The year is written back in the object shape the next time that year's budget is saved; loading alone does not rewrite the file.
@@ -75,7 +76,7 @@
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/budget.spec.ts` covers load, grouping, comments (including the RT-033 `{ m, d }` shape and legacy-string normalization), persistence, and pending sync update. `src/components/__tests__/CommentsDialog.spec.ts` covers add, edit, delete, and shared-`d` comments.
 - CONFIRMED: Budget store tests assert that rejected `idb.saveJsonFile()` calls propagate failure and do not update `budget`, `comments`, or pending sync counters.
-- CONFIRMED: `src/views/__tests__/Budget.spec.ts` mounts `Budget.vue` and covers category/expense rows, Save disabled until an edit, pending row and navigation guard after an edit, the `setBudgetForYear()` payload, ignored negative values, and the RT-009 failed local queue write (error message, guard still pending, Save still available).
+- CONFIRMED: `src/views/__tests__/Budget.spec.ts` mounts `Budget.vue` and covers category/expense rows, Save disabled until an edit, pending row and navigation guard after an edit, the `setBudgetForYear()` payload, ignored negative values, and the RT-009 failed local queue write (error message, `console.error` log per RT-044, guard still pending, Save still available).
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.

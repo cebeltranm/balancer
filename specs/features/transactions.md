@@ -13,11 +13,12 @@
 - CONFIRMED: The product decision for transaction edit identity is to continue using delete-plus-new-id. Code currently satisfies this requirement.
 - CONFIRMED: Deleting a transaction queues it in IndexedDB with `deleted: true`.
 - CONFIRMED: The store merges pending IndexedDB transactions over the remote monthly file on load.
-- CONFIRMED: Contract status: satisfied for RT-008 and RT-009; dialog-level test coverage is listed under Missing Tests.
+- CONFIRMED: Contract status: satisfied for RT-008, RT-009, and RT-044; dialog-level test coverage is listed under Missing Tests.
 
 ## Product Contract
 - REQUIRED (RT-008): Editing a transaction deletes the original id and saves a new transaction with a fresh id; stable ids across edits are out of scope.
 - REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep the form open with entered values, and do not mark the edit as saved.
+- RESOLVED (RT-044): The failed local queue write is also logged with `console.error`, following the default Logging rule in `specs/validation-and-errors.md`.
 - RESOLVED (RT-042): The description must be non-empty (at least 1 character); the earlier 5-character minimum is dropped. Contract status: not satisfied until the implementation PR (the dialog still uses `min(5)`).
 
 ## User Flows
@@ -73,7 +74,7 @@
 - CONFIRMED: `src/components/__tests__/TransactionEditDialog.spec.ts` covers edit submit as delete-plus-new-id: the original transaction is deleted and the replacement save uses a fresh id.
 - REQUIRED: Sync tests should continue to assert that deleted queued transaction ids are omitted from staged monthly files and non-deleted queued replacement transactions are appended.
 - CONFIRMED: Transaction store tests assert that rejected `idb.saveTransaction()` calls propagate failure and do not call `updatePendingToSync()` or reload the month.
-- CONFIRMED: Transaction dialog tests assert that a rejected local queue write shows an error message and does not emit `update:transaction`.
+- CONFIRMED: Transaction dialog tests assert that a rejected local queue write shows an error message, logs the error with `console.error` (RT-044), and does not emit `update:transaction`.
 - CONFIRMED: `src/components/__tests__/TransactionEditDialog.spec.ts` covers dialog validation: a valid transaction saves, and a description shorter than 5 characters (to become an empty description under RT-042), a future date, a non-positive expense value, or values not summing to zero block the save with a visible error.
 - CONFIRMED: `src/views/__tests__/Transactions.spec.ts` mounts `Transactions.vue` and covers listing the selected account's rows for the month, hiding deleted transactions, pending-sync row marking, opening the edit dialog with the selected transaction, and delete only after confirmation.
 
@@ -82,7 +83,7 @@
 - CONFIRMED: `Transactions.vue` rendered tests do not cover the account balance summary, account/period selector changes, or row selection.
 - CONFIRMED: The dialog's top-level "Sum of values should be 0" message is not rendered; unbalanced values are blocked through the appended balancing row's account error instead. Tests assert the blocked save, not that message.
 - CONFIRMED: Edit-as-delete-plus-new-id is covered at dialog level; no integration test covers the subsequent balance recalculation across real stores.
-- CONFIRMED: Transaction edit dialog local queue failure UX is covered; expense and transfer dialog failure UX is tracked in `specs/features/transaction-dialogs.md`.
+- CONFIRMED: Local queue failure UX is covered for the edit dialog here and for the Expense and Transfer dialogs in `specs/features/transaction-dialogs.md`.
 - CONFIRMED: `TransactionEditDialog.spec.ts` asserts the 5-character description rule and must change with RT-042.
 
 ## Product Questions

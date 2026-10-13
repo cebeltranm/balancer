@@ -68,7 +68,7 @@ Current code traceability only. Nothing here is a requirement.
 - CONFIRMED: Stores and helpers raise toasts through `EVENTS.emit("message", ...)` (`src/stores/storage.ts`, `src/helpers/files.ts`, `src/helpers/sync.ts`). The transaction dialogs, `Budget.vue`, `Values.vue`, and `Transactions.vue` use the same bus. `Accounts.vue` and `Settings.vue` call `useToast().add` directly.
 - CONFIRMED: Sync failed (`storage.ts`) and invalid file (`files.ts`) emit `error` with `life: 0`; sync failed also sets `closable: true` and a `group`. Local save failures in the three transaction dialogs and `Budget.vue`, and the value sync failure in `Values.vue`, emit `error` with the default 3000 ms lifetime.
 - CONFIRMED: `console.log` is used for caught errors in `src/helpers/files.ts` (`writeJsonFile`), `src/helpers/storage/dropbox.ts`, and `src/components/Auth.vue` (`reportWebauthnError`, `reportLoginError`). `console.error` is used in `http_server.ts`, `pwa.ts`, `storage.ts` (online refresh), and `Settings.vue` (retry login).
-- CONFIRMED: The `catch {}` blocks in `TransactionEditDialog.vue`, `TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `Budget.vue` show a toast and do not log the error.
+- CONFIRMED (RT-044): The local save `catch` blocks in `TransactionEditDialog.vue`, `TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `Budget.vue` log the caught error with `console.error` and show a toast.
 
 ### Contract status
 | Rule | Status | Evidence |
@@ -83,7 +83,7 @@ Current code traceability only. Nothing here is a requirement.
 | Retry is user-initiated, no background loop | satisfied | Sync is debounced and user-retried; no retry loops found. |
 | Failure never discards queued data or credentials | satisfied | RT-002, RT-020; `sync.spec.ts`, `storage.spec.ts`. |
 | Logging uses `console.error`/`console.warn`, not `console.log` | not satisfied | `console.log` is used for caught errors in `files.ts`, `dropbox.ts`, and `Auth.vue`. |
-| Unexpected failure is both shown and logged | not satisfied | The transaction-dialog and budget `catch {}` blocks show a toast and do not log. |
+| Unexpected failure is both shown and logged | satisfied for local saves (RT-044) | Transaction dialogs and `Budget.vue` show a toast and log with `console.error`; covered by `TransactionEditDialog.spec.ts`, `TransactionExpenseDialog.spec.ts`, `TransactionTransferDialog.spec.ts`, and `Budget.spec.ts`. |
 | No secrets or user financial values in logs | satisfied | No log call found that writes a token or file contents; not covered by a test. |
 | Message text is user-safe | satisfied | Existing messages are fixed strings or `StorageAuthError` messages; the Settings retry-login provider message is the only pass-through (RT-018). |
 
@@ -113,7 +113,6 @@ Follow the layers and conventions in `specs/testing-strategy.md`.
 ## Code Alignment Follow-Ups
 These are the gaps between the contract and current code. This spec change does not fix them. Each needs its own task and must not change an approved override.
 - Change caught-error logging from `console.log` to `console.error` in `src/helpers/files.ts`, `src/helpers/storage/dropbox.ts`, and `src/components/Auth.vue`, and add the matching tests.
-- Log the caught error with `console.error` in the `catch {}` blocks of `TransactionEditDialog.vue`, `TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `Budget.vue`, and add the matching tests.
 - Give the invalid-file toast in `src/helpers/files.ts` a `group` and `closable: true`, and clear the group when the file is recovered.
 - Add the `App.vue` message-handler tests to `src/__tests__/App.spec.ts`.
 - Audit callers of `writeJsonFile` and the Dropbox helper that return `false` to confirm each one shows a message.
