@@ -80,7 +80,7 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 ## Error handling
 - REQUIRED: Follow the defaults in `specs/validation-and-errors.md`. This feature does not override any of them.
 - CONFIRMED: A failed local queue write (RT-009) shows the error message "Transaction not saved / The transaction could not be saved locally. Please try again.", keeps the form open with the entered values, and re-enables Save.
-- UNCLEAR: Logging the caught error with `console.error` is tracked as a code-alignment follow-up in `specs/validation-and-errors.md`, not here.
+- UNCLEAR (RT-044): Whether a failed local save must also be logged with `console.error` (default RT-032 Logging rule) or stays toast-only through an explicit override. The Observability line below conflicts with the default. See `specs/requirements-triage.md`.
 
 ## Security / permissions
 - CONFIRMED: No route gate. The forms write only to the local queue; nothing is sent to a provider until sync.
