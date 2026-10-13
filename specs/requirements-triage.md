@@ -22,8 +22,10 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 
 | ID | Area | Spec locations | Question | Proposed answer | Bucket | Confidence | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| RT-038 | Quick-add transaction dialogs | `spec-coverage.md` Code Areas Without Specs and Recommended Next Specs | Are the top-bar Expense and Transfer quick-add dialogs a supported flow? | Yes. Spec them in `features/transaction-dialogs.md` and hold them to the same rules as `TransactionEditDialog`. | Document only (then tests) | Medium | Open |
+| RT-038 | Quick-add transaction dialogs | `spec-coverage.md` Code Areas Without Specs and Recommended Next Specs | Are the top-bar Expense and Transfer quick-add dialogs a supported flow? | Yes. Spec them in `features/transaction-dialogs.md` and hold them to the same rules as `TransactionEditDialog`. | Document only (then tests) | Medium | Resolved |
 | RT-039 | Unused worker sources | `spec-coverage.md` Code Areas Without Specs; `AGENTS.md` sensitive areas | Are `claims-sw.ts`, `prompt-sw.ts`, `worker.js`, and `workerImport.js` part of the product? | No. Mark them unused and out of scope; remove them in a separate cleanup task. | Document only | Medium | Open |
+| RT-042 | Transaction description minimum | `features/transaction-dialogs.md`; `features/transactions.md`; `data-model.md` | Which minimum description length applies to the Expense and general transaction forms? | 1 character (non-empty) in both. | Code change | High | Resolved |
+| RT-043 | Quick-add field scope | `features/transaction-dialogs.md` | Is it intended that the quick-add forms omit tags and units? | Yes. Tags, units, and extra entries use the General option. | Document only | High | Resolved |
 
 ## RT-033: Budget comment shape and metadata
 
@@ -109,7 +111,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Bucket / confidence:** Document only / High.
 - **Decision:** RESOLVED (RT-037). Accepted as proposed. `specs/architecture.md` now records the generated service worker as specified by its observable build output (RT-025) with in-browser behavior as manual coverage.
 
-## RT-038: Top-bar quick-add transaction dialogs (not yet marked UNCLEAR)
+## RT-038: Top-bar quick-add transaction dialogs
 
 - **Open question:** `specs/spec-coverage.md` says the Expense and Transfer dialogs "are not covered in detail because the main transaction view currently uses `TransactionEditDialog.vue`". It recommends a `transaction-dialogs.md` spec "if those components are still intended to be active".
 - **Current behavior:** The dialogs are active.
@@ -120,6 +122,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Risk if left unclear:** These are user-facing write paths into `transactions_<year>_<month>.json`, but no spec covers them. They may not follow RT-008 (fresh id on edit), RT-009 (blocking local queue failure), or the transaction validation rules, and nothing would detect it.
 - **Proposed answer:** Treat them as a supported flow. Write `specs/features/transaction-dialogs.md` requiring the same validation, id, and local-queue failure rules as `TransactionEditDialog`. Then add component tests per `specs/testing-strategy.md`. If the product does not want them, remove the top-bar entry point instead.
 - **Bucket / confidence:** Document only, then tests / Medium.
+- **Decision:** RESOLVED (RT-038). Accepted as proposed. `specs/features/transaction-dialogs.md` specifies the picker and the Expense and Transfer forms and holds them to the same rules as the general transaction form. Two follow-up decisions are RT-042 and RT-043. The component tests are `GAP` rows in the `specs/testing-strategy.md` matrix, to be written in an "Implement RT-038" PR.
 
 ## RT-039: Unused service-worker and worker sources (not yet marked UNCLEAR)
 
@@ -173,3 +176,23 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
   - Rule placement: shared "List ordering" section in `specs/architecture.md`, referenced by `values.md` and `investments.md`.
   - Code status: satisfied. `sortTreeByName()` in `src/helpers/ordering.ts`, applied in `accountsGroupBy` in `src/views/portafolio/index.vue`; tests in `src/views/__tests__/PortfolioRowOrder.spec.ts` and `src/helpers/__tests__/ordering.spec.ts`.
 - **Bucket / confidence:** Code change / High.
+
+## RT-042: Transaction description minimum length
+
+- **Question:** The general transaction form requires a description of at least 5 characters, but the Expense quick-add form requires only 1. Which minimum applies?
+- **Current behavior:** `TransactionEditDialog.vue` uses `z.string().min(5)`; `TransactionExpenseDialog.vue` uses `z.string().min(1, "Description is required")`; the Transfer form generates its description.
+- **Evidence:** `src/components/TransactionEditDialog.vue`; `src/components/TransactionExpenseDialog.vue`; `src/components/__tests__/TransactionEditDialog.spec.ts` ("rejects a description shorter than 5 characters"); `specs/data-model.md`.
+- **Risk if left unclear:** The same transaction is valid in one form and rejected in the other.
+- **Decision:** RESOLVED (RT-042). The minimum is 1 character (non-empty) in both the Expense form and the general form. Loosening is backward compatible: stored transactions are not revalidated. Recorded in `specs/features/transaction-dialogs.md`, `specs/features/transactions.md`, and `specs/data-model.md`.
+  - Code status: not satisfied until the implementation PR changes `TransactionEditDialog.vue` to `z.string().min(1, "Description is required")` and updates its test.
+- **Bucket / confidence:** Code change / High.
+
+## RT-043: Quick-add forms omit tags and units
+
+- **Question:** The general form supports tags and unit counts, but the quick-add forms do not. Is the difference intended?
+- **Current behavior:** The Expense and Transfer forms never write `tags` or `units`, and list only payment-type accounts (cash, bank, credit card, receivable, payable), so unit-based accounts (ETF, Stock, Crypto) are not offered.
+- **Evidence:** `src/components/TransactionExpenseDialog.vue`; `src/components/TransactionTransferDialog.vue`; `PAYMENT_ACCOUNT_TYPES` in `src/helpers/transactionForms.ts`.
+- **Risk if left unclear:** Someone may "fix" the missing fields and turn the quick forms into the general form.
+- **Decision:** RESOLVED (RT-043). The difference is intentional. Quick-add stays the simple path; tags, units, and more than two entries use the General option. Recorded in `specs/features/transaction-dialogs.md`.
+  - Code status: satisfied; no test yet (`GAP` row in the matrix).
+- **Bucket / confidence:** Document only / High.

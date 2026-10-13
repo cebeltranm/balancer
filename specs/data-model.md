@@ -88,7 +88,7 @@
 - CONFIRMED: Shape is an array of transactions.
 - CONFIRMED: Transaction fields include `id`, `date`, `description`, optional `tags`, `values`, optional `deleted`, and local-only optional `to_sync`.
 - CONFIRMED: Each transaction value includes `accountId`, `value`, optional `accountValue`, and optional `units`.
-- CONFIRMED: Transaction editor requires non-future date, description length at least 5, values with accounts and numeric values, expense values greater than 0, unit values for unit-based accounts, and total value sum approximately 0.
+- CONFIRMED: Transaction editor requires non-future date, description length at least 1 (RT-042; currently enforced as 5 until the implementation PR), values with accounts and numeric values, expense values greater than 0, unit values for unit-based accounts, and total value sum approximately 0.
 - CONFIRMED: For same-currency values, `accountValue` is persisted equal to `value`; for cross-currency values, `accountValue` is separately entered or rate-derived.
 - CONFIRMED: Pending local transactions override same-id remote transactions during load; pending deleted transactions are excluded from the visible merged list.
 - CONFIRMED: Sync merges pending transactions into the month file by removing same ids from the remote file and appending non-deleted pending transactions.
