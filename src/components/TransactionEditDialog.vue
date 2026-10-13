@@ -555,7 +555,8 @@ async function handleSubmit(_event: any) {
     ];
     state.value.description = "";
     state.value.tags = [];
-  } catch {
+  } catch (error) {
+    console.error("Failed to save transaction locally", error);
     EVENTS.emit("message", {
       severity: "error",
       summary: "Transaction not saved",

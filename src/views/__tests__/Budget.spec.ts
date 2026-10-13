@@ -176,6 +176,7 @@ describe("Budget view (RT-009)", () => {
   afterEach(() => {
     app?.unmount();
     root.remove();
+    vi.restoreAllMocks();
   });
 
   it("shows expense rows under their category with Save disabled until an edit", async () => {
@@ -221,10 +222,12 @@ describe("Budget view (RT-009)", () => {
     expect(mocks.emit).not.toHaveBeenCalledWith(FORM_WITH_PENDING_EVENTS, true);
   });
 
-  it("shows an error and keeps edits pending when the local queue write fails", async () => {
-    mocks.setBudgetForYear.mockRejectedValue(
-      new Error("IndexedDB unavailable"),
-    );
+  it("shows an error, logs it, and keeps edits pending when the local queue write fails (RT-044)", async () => {
+    const saveError = new Error("IndexedDB unavailable");
+    mocks.setBudgetForYear.mockRejectedValue(saveError);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     app = await mountBudget(root);
 
     editRent(2, 150);
@@ -237,6 +240,10 @@ describe("Budget view (RT-009)", () => {
       summary: "Budget not saved",
       message: "The budget could not be saved locally. Please try again.",
     });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to save budget locally",
+      saveError,
+    );
     const pendingEvents = mocks.emit.mock.calls.filter(
       ([name]) => name === FORM_WITH_PENDING_EVENTS,
     );

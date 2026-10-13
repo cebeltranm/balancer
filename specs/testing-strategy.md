@@ -47,7 +47,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 
 ### Transactions (`specs/features/transactions.md`)
 - Component — REQUIRED:
-  - COVERED: Edit as delete-original-plus-new-id, and local queue failure keeps the dialog from reporting success (`src/components/__tests__/TransactionEditDialog.spec.ts`).
+  - COVERED: Edit as delete-original-plus-new-id, and local queue failure keeps the dialog from reporting success and logs the error (RT-044) (`src/components/__tests__/TransactionEditDialog.spec.ts`).
   - COVERED: `TransactionEditDialog.vue` validation blocks saving a short description (the 5-character rule changes to an empty-description rule under RT-042; the test is updated in the implementation PR), a future date, a non-positive expense value, or values not summing to zero (`TransactionEditDialog.spec.ts`).
   - COVERED: `Transactions.vue` lists the selected account's rows, hides deleted transactions, marks pending rows, opens the edit dialog, and deletes only after confirmation (`src/views/__tests__/Transactions.spec.ts`).
 - Integration — RECOMMENDED: edit-as-delete-plus-new-save followed by balance recalculation across the real transactions and balance stores.
@@ -58,7 +58,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - GAP (RT-038): Picker buttons open the Expense, Transfer, and general forms (`TransactionTypeDialog`).
   - GAP (RT-038): Expense form saves a balanced transaction with a fresh id, and blocks a future date, a non-positive value, the same account on both sides, and a missing exchange rate.
   - GAP (RT-038): Transfer form saves a balanced transaction with the generated description, and blocks the same validation cases plus a missing target value.
-  - GAP (RT-009): A failed local queue write in either form shows the error message, keeps the form open with its values, and re-enables Save.
+  - COVERED (RT-009, RT-044): A failed local queue write in either form shows the error message, logs it with `console.error`, keeps the form open with its values, and re-enables Save (`src/components/__tests__/TransactionExpenseDialog.spec.ts`, `src/components/__tests__/TransactionTransferDialog.spec.ts`).
   - GAP (RT-042): An empty description is blocked, and a 1–4 character description saves, in the Expense form and in `TransactionEditDialog` (the existing `TransactionEditDialog.spec.ts` 5-character test changes).
   - GAP (RT-043): Neither quick-add form offers tags or unit fields, and only payment-type accounts are listed.
 - Integration: none required.
@@ -99,7 +99,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Budget (`specs/features/budget.md`)
 - Component — REQUIRED:
   - COVERED: Editing a budget cell marks the row pending, blocks navigation, and saving calls `setBudgetForYear()`; negative values are ignored (`src/views/__tests__/Budget.spec.ts`).
-  - COVERED (RT-009): A failed local budget queue write shows an error and keeps edits pending with Save available (`Budget.spec.ts`).
+  - COVERED (RT-009, RT-044): A failed local budget queue write shows an error, logs it with `console.error`, and keeps edits pending with Save available (`Budget.spec.ts`).
   - GAP: Context menu actions (apply next, remove) update the row and mark it pending.
 - Unit — COVERED: load, group, save, and failed queue write (`src/stores/__tests__/budget.spec.ts`).
 - Manual: context menu and comments dialog interaction.

@@ -55,7 +55,7 @@
 ## Code Areas Without Specs
 - CONFIRMED: `src/format.ts` has focused MXN currency-formatting coverage; other formatter functions are covered only through feature usage.
 - CONFIRMED: `src/layout/AppMenu.vue` is covered only by architecture-level navigation notes; `src/layout/AppTopbar.vue` has focused MXN currency-selector coverage.
-- RESOLVED (RT-038): `src/components/TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `TransactionTypeDialog.vue` are specified in `specs/features/transaction-dialogs.md`; their component tests are not written yet.
+- RESOLVED (RT-038): `src/components/TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `TransactionTypeDialog.vue` are specified in `specs/features/transaction-dialogs.md`; the Expense and Transfer forms have failed-save tests (RT-009, RT-044), the rest of their component tests are not written yet.
 - CONFIRMED: `src/components/AccountsSelector.vue`, `PeriodSelector.vue`, and `CommentsDialog.vue` are covered only as supporting components.
 - CONFIRMED: Styling files under `src/assets/styles/` are not specified.
 - CONFIRMED: Public icons, favicon, and robots/static HTML are not specified beyond PWA manifest/icon references.

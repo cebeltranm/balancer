@@ -137,10 +137,12 @@ describe("TransactionEditDialog", () => {
     });
   });
 
-  it("keeps failed local queue writes from being presented as saved", async () => {
-    storeMocks.saveTransaction.mockRejectedValue(
-      new Error("IndexedDB unavailable"),
-    );
+  it("keeps failed local queue writes from being presented as saved and logs them (RT-044)", async () => {
+    const saveError = new Error("IndexedDB unavailable");
+    storeMocks.saveTransaction.mockRejectedValue(saveError);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const onUpdateTransaction = vi.fn();
     const originalTransaction = {
       id: 42,
@@ -189,6 +191,10 @@ describe("TransactionEditDialog", () => {
       summary: "Transaction not saved",
       message: "The transaction could not be saved locally. Please try again.",
     });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to save transaction locally",
+      saveError,
+    );
     expect(onUpdateTransaction).not.toHaveBeenCalled();
   });
 });

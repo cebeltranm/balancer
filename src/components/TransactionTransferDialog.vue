@@ -283,7 +283,8 @@ async function handleSubmit() {
     await transactionsStore.saveTransaction(transaction);
     close();
     resetState();
-  } catch {
+  } catch (error) {
+    console.error("Failed to save transaction locally", error);
     EVENTS.emit("message", {
       severity: "error",
       summary: "Transaction not saved",

@@ -25,6 +25,7 @@ Intended behavior that must survive refactors. Anything not listed here is not a
   - The saved transaction gets a fresh `Date.now()` id.
   - A cross-currency transaction needs an available exchange rate.
   - A failed local queue write is blocking (RT-009): show an error, keep the form open with the entered values, and do not close or reset it.
+  - RESOLVED (RT-044): A failed local queue write is also logged with `console.error`, with the caught error and a short context message, following the default Logging rule in `specs/validation-and-errors.md` (no override). The log contains no transaction values.
 - RESOLVED (RT-038): The quick-add forms only create transactions. They never delete or replace an existing one, so the delete-plus-new-id rule (RT-008) does not apply to them.
 - RESOLVED (RT-042): A transaction description must be non-empty (at least 1 character) in both the Expense form and the general transaction form. This replaces the earlier 5-character minimum of the general form. The Transfer form has no description input; it generates one that names the source and destination accounts.
 - RESOLVED (RT-043): The quick-add forms intentionally do not offer tags or unit counts, and only list payment-type accounts (cash, bank, credit card, receivable, payable) for the payment, source, and destination accounts. Users who need tags, unit-based accounts (ETF, Stock, Crypto), or more than two entries use the General option.
@@ -47,13 +48,14 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - CONFIRMED: `src/components/TransactionTransferDialog.vue` validates date not in the future, source and destination required and different, `value > 0`, and (cross-currency only) a positive target value and an exchange rate above 0. The target value is pre-filled from the exchange rate until the user edits it.
 - CONFIRMED: The Transfer form builds a transaction with `id: Date.now()`, the description `Transfer <source name> -> <destination name>`, a source entry of `-value` and a destination entry of `+value` whose `accountValue` is the target value.
 - CONFIRMED: Account options come from `buildAccountOptions()` with `PAYMENT_ACCOUNT_TYPES` in `src/helpers/transactionForms.ts`.
-- CONFIRMED: Both forms save through `transactionsStore.saveTransaction()`. On success they call `close()` then `resetState()`. On failure, the `catch {}` emits an `error` message "Transaction not saved" and leaves the form open with its values. The caught error is not logged (see the follow-up in `specs/validation-and-errors.md`).
+- CONFIRMED: Both forms save through `transactionsStore.saveTransaction()`. On success they call `close()` then `resetState()`. On failure, the `catch` logs `console.error("Failed to save transaction locally", error)`, emits an `error` message "Transaction not saved", and leaves the form open with its values.
 - CONFIRMED: Both forms show the Save button only while not saving, and re-validate on every change once an error has been shown.
 - CONFIRMED: `TransactionEditDialog.vue` currently validates the description with `z.string().min(5)`.
 - CONFIRMED: Contract status:
   - Supported flow and picker routing (RT-038): satisfied; no test covers the picker or the forms (`src/layout/__tests__/AppTopbar.spec.ts` stubs the picker).
   - Shared rules (date, positive amounts, balanced entries, fresh id, cross-currency rate) for the quick-add forms (RT-038): satisfied; no test.
-  - Blocking local save failure for the quick-add forms (RT-009 via RT-038): satisfied; no test.
+  - Blocking local save failure for the quick-add forms (RT-009 via RT-038): satisfied; covered by `TransactionExpenseDialog.spec.ts` and `TransactionTransferDialog.spec.ts`.
+  - Failed local save is logged with `console.error` (RT-044): satisfied in both quick-add forms and the general form; covered by `TransactionExpenseDialog.spec.ts`, `TransactionTransferDialog.spec.ts`, and `TransactionEditDialog.spec.ts`.
   - Non-empty description (RT-042): Expense form satisfied; general form **not satisfied** (still requires 5 characters; `TransactionEditDialog.spec.ts` asserts the 5-character rule); Transfer form not applicable.
   - Tags, units, and account types omitted from quick-add (RT-043): satisfied; no test.
 
@@ -80,13 +82,13 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 ## Error handling
 - REQUIRED: Follow the defaults in `specs/validation-and-errors.md`. This feature does not override any of them.
 - CONFIRMED: A failed local queue write (RT-009) shows the error message "Transaction not saved / The transaction could not be saved locally. Please try again.", keeps the form open with the entered values, and re-enables Save.
-- UNCLEAR (RT-044): Whether a failed local save must also be logged with `console.error` (default RT-032 Logging rule) or stays toast-only through an explicit override. The Observability line below conflicts with the default. See `specs/requirements-triage.md`.
+- RESOLVED (RT-044): The caught error is also logged with `console.error` (default Logging rule in `specs/validation-and-errors.md`; no override).
 
 ## Security / permissions
 - CONFIRMED: No route gate. The forms write only to the local queue; nothing is sent to a provider until sync.
 
 ## Observability
-- CONFIRMED: The only observable output is the error toast on a failed local save. No other logs or telemetry are required.
+- RESOLVED (RT-044): A failed local save shows the error toast and logs the caught error with `console.error` in the browser console. No remote telemetry is required.
 
 ## Acceptance criteria
 - [ ] REQUIRED (RT-038): GIVEN the top-bar add action is used, WHEN the user picks Expenses, Transfer, or General, THEN the picker closes and the matching form opens.
@@ -97,6 +99,7 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - [ ] REQUIRED (RT-038): GIVEN the same account is chosen on both sides, WHEN the user saves either form, THEN the save is blocked with a visible error.
 - [ ] REQUIRED (RT-038): GIVEN accounts in different currencies and no exchange rate for the date, WHEN the user saves either form, THEN the save is blocked with a visible error.
 - [ ] REQUIRED (RT-009): GIVEN the local queue write fails, WHEN the user saves either form, THEN an error message is shown, the form stays open with the entered values, and Save is available again.
+- [ ] RESOLVED (RT-044): GIVEN the local queue write fails, WHEN the user saves either quick-add form or the general form, THEN the caught error is logged with `console.error` in addition to the error message.
 - [ ] REQUIRED (RT-042): GIVEN an empty description, WHEN the user saves the Expense form or the general form, THEN the save is blocked with "Description is required".
 - [ ] REQUIRED (RT-042): GIVEN a description of 1 to 4 characters, WHEN the user saves the Expense form or the general form with otherwise valid data, THEN the transaction is queued.
 - [ ] REQUIRED (RT-043): GIVEN either quick-add form is open, THEN it offers no tags or unit fields and lists only payment-type accounts for the payment, source, and destination accounts.
@@ -110,7 +113,7 @@ Required coverage levels and conventions are defined in `specs/testing-strategy.
 - Manual: date picker, account select filters, and the description autocomplete in a real browser.
 
 ## Missing Tests / Coverage Gaps
-- CONFIRMED: No test renders `TransactionExpenseDialog`, `TransactionTransferDialog`, or `TransactionTypeDialog`.
+- CONFIRMED: `TransactionExpenseDialog.spec.ts` and `TransactionTransferDialog.spec.ts` cover only the failed local save (RT-009, RT-044). Validation, the queued transaction shape, and RT-043 are not tested. No test renders `TransactionTypeDialog`.
 - CONFIRMED: `AppTopbar.spec.ts` stubs the picker, so the top-bar add action opening it is not tested.
 - CONFIRMED: `TransactionEditDialog.spec.ts` asserts the old 5-character rule and must change with RT-042.
 
@@ -118,3 +121,4 @@ Required coverage levels and conventions are defined in `specs/testing-strategy.
 - RESOLVED (RT-038): The quick-add dialogs are supported and follow the general transaction form's rules.
 - RESOLVED (RT-042): The description minimum is 1 character in the Expense and general forms.
 - RESOLVED (RT-043): Tags and units are intentionally absent from the quick-add forms.
+- RESOLVED (RT-044): A failed local save is logged with `console.error` as well as shown; no logging override.

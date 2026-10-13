@@ -1,6 +1,6 @@
 # Requirements Triage
 
-This triage lists only the product decisions that are still open in `specs/`. Every earlier item (RT-001 to RT-043) is closed and recorded as `RESOLVED`, `REQUIRED`, or `IMPLEMENTED` in the feature, data-model, architecture, and validation specs. Their full triage text is in git history.
+This triage lists the product decisions opened after RT-043. Every earlier item (RT-001 to RT-043) is closed and recorded as `RESOLVED`, `REQUIRED`, or `IMPLEMENTED` in the feature, data-model, architecture, and validation specs. Their full triage text is in git history.
 
 IDs continue from RT-044 so existing `RT-xxx` references in specs and tests stay unique. `specs/feature-template.md` also contains `UNCLEAR`, but only as marker instructions, so it is not listed.
 
@@ -10,11 +10,11 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
 
 | ID | Area | Spec locations | Question | Suggested solution | Status |
 | --- | --- | --- | --- | --- | --- |
-| RT-044 | Transaction dialog error logging | `features/transaction-dialogs.md` Error handling and Observability; `validation-and-errors.md` Logging and Code Alignment Follow-Ups | Must a failed local save in the transaction dialogs be logged with `console.error` as well as shown as a toast? | Yes. Apply the default RT-032 Logging rule with no override, and fix the code in the existing follow-up task. | Open |
+| RT-044 | Transaction dialog error logging | `features/transaction-dialogs.md` Error handling and Observability; `validation-and-errors.md` Logging and Code Alignment Follow-Ups | Must a failed local save in the transaction dialogs be logged with `console.error` as well as shown as a toast? | Yes. Apply the default RT-032 Logging rule with no override, and fix the code in the existing follow-up task. | Resolved |
 
 ## RT-044: Logging of failed local saves in the transaction dialogs
 
-- **Status:** Open. Waiting for a product owner decision.
+- **Status:** Resolved. The suggested solution was accepted (see Decision).
 - **Unclear spec:**
   - `specs/features/transaction-dialogs.md` (Error handling) says "UNCLEAR: Logging the caught error with `console.error` is tracked as a code-alignment follow-up in `specs/validation-and-errors.md`, not here."
   - The same spec (Observability) says "The only observable output is the error toast on a failed local save. No other logs or telemetry are required."
@@ -31,3 +31,4 @@ When a decision is made, record it in the listed spec locations as `RESOLVED (RT
   - The Code Alignment Follow-Up for the transaction dialogs stays blocked, so the "Unexpected failure is both shown and logged" row in `validation-and-errors.md` stays "not satisfied".
   - When a local save fails (for example, IndexedDB quota or a private-browsing restriction), the user sees only a generic toast and nothing in the console records the cause. That makes the failure hard to diagnose or report.
   - Limited risk: no data is lost. The form stays open with the entered values and Save is available again (RT-009).
+- **Decision:** RESOLVED (RT-044). Accepted as suggested: the default RT-032 Logging rule applies with no override. A failed local save in `TransactionEditDialog.vue`, `TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `Budget.vue` now calls `console.error("Failed to save <transaction|budget> locally", error)` before showing the existing error message. `specs/features/transaction-dialogs.md`, `specs/features/transactions.md`, `specs/features/budget.md`, `specs/validation-and-errors.md`, and `specs/testing-strategy.md` carry `RESOLVED (RT-044)`; the matching Code Alignment Follow-Up is removed. Code status: satisfied. Tests: updated `TransactionEditDialog.spec.ts` and `Budget.spec.ts`; new `TransactionExpenseDialog.spec.ts` and `TransactionTransferDialog.spec.ts`.
