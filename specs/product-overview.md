@@ -75,11 +75,11 @@ The router also blocks navigation while forms report pending changes and emits a
 ### Background jobs and worker behavior
 
 - `src/helpers/pwa.ts` registers the service worker immediately and checks for service-worker updates every 120 seconds when `__RELOAD_SW__` is replaced with `"true"`.
-- `src/claims-sw.ts` and `src/prompt-sw.ts` precache app assets, clean outdated caches, and register an app-shell navigation fallback to `index.html`.
+- RESOLVED (RT-039): `src/claims-sw.ts` and `src/prompt-sw.ts` are unused and out of scope. The service worker comes from VitePWA generation (see `specs/features/pwa.md`). They are pending removal in a separate cleanup task.
 - `src/App.vue` checks pending local sync work on mount.
 - `src/components/Auth.vue` loads basic files after login, seeds `accounts.json` from `public/accounts.json` if missing, refreshes stale cached files from remote storage, ensures current-month values/balance exist, and preloads recent transactions.
 - `src/stores/storage.ts` debounces full sync work and serializes explicit sync operations.
-- `src/worker.js` is a small sample/test worker responding to `ping` and `clear`; it does not appear to drive core product behavior.
+- RESOLVED (RT-039): `src/worker.js` and `src/workerImport.js` are unused sample code and out of scope; they do not drive product behavior. They are pending removal in a separate cleanup task.
 
 ## External dependencies
 

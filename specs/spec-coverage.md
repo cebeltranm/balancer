@@ -57,7 +57,7 @@
 - CONFIRMED: `src/layout/AppMenu.vue` is covered only by architecture-level navigation notes; `src/layout/AppTopbar.vue` has focused MXN currency-selector coverage.
 - RESOLVED (RT-038): `src/components/TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `TransactionTypeDialog.vue` are specified in `specs/features/transaction-dialogs.md`; their component tests are not written yet.
 - CONFIRMED: `src/components/AccountsSelector.vue`, `PeriodSelector.vue`, and `CommentsDialog.vue` are covered only as supporting components.
-- CONFIRMED: `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are covered only at a high level by PWA/architecture notes.
+- RESOLVED (RT-039): `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are unused and out of scope. They need no spec or tests and are pending removal in a separate cleanup task.
 - CONFIRMED: Styling files under `src/assets/styles/` are not specified.
 - CONFIRMED: Public icons, favicon, and robots/static HTML are not specified beyond PWA manifest/icon references.
 
