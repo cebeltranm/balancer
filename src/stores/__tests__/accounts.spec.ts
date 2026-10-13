@@ -110,6 +110,103 @@ describe("accounts store", () => {
     expect(store.getAccountGroupType("legacy_cash")).toBeNull();
   });
 
+  describe("legacy account type aliases (RT-034)", () => {
+    const legacyFile = () => ({
+      old_cash: { name: "Wallet", type: "cash", currency: "usd" },
+      old_saving: { name: "Savings", type: "SavingAccount", currency: "usd" },
+    });
+
+    it("RT-034: migrates cash to Cash and SavingAccount to BankAccount on load", async () => {
+      vi.mocked(readJsonFile).mockResolvedValue(legacyFile());
+
+      const store = useAccountsStore();
+      const loaded = await store.loadAccounts(true);
+
+      expect(loaded.old_cash.type).toBe(AccountType.Cash);
+      expect(loaded.old_saving.type).toBe(AccountType.BankAccount);
+      expect(store.accounts.old_cash.type).toBe(AccountType.Cash);
+      expect(store.accounts.old_saving.type).toBe(AccountType.BankAccount);
+    });
+
+    it("RT-034: migrated accounts resolve to the assets group", async () => {
+      vi.mocked(readJsonFile).mockResolvedValue(legacyFile());
+
+      const store = useAccountsStore();
+      await store.loadAccounts(true);
+
+      expect(store.getAccountGroupType("old_cash")).toBe(
+        AccountGroupType.Assets,
+      );
+      expect(store.getAccountGroupType("old_saving")).toBe(
+        AccountGroupType.Assets,
+      );
+    });
+
+    it("RT-034: loading legacy aliases does not write accounts.json", async () => {
+      vi.mocked(readJsonFile).mockResolvedValue(legacyFile());
+
+      const store = useAccountsStore();
+      await store.loadAccounts(true);
+
+      expect(writeJsonFile).not.toHaveBeenCalled();
+    });
+
+    it("RT-034: saving an account persists the migrated type, not the alias", async () => {
+      vi.mocked(readJsonFile).mockResolvedValue(legacyFile());
+      vi.mocked(writeJsonFile).mockResolvedValue(true);
+
+      const store = useAccountsStore();
+      await store.loadAccounts(true);
+      await store.saveAccount({
+        id: "new_cash",
+        name: "New Wallet",
+        type: AccountType.Cash,
+        currency: "usd",
+      });
+
+      const [fileName, rawPayload] = vi.mocked(writeJsonFile).mock.calls[0];
+      const payload = rawPayload as Record<string, { type: string }>;
+      expect(fileName).toBe("accounts.json");
+      expect(payload.old_cash.type).toBe(AccountType.Cash);
+      expect(payload.old_saving.type).toBe(AccountType.BankAccount);
+    });
+
+    it.each([
+      "CASH",
+      "savingaccount",
+      "Cash Account",
+      "Savingaccount",
+      " cash",
+    ])("RT-034: rejects near-miss type %j as malformed_file", async (type) => {
+      vi.mocked(readJsonFile).mockResolvedValue({
+        bad: { name: "Bad", type, currency: "usd" },
+      });
+
+      const store = useAccountsStore();
+
+      await expect(store.loadAccounts(true)).rejects.toMatchObject({
+        code: "malformed_file",
+        fileName: "accounts.json",
+        recoverable: true,
+      });
+      expect(store.accounts).toEqual({});
+    });
+
+    it("RT-034: one unsupported type still rejects the whole file even when aliases are present", async () => {
+      vi.mocked(readJsonFile).mockResolvedValue({
+        ...legacyFile(),
+        bad: { name: "Bad", type: "Nope", currency: "usd" },
+      });
+
+      const store = useAccountsStore();
+
+      await expect(store.loadAccounts(true)).rejects.toMatchObject({
+        code: "malformed_file",
+      });
+      expect(store.accounts).toEqual({});
+    });
+  });
+
   it("returns proper group/type helpers and active accounts", () => {
     const store = useAccountsStore();
     store.accounts = {

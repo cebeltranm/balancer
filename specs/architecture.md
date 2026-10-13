@@ -48,7 +48,7 @@
 
 ## Main Risks And Assumptions
 - CONFIRMED: `syncCachedFiles()` in `Auth.vue` uses `Object.keys(...).forEach(async ...)`, so refresh tasks are launched without being awaited as a group.
-- CONFIRMED: `accounts.json` in `public/` includes legacy-looking account type strings (`cash`, `SavingAccount`) that do not match `AccountType` enum values.
+- RESOLVED (RT-034): Files seeded before RT-006 may contain legacy account type strings (`cash`, `SavingAccount`) that do not match `AccountType` enum values. They are migrated in memory on load by a fixed alias list; see `features/accounts.md`.
 - CONFIRMED: `balance_<year>.json` is calculated and persisted; stale balances are possible if source files change without recalculation.
 - INFERRED: The app assumes account ids are stable because transactions, budget, values, and balance files reference account ids.
 - INFERRED: The app assumes monthly transaction ids are unique enough to merge by `id`; new transaction ids are generated with `Date.now()`.
