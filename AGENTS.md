@@ -51,7 +51,8 @@ This section is the single source for how changes enter the specs.
 | `specs/data-model.md` | Persisted files, fields, and compatibility rules. |
 | `specs/validation-and-errors.md` | Default validation and error rules. Feature specs must name any rule they override. |
 | `specs/testing-strategy.md` | Test layers, conventions, Change Gate, and the per-feature coverage matrix. |
-| `specs/requirements-triage.md` | Open and resolved product decisions, numbered `RT-xxx`. |
+| `specs/requirements-triage.md` | Exists only while a product decision is open. Lists open decisions, numbered `RT-xxx`. RT-001 to RT-044 are closed and recorded in the specs (their triage text is in git history); the next free id is RT-045. Create the file when a new decision is opened. |
+| `specs/implementation-plan.md` | Contract lines not yet satisfied by code and required test gaps, with priority, complexity, and suggested session grouping. |
 | `specs/spec-coverage.md` | Which specs exist and which code and tests they map to. |
 | `specs/feature-template.md` | Template for a new feature spec. |
 | `specs/features/<name>.md` | One spec per feature. The **Product Contract** is the requirement; **Observed Implementation** only traces the current code. |
@@ -71,7 +72,7 @@ Pick the size first. If you can't tell which size it is, treat it as the bigger 
 3. Fix the code and update `Contract status` in Observed Implementation.
 
 ### Small change
-1. **Record the decision.** Add the next free `RT-xxx` id to `specs/requirements-triage.md` with the question, the answer, and its status. For a trivial change, one row in the summary table is enough.
+1. **Record the decision.** Add the next free `RT-xxx` id to `specs/requirements-triage.md` (create it if missing) with the question, the answer, and its status. For a trivial change, one row in the summary table is enough.
 2. **Edit the feature spec.** Add or change a `RESOLVED (RT-xxx)` line in the Product Contract and add a GIVEN/WHEN/THEN acceptance criterion. Update `specs/data-model.md` or `specs/validation-and-errors.md` only if the change affects them.
 3. **Write the test, then the code**, in the same PR. The Change Gate in `specs/testing-strategy.md` lets a small, local change proceed if it adds a test for the behavior it changes.
 4. Update Observed Implementation and the feature's row in the `specs/testing-strategy.md` matrix.
@@ -86,7 +87,7 @@ Pick the size first. If you can't tell which size it is, treat it as the bigger 
 
 ### Closing a decision
 1. Record it in the listed spec locations as `RESOLVED (RT-xxx)` and remove the `UNCLEAR` marker.
-2. Update the item's status in `specs/requirements-triage.md`.
+2. Remove the item from `specs/requirements-triage.md`, and delete the file once no open items remain.
 3. If it needs code, implement it as a fix or small change above.
 
 ### Spec checks before finishing
