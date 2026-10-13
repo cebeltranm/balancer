@@ -16,7 +16,7 @@ Balancer is an application for tracking expenses and investments. The applicatio
 
 ## Requirements
 
-- Node.js
+- Node.js 24 LTS (see `.nvmrc`)
 - npm 
 
 ## Getting Started
