@@ -40,7 +40,6 @@
 - Code status (RT-025): SATISFIED. `initPWA()` passes `onRegisterError`, which logs via `console.error` only (`src/helpers/pwa.ts`); covered by `pwa.spec.ts`.
 
 ## Edge Cases
-- RESOLVED (RT-039): `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are unused and out of scope. Runtime behavior comes only from the generated VitePWA service worker. The unused files are pending removal in a separate cleanup task.
 - CONFIRMED: Manifest icon paths intentionally mix slash/no-slash paths, with comments indicating test sensitivity.
 - INFERRED: Offline app shell does not guarantee offline availability of remote JSON storage data unless already cached in IndexedDB.
 

@@ -134,7 +134,7 @@ Two more open questions turned up during the review. They are not marked `UNCLEA
 - **Risk if left unclear:** Contributors may edit or test files that never run, or assume custom service-worker logic exists. That conflicts with the RT-025 statement that generated output is the contract.
 - **Proposed answer:** Record them as unused examples and out of scope in `specs/architecture.md` and `spec-coverage.md`. Remove them, and the commented config, in a separate cleanup task if the product agrees.
 - **Bucket / confidence:** Document only / Medium.
-- **Decision:** RESOLVED (RT-039). Accepted as proposed. `claims-sw.ts`, `prompt-sw.ts`, `worker.js`, and `workerImport.js` are unused and out of scope; the generated VitePWA service worker is the only service-worker contract. `specs/architecture.md`, `specs/product-overview.md`, `specs/features/pwa.md`, `specs/spec-coverage.md`, and `AGENTS.md` now say so. Code status: pending removal. Follow-up cleanup task (separate PR, no behavior change): delete the four files, the commented `SW === 'true'` block in `vite.config.ts`, and the `src/worker.js` override in `eslint.config.mjs`, then remove them from `AGENTS.md` sensitive areas. Validate with `npm run build`, `type-check`, `lint`, and `test`.
+- **Decision:** RESOLVED (RT-039). Accepted as proposed. The four unused sources were out of scope and have been removed, together with the commented `injectManifest` block in `vite.config.ts` and the `src/worker.js` ESLint override. The generated VitePWA service worker is the only service-worker contract (`specs/architecture.md`, `specs/features/pwa.md`). Code status: satisfied. No behavior change; validated with `npm run build`, `type-check`, `lint`, and `test`.
 
 ## RT-040: Values table row order
 
