@@ -31,7 +31,7 @@
 - CONFIRMED: The build-time replacement sets `__RELOAD_SW__` to `"true"`, causing registered service workers to check for updates every 120 seconds.
 - CONFIRMED: `src/App.vue` shows a persistent toast when `needRefresh` becomes true and calls `updateServiceWorker(true)` when the user chooses update.
 - RESOLVED (RT-025, RT-037): The generated service worker is specified by its observable result, not its source. A production build must emit a manifest named `Balancer` with the 192/512 icons, a service worker that precaches `index.html` and the built JS/CSS assets, and outdated-cache cleanup; this is covered by `src/helpers/__tests__/pwaBuild.spec.ts`. Registration failure is console-only and never blocks startup (`pwa.spec.ts`). In-browser install, activate, offline reload, and update-swap behavior is manual coverage per `specs/testing-strategy.md`. See `specs/features/pwa.md`.
-- RESOLVED (RT-039): `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are unused and out of scope. Nothing imports them and the `injectManifest` config that would use them is commented out in `vite.config.ts`. The generated VitePWA service worker is the only service-worker contract. They are to be removed in a separate cleanup task.
+- RESOLVED (RT-039): The generated VitePWA service worker is the only service-worker contract. There are no custom service-worker or worker sources in `src/`.
 
 ## Authentication Boundaries
 - CONFIRMED: Storage-provider login is separate from local device authentication.

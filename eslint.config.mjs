@@ -46,14 +46,6 @@ export default [
     },
   },
   {
-    files: ["src/worker.js"],
-    languageOptions: {
-      globals: {
-        self: "readonly",
-      },
-    },
-  },
-  {
     rules: {
       "@typescript-eslint/no-unused-expressions": "warn",
       "no-case-declarations": "warn",

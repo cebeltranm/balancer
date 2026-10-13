@@ -10,14 +10,6 @@ import replace from "@rollup/plugin-replace";
 const replaceOptions = { __DATE__: new Date().toISOString() };
 const reload = true; // process.env.RELOAD_SW === 'true'
 
-// if (process.env.SW === 'true') {
-// pwaOptions.srcDir = 'src'
-// pwaOptions.filename = 'prompt-sw.ts'
-// pwaOptions.strategies = 'injectManifest'
-// ;(pwaOptions.manifest as Partial<ManifestOptions>).name = 'PWA Inject Manifest'
-// ;(pwaOptions.manifest as Partial<ManifestOptions>).short_name = 'PWA Inject'
-// }
-
 if (reload) {
   // @ts-expect-error overrides
   replaceOptions.__RELOAD_SW__ = "true";
