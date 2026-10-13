@@ -48,10 +48,21 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Transactions (`specs/features/transactions.md`)
 - Component — REQUIRED:
   - COVERED: Edit as delete-original-plus-new-id, and local queue failure keeps the dialog from reporting success (`src/components/__tests__/TransactionEditDialog.spec.ts`).
-  - COVERED: `TransactionEditDialog.vue` validation blocks saving a short description, a future date, a non-positive expense value, or values not summing to zero (`TransactionEditDialog.spec.ts`).
+  - COVERED: `TransactionEditDialog.vue` validation blocks saving a short description (the 5-character rule changes to an empty-description rule under RT-042; the test is updated in the implementation PR), a future date, a non-positive expense value, or values not summing to zero (`TransactionEditDialog.spec.ts`).
   - COVERED: `Transactions.vue` lists the selected account's rows, hides deleted transactions, marks pending rows, opens the edit dialog, and deletes only after confirmation (`src/views/__tests__/Transactions.spec.ts`).
 - Integration — RECOMMENDED: edit-as-delete-plus-new-save followed by balance recalculation across the real transactions and balance stores.
 - Manual: date picker and autocomplete interaction in a real browser.
+
+### Transaction Dialogs (`specs/features/transaction-dialogs.md`)
+- Component — REQUIRED:
+  - GAP (RT-038): Picker buttons open the Expense, Transfer, and general forms (`TransactionTypeDialog`).
+  - GAP (RT-038): Expense form saves a balanced transaction with a fresh id, and blocks a future date, a non-positive value, the same account on both sides, and a missing exchange rate.
+  - GAP (RT-038): Transfer form saves a balanced transaction with the generated description, and blocks the same validation cases plus a missing target value.
+  - GAP (RT-009): A failed local queue write in either form shows the error message, keeps the form open with its values, and re-enables Save.
+  - GAP (RT-042): An empty description is blocked, and a 1–4 character description saves, in the Expense form and in `TransactionEditDialog` (the existing `TransactionEditDialog.spec.ts` 5-character test changes).
+  - GAP (RT-043): Neither quick-add form offers tags or unit fields, and only payment-type accounts are listed.
+- Integration: none required.
+- Manual: date picker, account select filters, and description autocomplete in a real browser.
 
 ### Expenses (`specs/features/expenses.md`)
 - Component — REQUIRED:
@@ -172,6 +183,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 - [ ] Portfolio pie, treemap, and bar charts render; Unknown allocation warning visible when applicable.
 - [ ] Budget context menu and comments dialog open, save, and close.
 - [ ] Transaction dialog date picker and tag autocomplete work.
+- [ ] Top-bar Expense and Transfer quick-add forms open from the picker, and their date picker and description autocomplete work.
 
 ### External Providers
 - [ ] Values external sync fetches currency and stock values from the real providers and saves them.

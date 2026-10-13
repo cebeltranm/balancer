@@ -5,6 +5,7 @@
 - CONFIRMED: `specs/data-model.md`
 - CONFIRMED: `specs/features/dashboard.md`
 - CONFIRMED: `specs/features/transactions.md`
+- CONFIRMED: `specs/features/transaction-dialogs.md` (RT-038)
 - CONFIRMED: `specs/features/expenses.md`
 - CONFIRMED: `specs/features/accounts.md`
 - CONFIRMED: `specs/features/values.md`
@@ -54,7 +55,7 @@
 ## Code Areas Without Specs
 - CONFIRMED: `src/format.ts` has focused MXN currency-formatting coverage; other formatter functions are covered only through feature usage.
 - CONFIRMED: `src/layout/AppMenu.vue` is covered only by architecture-level navigation notes; `src/layout/AppTopbar.vue` has focused MXN currency-selector coverage.
-- CONFIRMED: `src/components/TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `TransactionTypeDialog.vue` are not covered in detail because the main transaction view currently uses `TransactionEditDialog.vue`.
+- RESOLVED (RT-038): `src/components/TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `TransactionTypeDialog.vue` are specified in `specs/features/transaction-dialogs.md`; their component tests are not written yet.
 - CONFIRMED: `src/components/AccountsSelector.vue`, `PeriodSelector.vue`, and `CommentsDialog.vue` are covered only as supporting components.
 - CONFIRMED: `src/claims-sw.ts`, `src/prompt-sw.ts`, `src/worker.js`, and `src/workerImport.js` are covered only at a high level by PWA/architecture notes.
 - CONFIRMED: Styling files under `src/assets/styles/` are not specified.
@@ -132,7 +133,7 @@
 - RESOLVED: Transaction edits continue using delete-plus-new-id. Current code satisfies this behavior; add dialog-level coverage to lock it down.
 
 ## Recommended Next Specs To Write
-- CONFIRMED: `specs/features/transaction-dialogs.md` for transaction type-specific dialog components and expected flow, if those components are still intended to be active.
+- RESOLVED (RT-038): `specs/features/transaction-dialogs.md` now exists.
 - CONFIRMED: `specs/features/selectors-and-shared-components.md` for account selector, period selector, comments dialog, and account value cards.
 - RESOLVED (RT-032): `specs/validation-and-errors.md` now exists with the default validation and error rules and the approved feature overrides.
 - CONFIRMED: `specs/compatibility.md` defining the versionless JSON compatibility policy, additive default requirements, ignored deprecated structures, prohibited renames, legacy account type handling, and account deletion/reference policy.
