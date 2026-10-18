@@ -280,14 +280,23 @@ describe("TransactionEditDialog validation", () => {
     expect(storeMocks.saveTransaction).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects a description shorter than 5 characters", async () => {
+  it("rejects an empty description (RT-042)", async () => {
+    app = await mountDialog(root, { ...validTransaction, description: "" });
+
+    await submit(root);
+
+    expect(errorMessages(root)).toEqual(["Description is required"]);
+    expect(storeMocks.deleteTransaction).not.toHaveBeenCalled();
+    expect(storeMocks.saveTransaction).not.toHaveBeenCalled();
+  });
+
+  it("saves a description of 1 to 4 characters (RT-042)", async () => {
     app = await mountDialog(root, { ...validTransaction, description: "Rent" });
 
     await submit(root);
 
-    expect(errorMessages(root)).toHaveLength(1);
-    expect(storeMocks.deleteTransaction).not.toHaveBeenCalled();
-    expect(storeMocks.saveTransaction).not.toHaveBeenCalled();
+    expect(errorMessages(root)).toEqual([]);
+    expect(storeMocks.saveTransaction).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a future-dated transaction", async () => {

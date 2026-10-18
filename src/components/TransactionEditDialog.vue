@@ -309,7 +309,7 @@ const zodSchema = z.object({
   date: z.date().refine((date) => !isFutureLocalDate(date), {
     message: "Can not add future transaction",
   }),
-  description: z.string().min(5),
+  description: z.string().min(1, "Description is required"),
   tags: z.boolean().or(z.string().array().optional()),
   values: z
     .array(
