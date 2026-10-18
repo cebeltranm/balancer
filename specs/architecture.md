@@ -47,6 +47,14 @@
 - RESOLVED (RT-040, RT-041): Ordering is applied in the view and is display-only. It never changes `accounts.json`, `activeAccounts()`, `accountsGroupByCategories()` or other store getters, persisted files, totals, or sync.
 - RESOLVED (RT-040, RT-041): Feature specs name the lists they order and reference this section: `features/values.md` (RT-040) and `features/investments.md` (RT-041, table display only).
 
+## Global Currency
+- CONFIRMED: `App.vue` provides the global `CURRENCY` (default COP). The Expenses, Assets, Balance, Budget, Transactions, and portfolio views read it, and `AppTopbar.vue` is the only place that changes it. The dashboard does not use it (RT-015).
+- RESOLVED (RT-046): The top-bar currency menu offers only the currencies of accounts active today (`activeAccounts(new Date())`, month-granular, all account types including income, expense, and liability). Items follow `Currency` enum order and are not sorted. A currency used by several active accounts appears once, and a single currency still shows a one-item menu. Account currencies outside the `Currency` enum are ignored.
+- RESOLVED (RT-046): With no active account in a supported currency, the menu is empty and the currency button is disabled; the full currency list is never used as a fallback, and `CURRENCY` is left unchanged.
+- RESOLVED (RT-046): When `CURRENCY` is not among the available currencies and at least one is available, the top bar switches `CURRENCY` to the first available currency in enum order, without a message. This re-runs when the accounts or the set of available currencies change.
+- CONFIRMED: Code status: SATISFIED. `AppTopbar.vue` derives the menu from `useAccountsStore().activeAccounts(new Date())` and a `watch` on that list applies the switch; covered by `src/layout/__tests__/AppTopbar.spec.ts`.
+- RESOLVED (RT-046): This is display-only. It never changes `accounts.json`, `activeAccounts()`, the currency choices in the account form (`Accounts.vue` still offers every `Currency`), exchange rates, persisted files, totals, or sync.
+
 ## Main Risks And Assumptions
 - CONFIRMED: `syncCachedFiles()` in `Auth.vue` uses `Object.keys(...).forEach(async ...)`, so refresh tasks are launched without being awaited as a group.
 - RESOLVED (RT-034): Files seeded before RT-006 may contain legacy account type strings (`cash`, `SavingAccount`) that do not match `AccountType` enum values. They are migrated in memory on load by a fixed alias list; see `features/accounts.md`.
@@ -56,6 +64,14 @@
 - CONFIRMED: There is intentionally no schema version or migration envelope for domain JSON files; renaming existing files or replacing existing top-level structures is prohibited.
 
 ## Architecture Acceptance Criteria
+- RESOLVED (RT-046): GIVEN active accounts in COP and USD only, WHEN the top-bar currency menu is opened, THEN only COP and USD are listed, in that order.
+- RESOLVED (RT-046): GIVEN the only EUR account has `hideSince` in a past month or `activeFrom` in a future month, WHEN the menu is opened, THEN EUR is not listed.
+- RESOLVED (RT-046): GIVEN income, expense, or liability accounts are the only active accounts in a currency, WHEN the menu is opened, THEN that currency is listed.
+- RESOLVED (RT-046): GIVEN an active account whose currency is not in the `Currency` enum, WHEN the menu is opened, THEN that currency is not listed.
+- RESOLVED (RT-046): GIVEN `CURRENCY` is COP and the only active accounts are in USD and EUR, WHEN the top bar renders, THEN `CURRENCY` becomes USD.
+- RESOLVED (RT-046): GIVEN `CURRENCY` is USD and an active USD account exists, WHEN the top bar renders, THEN `CURRENCY` is unchanged.
+- RESOLVED (RT-046): GIVEN no active accounts, WHEN the top bar renders, THEN the menu has no items, the currency button is disabled, and `CURRENCY` is unchanged.
+- RESOLVED (RT-046): GIVEN active accounts in USD and EUR, WHEN the user picks EUR, THEN `CURRENCY` becomes EUR.
 - CONFIRMED: GIVEN the app starts, WHEN `src/main.ts` runs, THEN Vue Router, Pinia, PrimeVue, Google Charts, and the global formatter are installed before mounting.
 - CONFIRMED: GIVEN navigation targets a protected route while unauthenticated, WHEN the router emits `CHECK_AUTHENTICATE`, THEN `App.vue` can open the authentication dialog.
 - CONFIRMED: GIVEN forms report pending changes, WHEN navigation is attempted, THEN router navigation is blocked by the pending-change guard.

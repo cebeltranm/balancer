@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan lists every place where the specs and the code or tests do not yet agree, after all triage decisions (RT-001 to RT-045) were recorded in the specs. It orders the work into sessions that can each be done and reviewed as one PR.
+This plan lists every place where the specs and the code or tests do not yet agree, after all triage decisions (RT-001 to RT-046) were recorded in the specs. It orders the work into sessions that can each be done and reviewed as one PR.
 
 It is a work list, not a requirement. The requirement is always the Product Contract in the cited spec. When an item is done, update the cited spec (`Contract status`, `Missing Tests / Coverage Gaps`, acceptance-criteria checkboxes) and the `specs/testing-strategy.md` matrix in the same PR, as `AGENTS.md` requires, and remove the item from this plan.
 
@@ -56,7 +56,7 @@ Suggested PR title: "Cover invalid persisted file handling across file families"
 
 - **IMP-11 (Test, S).** `src/helpers/__tests__/dropbox.spec.ts`: a downloaded file that is not valid JSON throws `PersistedFileError` (`invalid_file`), not a missing-file result (`dropbox.ts:160-162`).
 - **IMP-12 (Test, M).** Startup/bootstrap tests for invalid `config.json`, `values_<year>.json`, `budget_<year>.json`, `balance_<year>.json`, and `transactions_<year>_<month>.json`: no seed, default (`ensureCurrentMonthValues`, `ensureCurrentMonthBalance`), derived, or sync write overwrites the invalid remote file. Best placed in the store specs plus one `Auth.spec.ts` case for the startup path.
-  - While doing this, check whether the values, budget, and balance loaders need required-field validation. `data-model.md` says "where applicable"; today they normalize through `persistedShapes.ts` instead of throwing `malformed_file`. If a file family should reject malformed content and does not, that is a product decision: open RT-046 rather than changing behavior here.
+  - While doing this, check whether the values, budget, and balance loaders need required-field validation. `data-model.md` says "where applicable"; today they normalize through `persistedShapes.ts` instead of throwing `malformed_file`. If a file family should reject malformed content and does not, that is a product decision: open RT-047 rather than changing behavior here.
 - **IMP-13 (Test, S).** A storage-state or UI test that the invalid-file toast names the file (overlaps with IMP-07; keep in whichever session runs first).
 - Close-out: change the `data-model.md` "Current tests cover…" line and the four REQUIRED test-expectation lines to point at the new tests.
 
@@ -115,7 +115,7 @@ Documentation only; no code or tests. Can be folded into whichever session touch
 
 ## Needs a product decision before implementation
 
-These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-046 onward in `specs/requirements-triage.md` for any you want to pursue.
+These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-047 onward in `specs/requirements-triage.md` for any you want to pursue.
 
 | Topic | Where it is mentioned | Question to decide | Suggested size |
 | --- | --- | --- | --- |
@@ -129,4 +129,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-045 is satisfied in code. The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-046 is satisfied in code. The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.

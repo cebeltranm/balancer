@@ -26,6 +26,7 @@
         variant="outlined"
         rounded
         aria-label="Currencies"
+        :disabled="currencies.length === 0"
         @click="menuCurrencies?.toggle"
       >
         <span v-if="currencyIconText">{{ currencyIconText }}</span>
@@ -62,13 +63,15 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, inject, type Ref } from "vue";
+import { ref, computed, inject, watch, type Ref } from "vue";
 import TransactionTypeDialog from "@/components/TransactionTypeDialog.vue";
 import { Currency } from "@/types";
 import { CURRENCY_ICONS } from "@/helpers/options";
 import { useStorageStore } from "@/stores/storage";
+import { useAccountsStore } from "@/stores/accounts";
 
 const storage = useStorageStore();
+const accountsStore = useAccountsStore();
 
 const emit = defineEmits(["menu-toggle", "topbar-menu-toggle"]);
 const transactionDialog = ref<InstanceType<
@@ -90,14 +93,30 @@ const currencyIconText = computed(() =>
 );
 
 const menuCurrencies = ref();
+// RT-046: only currencies of accounts active today, in enum order.
+const availableCurrencies = computed(() => {
+  const used = new Set<string>(
+    accountsStore.activeAccounts(new Date()).map((a) => a.currency),
+  );
+  return Object.values(Currency).filter((c) => used.has(c));
+});
 const currencies = computed(() =>
-  Object.values(Currency).map((c) => ({
+  availableCurrencies.value.map((c) => ({
     label: c.toUpperCase(),
     icon: currencyToIcon(c),
     command: () => {
       CURRENCY.value = c;
     },
   })),
+);
+watch(
+  availableCurrencies,
+  (available) => {
+    if (available.length > 0 && !available.includes(CURRENCY.value)) {
+      CURRENCY.value = available[0];
+    }
+  },
+  { immediate: true },
 );
 
 const isOffline = computed(

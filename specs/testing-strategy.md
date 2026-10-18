@@ -121,6 +121,11 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Unit — COVERED: investment mapping and grouping (`src/helpers/__tests__/investments.spec.ts`); missing-rate totals (`src/composables/__tests__/totalByCategory.spec.ts`).
 - Manual: pie, treemap, and bar charts render correctly.
 
+### Global Currency (`specs/architecture.md`)
+- Component — REQUIRED:
+  - COVERED (RT-046): Top-bar currency menu lists only currencies of active accounts in enum order, ignores unsupported codes, disables the button when empty, auto-switches `CURRENCY` to the first available currency, and picking an item sets `CURRENCY` (`src/layout/__tests__/AppTopbar.spec.ts`).
+- Manual: see "Charts and Overlays".
+
 ### Settings (`specs/features/settings.md`)
 - Component — REQUIRED:
   - COVERED (RT-018): Retry login toasts and unchanged state on failure (`src/views/__tests__/Settings.spec.ts`).
@@ -183,6 +188,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 - [ ] Portfolio pie, treemap, and bar charts render; Unknown allocation warning visible when applicable.
 - [ ] Budget context menu and comments dialog open, save, and close.
 - [ ] Transaction dialog date picker and tag autocomplete work.
+- [ ] Top-bar currency menu lists only currencies with an active account; hiding the last account of the selected currency switches the views to the first remaining currency.
 - [ ] Top-bar Expense and Transfer quick-add forms open from the picker, and their date picker and description autocomplete work.
 
 ### External Providers
