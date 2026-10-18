@@ -85,6 +85,7 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import * as files from "@/helpers/files";
 import * as sync from "@/helpers/sync";
+import { EVENTS } from "@/helpers/events";
 import { isStorageAuthError } from "@/helpers/storageAuthError";
 import { useStorageStore } from "@/stores/storage";
 import { useAccountsStore } from "@/stores/accounts";
@@ -361,7 +362,19 @@ async function checkStore() {
   let accounts = await files.readJsonFile("accounts.json", false);
   if (!accounts) {
     accounts = await fetch("./accounts.json");
-    await files.writeJsonFile("accounts.json", await accounts.json());
+    const saved = await files.writeJsonFile(
+      "accounts.json",
+      await accounts.json(),
+    );
+    if (!saved) {
+      console.error("accounts.json seed could not be saved");
+      EVENTS.emit("message", {
+        severity: "error",
+        summary: "Accounts not saved",
+        message: "The default accounts.json file could not be saved.",
+        closable: true,
+      });
+    }
   }
 }
 

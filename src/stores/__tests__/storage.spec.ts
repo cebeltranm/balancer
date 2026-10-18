@@ -178,6 +178,56 @@ describe("storage store", () => {
     });
   });
 
+  it("shows an error toast and logs with console.error when the config seed write fails (RT-045)", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const messages: any[] = [];
+    const onMessage = (msg: any) => messages.push(msg);
+    EVENTS.on("message", onMessage);
+    vi.mocked(readJsonFile).mockResolvedValue(false);
+    vi.mocked(writeJsonFile).mockResolvedValue(false);
+    const store = useStorageStore();
+
+    await store.login();
+
+    EVENTS.off("message", onMessage);
+    expect(messages).toEqual([
+      expect.objectContaining({ severity: "error", closable: true }),
+    ]);
+    expect(messages[0].life).toBeUndefined();
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("does not log token or credential values on error paths", async () => {
+    const secret = "secret-token-value";
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    storageMocks.getInfoMock.mockResolvedValue({
+      type: "Dropbox",
+      loggedIn: true,
+      offline: false,
+      token: secret,
+      accessToken: secret,
+    });
+    vi.mocked(readJsonFile).mockResolvedValue(false);
+    vi.mocked(writeJsonFile).mockResolvedValue(false);
+    const store = useStorageStore();
+
+    await store.login();
+
+    const logged = JSON.stringify([
+      ...consoleError.mock.calls,
+      ...consoleWarn.mock.calls,
+    ]);
+    expect(logged).not.toContain(secret);
+    consoleError.mockRestore();
+    consoleWarn.mockRestore();
+  });
+
   it("does not refresh store info or seed config when login returns false", async () => {
     storageMocks.doAuthMock.mockResolvedValue(false);
     const store = useStorageStore();

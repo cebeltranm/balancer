@@ -24,8 +24,6 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-09 | Error logs contain no token or credential: add the `storage.spec.ts` assertion (Dropbox part done) | `validation-and-errors.md` Test Expectations | Test | P3 | S | 2 |
-| IMP-10 | Seed writes in `storage.ts` and `Auth.vue` ignore a `false` result; show an `error` toast per RT-045 (audit and account hide/restore error toast done) | `validation-and-errors.md` No silent failure | Code | P2 | S | 2 |
 | IMP-11 | Dropbox provider: unparseable JSON is an invalid file | `data-model.md` Test Expectations | Test | P2 | S | 3 |
 | IMP-12 | Startup/bootstrap does not overwrite invalid config, values, budget, balance, or transaction files | `data-model.md` Test Expectations | Test | P2 | M | 3 |
 | IMP-13 | Invalid-file error is user-visible with file context | `data-model.md` Test Expectations | Test | P2 | S | 3 |
@@ -48,25 +46,11 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Sessions 2–3 are the ones that matter for correctness. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 2 — Error logging and toast alignment (P1/P2)
-
-Why: these are the "Code Alignment Follow-Ups" in `specs/validation-and-errors.md`. Its Contract status table shows "Logging … not satisfied" and two "partially satisfied" rows.
-
-Suggested PR title: "Align error logging and invalid-file toast with validation-and-errors".
-
-Done in this session: IMP-06 (`console.error`/`console.warn`), IMP-07 (invalid-file toast is closable and grouped per file, `invalid-file:<fileName>`, cleared on recovery), IMP-08 (`App.spec.ts` message handler tests), the Dropbox half of IMP-09, and the caller audit of IMP-10 (account hide/restore now shows an error toast on a failed save).
-
-Remaining:
-
-- **IMP-09 (Test, S).** `storage.spec.ts`: error-path log calls contain no token value.
-- **IMP-10 (Code, S).** `src/stores/storage.ts:30` (config seed) and `src/components/Auth.vue:364` (accounts seed) do not check the write result. Decided in RT-045: show an `error` toast and log with `console.error` (recorded in `features/authentication.md`, `features/settings.md`, and `validation-and-errors.md`). Write the failing tests first.
-- Close-out once both are done: remove the last bullets from "Code Alignment Follow-Ups" in `validation-and-errors.md`, tick the remaining acceptance criteria, and remove this session.
+Sessions are in the suggested order. Each session is one PR. Session 3 is the one that matters for correctness. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
 
 ### Session 3 — Invalid persisted file coverage (P2)
 
-Why: `specs/data-model.md` has four REQUIRED test expectations. The code paths exist (`PersistedFileError`, `invalidRemoteFiles` write blocking), but only HTTP provider JSON, helper-level write blocking, and `accounts.json` are tested. It touches `files.ts` right after Session 2.
+Why: `specs/data-model.md` has four REQUIRED test expectations. The code paths exist (`PersistedFileError`, `invalidRemoteFiles` write blocking), but only HTTP provider JSON, helper-level write blocking, and `accounts.json` are tested. It touches `files.ts` after the error-logging work.
 
 Suggested PR title: "Cover invalid persisted file handling across file families".
 
@@ -145,4 +129,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-045 is satisfied in code except RT-045 (IMP-10). The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-045 is satisfied in code. The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.

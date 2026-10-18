@@ -15,7 +15,7 @@
 ## Product Contract
 - REQUIRED (RT-019): Zero-valued composition cells are omitted on save and read as zero when missing; existing files with explicit zeros stay valid.
 - REQUIRED (RT-018): Retry-login failures show provider-specific text when available, otherwise a generic retry-later message, and leave state unchanged.
-- REQUIRED (RT-045): If the `config.json` seed write returns `false`, the user sees an `error` toast and the failure is logged with `console.error`; it is not console-only. Code status: GAP (`ensureMinimumConfigFile` in `src/stores/storage.ts` ignores the result today; tracked as IMP-10).
+- REQUIRED (RT-045): If the `config.json` seed write returns `false`, the user sees an `error` toast and the failure is logged with `console.error`; it is not console-only. Code status: SATISFIED (`ensureMinimumConfigFile` in `src/stores/storage.ts`; covered by `storage.spec.ts`).
 - REQUIRED (RT-007): Missing `config.json` is seeded with the minimum shape `{ "stock_api": {}, "inv_composition": {} }`; existing or invalid files are never overwritten.
 
 ## User Flows
