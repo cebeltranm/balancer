@@ -24,11 +24,8 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-06 | Log caught errors with `console.error`, not `console.log` | `validation-and-errors.md` Logging | Code | P1 | S | 2 |
-| IMP-07 | Invalid-file toast: `group`, `closable`, cleared on recovery | `validation-and-errors.md` Presentation | Code | P2 | S | 2 |
-| IMP-08 | `App.vue` message handler tests (default `info`, lifetime, group, `CLEAR_MESSAGES`) | `validation-and-errors.md` Test Expectations | Test | P2 | S | 2 |
-| IMP-09 | Error logs contain no token or credential | `validation-and-errors.md` Test Expectations | Test | P2 | S | 2 |
-| IMP-10 | Audit `writeJsonFile` / Dropbox `false` results for silent failures | `validation-and-errors.md` No silent failure | Code | P2 | M | 2 |
+| IMP-09 | Error logs contain no token or credential: add the `storage.spec.ts` assertion (Dropbox part done) | `validation-and-errors.md` Test Expectations | Test | P3 | S | 2 |
+| IMP-10 | Seed writes in `storage.ts` and `Auth.vue` ignore a `false` result; blocked on RT-045 (audit and account hide/restore error toast done) | `validation-and-errors.md` No silent failure | Code | P2 | S | 2 |
 | IMP-11 | Dropbox provider: unparseable JSON is an invalid file | `data-model.md` Test Expectations | Test | P2 | S | 3 |
 | IMP-12 | Startup/bootstrap does not overwrite invalid config, values, budget, balance, or transaction files | `data-model.md` Test Expectations | Test | P2 | M | 3 |
 | IMP-13 | Invalid-file error is user-visible with file context | `data-model.md` Test Expectations | Test | P2 | S | 3 |
@@ -59,20 +56,13 @@ Why: these are the "Code Alignment Follow-Ups" in `specs/validation-and-errors.m
 
 Suggested PR title: "Align error logging and invalid-file toast with validation-and-errors".
 
-- **IMP-06 (Code, S).** Replace `console.log` for caught errors with `console.error` (with a context message and the error object):
-  - `src/helpers/files.ts:73` (`writeJsonFile`).
-  - `src/helpers/storage/dropbox.ts:83` (token refresh).
-  - `src/components/Auth.vue:150` (`reportWebauthnError`) and `:162` (`reportLoginError`).
-  - `src/components/Auth.vue:413` (`syncCachedFiles` unknown file prefix) is a handled degraded state, so it becomes `console.warn`.
-  - Tests: spy on `console.error`/`console.log` in `files.spec.ts`, `dropbox.spec.ts`, and `Auth.spec.ts`; assert `console.log` is not called on these paths.
-- **IMP-07 (Code, S).** `src/helpers/files.ts` invalid-file toast (around line 28): add `closable: true` and a named `group` (for example `invalid-file`), and emit `CLEAR_MESSAGES` for the group when a later read of the file succeeds (where `invalidRemoteFiles.delete(fileName)` runs). Decide whether the group is per file (`invalid-file:<name>`) so two invalid files show two toasts; the spec only requires that a repeat for the same state replaces the earlier toast. Tests in `files.spec.ts`.
-- **IMP-08 (Test, S).** Add the `"message"` handler tests to `src/__tests__/App.spec.ts`: no severity → `info` with the 3000 ms lifetime; `group` and `closable` forwarded; `CLEAR_MESSAGES` calls `removeGroup`.
-- **IMP-09 (Test, S).** In `dropbox.spec.ts` and `storage.spec.ts`, assert that error-path log calls contain no token value.
-- **IMP-10 (Code, M).** Audit each caller of `files.writeJsonFile` that can get `false` and confirm the user sees a message:
-  - `src/stores/accounts.ts:122` and `src/stores/config.ts:89` (both surface `saveError` / a toast today; confirm with a test).
-  - `src/helpers/sync.ts:95` (RT-002 sync-failed path; already covered).
-  - `src/stores/storage.ts:30` (config seed) and `src/components/Auth.vue:364` (accounts seed): the result is not checked. If a seed write fails silently, add an `error` toast per the one-time-action rule, or record an explicit console-only override in `features/authentication.md` if that is intended. The second option is a product decision; open RT-045 for it.
-- Close-out: update the Contract status table, Test Expectations table, and remove the done bullets from "Code Alignment Follow-Ups" in `validation-and-errors.md`; tick its acceptance criteria.
+Done in this session: IMP-06 (`console.error`/`console.warn`), IMP-07 (invalid-file toast is closable and grouped per file, `invalid-file:<fileName>`, cleared on recovery), IMP-08 (`App.spec.ts` message handler tests), the Dropbox half of IMP-09, and the caller audit of IMP-10 (account hide/restore now shows an error toast on a failed save).
+
+Remaining:
+
+- **IMP-09 (Test, S).** `storage.spec.ts`: error-path log calls contain no token value.
+- **IMP-10 (Code, S).** `src/stores/storage.ts:30` (config seed) and `src/components/Auth.vue:364` (accounts seed) do not check the write result. Blocked on RT-045 in `specs/requirements-triage.md` (error toast or console-only override in `features/authentication.md`).
+- Close-out once both are done: remove the last bullets from "Code Alignment Follow-Ups" in `validation-and-errors.md`, tick the remaining acceptance criteria, and remove this session.
 
 ### Session 3 — Invalid persisted file coverage (P2)
 
@@ -82,7 +72,7 @@ Suggested PR title: "Cover invalid persisted file handling across file families"
 
 - **IMP-11 (Test, S).** `src/helpers/__tests__/dropbox.spec.ts`: a downloaded file that is not valid JSON throws `PersistedFileError` (`invalid_file`), not a missing-file result (`dropbox.ts:160-162`).
 - **IMP-12 (Test, M).** Startup/bootstrap tests for invalid `config.json`, `values_<year>.json`, `budget_<year>.json`, `balance_<year>.json`, and `transactions_<year>_<month>.json`: no seed, default (`ensureCurrentMonthValues`, `ensureCurrentMonthBalance`), derived, or sync write overwrites the invalid remote file. Best placed in the store specs plus one `Auth.spec.ts` case for the startup path.
-  - While doing this, check whether the values, budget, and balance loaders need required-field validation. `data-model.md` says "where applicable"; today they normalize through `persistedShapes.ts` instead of throwing `malformed_file`. If a file family should reject malformed content and does not, that is a product decision: open RT-045 rather than changing behavior here.
+  - While doing this, check whether the values, budget, and balance loaders need required-field validation. `data-model.md` says "where applicable"; today they normalize through `persistedShapes.ts` instead of throwing `malformed_file`. If a file family should reject malformed content and does not, that is a product decision: open RT-046 rather than changing behavior here.
 - **IMP-13 (Test, S).** A storage-state or UI test that the invalid-file toast names the file (overlaps with IMP-07; keep in whichever session runs first).
 - Close-out: change the `data-model.md` "Current tests cover…" line and the four REQUIRED test-expectation lines to point at the new tests.
 
@@ -141,7 +131,7 @@ Documentation only; no code or tests. Can be folded into whichever session touch
 
 ## Needs a product decision before implementation
 
-These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-045 onward in a new `specs/requirements-triage.md` for any you want to pursue.
+These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-046 onward in `specs/requirements-triage.md` (RT-045 is open there) for any you want to pursue.
 
 | Topic | Where it is mentioned | Question to decide | Suggested size |
 | --- | --- | --- | --- |

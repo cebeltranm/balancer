@@ -147,7 +147,7 @@ function webauthnErrorMessage(error: unknown) {
 
 function reportWebauthnError(error?: unknown) {
   if (error) {
-    console.log(error);
+    console.error("Device authentication failed", error);
   }
   storageStore.setAuthError({
     kind: "webauthn",
@@ -159,7 +159,7 @@ function reportWebauthnError(error?: unknown) {
 
 function reportLoginError(error?: unknown) {
   if (error) {
-    console.log(error);
+    console.error("Storage provider login failed", error);
   }
   const provider = storeInfo.value?.type;
   storageStore.setAuthError({
@@ -410,7 +410,7 @@ async function syncCachedFiles() {
               balanceStore.loadBalanceForYear(Number(fileNameData[1]), true);
               break;
             default:
-              console.log("Needs to reload the file: ", e);
+              console.warn("Needs to reload the file: ", e);
           }
         }
       });

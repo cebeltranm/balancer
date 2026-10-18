@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, defineComponent, h, nextTick, ref } from "vue";
 import App from "@/App.vue";
+import { CLEAR_MESSAGES, EVENTS } from "@/helpers/events";
 
 const mocks = vi.hoisted(() => ({
   toastAdd: vi.fn(),
@@ -296,5 +297,73 @@ describe("App PWA update prompt (RT-026)", () => {
     expect(mocks.toastRemoveGroup).toHaveBeenCalledWith("pwa-update");
     expect(mocks.updateServiceWorker).toHaveBeenCalledTimes(1);
     expect(mocks.updateServiceWorker).toHaveBeenCalledWith(true);
+  });
+});
+
+describe("App message handler (validation-and-errors)", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    vi.clearAllMocks();
+    needRefresh = ref(false);
+    // Earlier suites leave their App's listeners on the shared emitter.
+    EVENTS.off("message");
+    EVENTS.off(CLEAR_MESSAGES);
+    app = createApp(App);
+    app.config.globalProperties.$primevue = { config: {} };
+    for (const name of ["Card", "ConfirmPopup", "Toast"]) {
+      app.component(name, stub());
+    }
+    app.component("Button", ButtonStub);
+    app.component("router-view", stub());
+    app.mount(root);
+    await flush();
+  });
+
+  afterEach(() => {
+    app.unmount();
+    root.remove();
+    EVENTS.off("message");
+    EVENTS.off(CLEAR_MESSAGES);
+  });
+
+  it("treats a message without severity as info with the 3000 ms lifetime", () => {
+    EVENTS.emit("message", { summary: "Hi", message: "There" });
+
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: "info",
+        summary: "Hi",
+        detail: "There",
+        life: 3000,
+      }),
+    );
+  });
+
+  it("forwards life, closable, and group", () => {
+    EVENTS.emit("message", {
+      severity: "error",
+      life: 0,
+      closable: true,
+      group: "g",
+    });
+
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: "error",
+        life: 0,
+        closable: true,
+        group: "g",
+      }),
+    );
+  });
+
+  it("CLEAR_MESSAGES removes the toast group", () => {
+    EVENTS.emit(CLEAR_MESSAGES, "g");
+
+    expect(mocks.toastRemoveGroup).toHaveBeenCalledWith("g");
   });
 });

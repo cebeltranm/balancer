@@ -80,7 +80,7 @@ export default class DropboxStore {
       }
       return true;
     } catch (e) {
-      console.log(e);
+      console.error("Dropbox token refresh failed", e);
       return false;
     }
   }

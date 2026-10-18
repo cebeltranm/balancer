@@ -66,8 +66,8 @@ Current code traceability only. Nothing here is a requirement.
 
 - CONFIRMED: `src/helpers/events.ts` exports `EVENTS` (a `tiny-emitter`). `src/App.vue` listens for `"message"` and calls PrimeVue `toast.add` with `severity` (default `info`), `summary`, `detail` (from `message`), `life` (default 3000), `closable`, and `group`. `CLEAR_MESSAGES` calls `toast.removeGroup`.
 - CONFIRMED: Stores and helpers raise toasts through `EVENTS.emit("message", ...)` (`src/stores/storage.ts`, `src/helpers/files.ts`, `src/helpers/sync.ts`). The transaction dialogs, `Budget.vue`, `Values.vue`, and `Transactions.vue` use the same bus. `Accounts.vue` and `Settings.vue` call `useToast().add` directly.
-- CONFIRMED: Sync failed (`storage.ts`) and invalid file (`files.ts`) emit `error` with `life: 0`; sync failed also sets `closable: true` and a `group`. Local save failures in the three transaction dialogs and `Budget.vue`, and the value sync failure in `Values.vue`, emit `error` with the default 3000 ms lifetime.
-- CONFIRMED: `console.log` is used for caught errors in `src/helpers/files.ts` (`writeJsonFile`), `src/helpers/storage/dropbox.ts`, and `src/components/Auth.vue` (`reportWebauthnError`, `reportLoginError`). `console.error` is used in `http_server.ts`, `pwa.ts`, `storage.ts` (online refresh), and `Settings.vue` (retry login).
+- CONFIRMED: Sync failed (`storage.ts`) and invalid file (`files.ts`) emit `error` with `life: 0`, `closable: true`, and a `group` (`sync-failed`; `invalid-file:<fileName>`, cleared with `CLEAR_MESSAGES` when a later read of the file succeeds). Local save failures in the three transaction dialogs and `Budget.vue`, and the value sync failure in `Values.vue`, emit `error` with the default 3000 ms lifetime.
+- CONFIRMED: Caught errors in `src/helpers/files.ts` (`writeJsonFile`), `src/helpers/storage/dropbox.ts` (token refresh), and `src/components/Auth.vue` (`reportWebauthnError`, `reportLoginError`) are logged with `console.error`; the unknown-file-prefix case in `Auth.vue` `syncCachedFiles` is a handled degraded state and uses `console.warn`. `console.error` is also used in `http_server.ts`, `pwa.ts`, `storage.ts` (online refresh), and `Settings.vue` (retry login).
 - CONFIRMED (RT-044): The local save `catch` blocks in `TransactionEditDialog.vue`, `TransactionExpenseDialog.vue`, `TransactionTransferDialog.vue`, and `Budget.vue` log the caught error with `console.error` and show a toast.
 
 ### Contract status
@@ -76,24 +76,24 @@ Current code traceability only. Nothing here is a requirement.
 | Severity vocabulary and `info` default | satisfied | `App.vue` message handler. No test covers the default (see Test Expectations). |
 | Inline field validation, no toast or dialog | satisfied | Transaction form `formErrors`; Accounts inline validation; covered by `TransactionEditDialog.spec.ts` and `AccountsClassAllocation.spec.ts`. |
 | One-time `error` keeps the surface open and values/edits | satisfied | RT-009; `TransactionEditDialog.spec.ts`, `Budget.spec.ts`. |
-| Persistent-state `error` is persistent, closable, and grouped | partially satisfied | Sync failed is persistent, closable, and grouped (`storage.spec.ts`). Invalid file is persistent (`life: 0`) but is not grouped or marked `closable` (`files.spec.ts`). |
+| Persistent-state `error` is persistent, closable, and grouped | satisfied | Sync failed (`storage.spec.ts`) and invalid file, one group per file (`files.spec.ts`), are persistent, closable, and grouped. |
 | Ongoing missing-data `warn` has an inline indicator | satisfied | RT-011; expense and investment summaries. |
 | `blocking` uses a dialog with explicit actions | satisfied | RT-020; `Auth.spec.ts`, `storage.spec.ts`. |
-| No silent failure | partially satisfied | Every `catch` found shows a message or is a documented override. `writeJsonFile` and the Dropbox helper return `false` and rely on callers to show the failure; this was not audited per caller. |
+| No silent failure | partially satisfied | Callers of `writeJsonFile` audited: `accounts` and `config` saves, account hide/restore (`Accounts.vue`), and sync show a message. The seed writes in `storage.ts` and `Auth.vue` ignore a `false` result; open as RT-045. |
 | Retry is user-initiated, no background loop | satisfied | Sync is debounced and user-retried; no retry loops found. |
 | Failure never discards queued data or credentials | satisfied | RT-002, RT-020; `sync.spec.ts`, `storage.spec.ts`. |
-| Logging uses `console.error`/`console.warn`, not `console.log` | not satisfied | `console.log` is used for caught errors in `files.ts`, `dropbox.ts`, and `Auth.vue`. |
+| Logging uses `console.error`/`console.warn`, not `console.log` | satisfied | `files.ts`, `dropbox.ts`, and `Auth.vue` use `console.error`/`console.warn`; covered by `files.spec.ts`, `dropbox.spec.ts`, `Auth.spec.ts`. |
 | Unexpected failure is both shown and logged | satisfied for local saves (RT-044) | Transaction dialogs and `Budget.vue` show a toast and log with `console.error`; covered by `TransactionEditDialog.spec.ts`, `TransactionExpenseDialog.spec.ts`, `TransactionTransferDialog.spec.ts`, and `Budget.spec.ts`. |
-| No secrets or user financial values in logs | satisfied | No log call found that writes a token or file contents; not covered by a test. |
+| No secrets or user financial values in logs | satisfied | No log call found that writes a token or file contents; covered for the Dropbox token-refresh log (`dropbox.spec.ts`). |
 | Message text is user-safe | satisfied | Existing messages are fixed strings or `StorageAuthError` messages; the Settings retry-login provider message is the only pass-through (RT-018). |
 
 ## Acceptance Criteria
-- [ ] REQUIRED: GIVEN a `"message"` event with no `severity`, WHEN it is handled, THEN a toast with severity `info` and a closing lifetime is shown.
-- [ ] REQUIRED: GIVEN a `"message"` event with `severity: "error"`, `life: 0`, `closable: true`, and a `group`, WHEN it is handled, THEN a persistent closable toast is added in that group, and `CLEAR_MESSAGES` for the group removes it.
+- [x] REQUIRED: GIVEN a `"message"` event with no `severity`, WHEN it is handled, THEN a toast with severity `info` and a closing lifetime is shown.
+- [x] REQUIRED: GIVEN a `"message"` event with `severity: "error"`, `life: 0`, `closable: true`, and a `group`, WHEN it is handled, THEN a persistent closable toast is added in that group, and `CLEAR_MESSAGES` for the group removes it.
 - [ ] REQUIRED: GIVEN a one-time save fails, WHEN the error toast is shown, THEN the dialog or view stays open, the entered values and pending edits are kept, and nothing is marked saved.
 - [ ] REQUIRED: GIVEN a state-based error (sync failed, invalid remote file) is raised twice, WHEN both are emitted, THEN one toast per group is visible.
 - [ ] REQUIRED: GIVEN field validation fails, WHEN the user submits, THEN the error appears inline next to the field, Save is blocked, and no toast or dialog is shown.
-- [ ] REQUIRED: GIVEN an unexpected failure is caught, WHEN it is handled, THEN a user-visible message is shown and `console.error` is called with the error; `console.log` is not called for it.
+- [x] REQUIRED: GIVEN an unexpected failure is caught, WHEN it is handled, THEN a user-visible message is shown and `console.error` is called with the error; `console.log` is not called for it.
 - [ ] REQUIRED: GIVEN a failure of any kind, WHEN it is handled, THEN queued `to_sync` data, pending edits, and local credentials are unchanged unless the user chose a reset action.
 - [ ] REQUIRED: GIVEN a log call from an error path, WHEN its arguments are inspected, THEN they contain no token or credential value.
 - [ ] REQUIRED: GIVEN a feature spec overrides a default, WHEN the spec is reviewed, THEN the override names the rule it replaces.
@@ -103,19 +103,17 @@ Follow the layers and conventions in `specs/testing-strategy.md`.
 
 | Expectation | Layer | Location | Status |
 | --- | --- | --- | --- |
-| The `"message"` handler applies `info` and the default lifetime, forwards `group`/`closable`, and `CLEAR_MESSAGES` removes the group. | Component | `src/__tests__/App.spec.ts` | missing (the file covers only the PWA update toast) |
+| The `"message"` handler applies `info` and the default lifetime, forwards `group`/`closable`, and `CLEAR_MESSAGES` removes the group. | Component | `src/__tests__/App.spec.ts` | covered |
 | Local-save failures keep the surface open and the edits pending, and emit `severity: "error"`. | Component | `TransactionEditDialog.spec.ts`, `Budget.spec.ts` | covered |
 | Sync failed is persistent, closable, and grouped; clearing removes it. | Unit | `src/stores/__tests__/storage.spec.ts` | covered |
-| Invalid file is persistent; group and `closable` expected after code alignment. | Unit | `src/helpers/__tests__/files.spec.ts` | partially covered; group/closable assertions to add |
-| Caught errors are logged with `console.error` and not `console.log` (spy on `console`). | Unit/Component | `files.spec.ts`, `dropbox.spec.ts`, `Auth.spec.ts`, the transaction dialog specs, `Budget.spec.ts` | missing |
-| Error logs contain no token or credential value. | Unit | `dropbox.spec.ts`, `storage.spec.ts` | missing |
+| Invalid file is persistent, closable, and grouped; recovery clears the group. | Unit | `src/helpers/__tests__/files.spec.ts` | covered |
+| Caught errors are logged with `console.error` and not `console.log` (spy on `console`). | Unit/Component | `files.spec.ts`, `dropbox.spec.ts`, `Auth.spec.ts`, the transaction dialog specs, `Budget.spec.ts` | covered for `files.ts`, `dropbox.ts`, `Auth.vue`, and the transaction dialogs and `Budget.vue` (RT-044) |
+| Error logs contain no token or credential value. | Unit | `dropbox.spec.ts`, `storage.spec.ts` | covered for Dropbox token refresh; `storage.spec.ts` assertion still to add |
 
 ## Code Alignment Follow-Ups
 These are the gaps between the contract and current code. This spec change does not fix them. Each needs its own task and must not change an approved override.
-- Change caught-error logging from `console.log` to `console.error` in `src/helpers/files.ts`, `src/helpers/storage/dropbox.ts`, and `src/components/Auth.vue`, and add the matching tests.
-- Give the invalid-file toast in `src/helpers/files.ts` a `group` and `closable: true`, and clear the group when the file is recovered.
-- Add the `App.vue` message-handler tests to `src/__tests__/App.spec.ts`.
-- Audit callers of `writeJsonFile` and the Dropbox helper that return `false` to confirm each one shows a message.
+- Decide RT-045 (seed write failure) and then either toast it or record a console-only override.
+- Add a "no token in logs" assertion to `storage.spec.ts`.
 
 ## Migration / Compatibility
 - RESOLVED (RT-032): This is a documentation decision. It changes no persisted file, data shape, or route.

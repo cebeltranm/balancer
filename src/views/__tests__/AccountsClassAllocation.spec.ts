@@ -20,6 +20,7 @@ import {
 const accountsStoreMocks = vi.hoisted(() => ({
   saveAccount: vi.fn(async (_account: unknown) => true),
   confirmRequire: vi.fn(),
+  toastAdd: vi.fn(),
 }));
 
 vi.mock("@/stores/accounts", () => ({
@@ -47,7 +48,7 @@ vi.mock("@/stores/accounts", () => ({
 }));
 
 vi.mock("primevue/usetoast", () => ({
-  useToast: () => ({ add: vi.fn() }),
+  useToast: () => ({ add: accountsStoreMocks.toastAdd }),
 }));
 
 vi.mock("primevue/useconfirm", () => ({
@@ -400,6 +401,30 @@ describe("Accounts lifecycle actions (RT-003)", () => {
         id: "global_etf",
         hideSince: expect.any(Date),
       }),
+    );
+  });
+
+  it("shows an error toast when hiding an account fails to save", async () => {
+    accountsStoreMocks.saveAccount.mockResolvedValueOnce(false);
+    accountsStoreMocks.toastAdd.mockClear();
+    app = await mountAccounts(root);
+    const groupFilter = root.querySelector(
+      'select[aria-label="Account group filter"]',
+    ) as HTMLSelectElement;
+    groupFilter.value = AccountGroupType.Investments;
+    groupFilter.dispatchEvent(new Event("change"));
+    await flush();
+    accountsStoreMocks.confirmRequire.mockClear();
+
+    findButton(root, "pi pi-eye-slash")?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
+    await flush();
+    await accountsStoreMocks.confirmRequire.mock.calls[0][0].accept();
+
+    expect(accountsStoreMocks.toastAdd).toHaveBeenCalledTimes(1);
+    expect(accountsStoreMocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: "error" }),
     );
   });
 });

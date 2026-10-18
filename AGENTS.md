@@ -51,7 +51,7 @@ This section is the single source for how changes enter the specs.
 | `specs/data-model.md` | Persisted files, fields, and compatibility rules. |
 | `specs/validation-and-errors.md` | Default validation and error rules. Feature specs must name any rule they override. |
 | `specs/testing-strategy.md` | Test layers, conventions, Change Gate, and the per-feature coverage matrix. |
-| `specs/requirements-triage.md` | Exists only while a product decision is open. Lists open decisions, numbered `RT-xxx`. RT-001 to RT-044 are closed and recorded in the specs (their triage text is in git history); the next free id is RT-045. Create the file when a new decision is opened. |
+| `specs/requirements-triage.md` | Exists only while a product decision is open. Lists open decisions, numbered `RT-xxx`. RT-001 to RT-044 are closed and recorded in the specs (their triage text is in git history); RT-045 is open in the triage file; the next free id is RT-046. |
 | `specs/implementation-plan.md` | Contract lines not yet satisfied by code and required test gaps, with priority, complexity, and suggested session grouping. |
 | `specs/spec-coverage.md` | Which specs exist and which code and tests they map to. |
 | `specs/feature-template.md` | Template for a new feature spec. |
