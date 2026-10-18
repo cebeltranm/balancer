@@ -24,11 +24,6 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-01 | General transaction form: description minimum 1 character (RT-042) | `features/transactions.md`, `features/transaction-dialogs.md` | Code | P1 | S | 1 |
-| IMP-02 | Type picker opens the three forms (RT-038) | `features/transaction-dialogs.md` | Test | P1 | S | 1 |
-| IMP-03 | Expense form: saved shape and validation (RT-038, RT-042) | `features/transaction-dialogs.md` | Test | P1 | M | 1 |
-| IMP-04 | Transfer form: saved shape and validation (RT-038) | `features/transaction-dialogs.md` | Test | P1 | M | 1 |
-| IMP-05 | Quick-add forms: no tags or units, payment accounts only (RT-043) | `features/transaction-dialogs.md` | Test | P1 | S | 1 |
 | IMP-06 | Log caught errors with `console.error`, not `console.log` | `validation-and-errors.md` Logging | Code | P1 | S | 2 |
 | IMP-07 | Invalid-file toast: `group`, `closable`, cleared on recovery | `validation-and-errors.md` Presentation | Code | P2 | S | 2 |
 | IMP-08 | `App.vue` message handler tests (default `info`, lifetime, group, `CLEAR_MESSAGES`) | `validation-and-errors.md` Test Expectations | Test | P2 | S | 2 |
@@ -56,29 +51,7 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Sessions 1–3 are the ones that matter for correctness. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 1 — Transaction dialogs: RT-042 and RT-038/RT-043 coverage (P1)
-
-Why first: RT-042 is the only Product Contract line that the code breaks today. The same three dialog components hold four of the REQUIRED `GAP` rows in the matrix. Doing them together closes `specs/features/transaction-dialogs.md` completely.
-
-Suggested PR title: "Implement RT-042 and close transaction dialog coverage (RT-038, RT-043)".
-
-- **IMP-01 (Code, S).** `src/components/TransactionEditDialog.vue:312` still uses `z.string().min(5)`.
-  - Test first in `src/components/__tests__/TransactionEditDialog.spec.ts`: replace the 5-character test with "empty description is blocked with 'Description is required'" and "a 1–4 character description saves" (cite RT-042).
-  - Change the rule to `z.string().min(1, "Description is required")`, matching `TransactionExpenseDialog.vue:394`.
-  - Specs to update: `features/transactions.md` (Product Contract RT-042 status, Error Handling line, Existing Tests line, Missing Tests line), `features/transaction-dialogs.md` (Contract status for RT-042, Missing Tests), `testing-strategy.md` (Transactions row text, Transaction Dialogs RT-042 row → `COVERED`).
-- **IMP-02 (Test, S).** New `src/components/__tests__/TransactionTypeDialog.spec.ts`: each of "Expenses", "Transfer", "General" closes the picker and calls `show()` on the matching form. Optionally assert in `AppTopbar.spec.ts` that the add action calls `show()` on the picker.
-- **IMP-03 (Test, M).** Extend `TransactionExpenseDialog.spec.ts`:
-  - A valid save queues one transaction with a `Date.now()` id and two entries that sum to zero (expense debit, payment credit), then closes and resets.
-  - Blocked with a visible error and nothing queued: future date, value `0` or negative, same account on both sides, cross-currency with no exchange rate, empty description (RT-042).
-  - A 1–4 character description saves (RT-042).
-- **IMP-04 (Test, M).** Extend `TransactionTransferDialog.spec.ts`:
-  - A valid save queues one transaction with a fresh id, the description `Transfer <source> -> <destination>`, a `-value` source entry and a `+value` destination entry.
-  - Blocked: future date, non-positive value, same account, missing exchange rate, cross-currency with no positive target value.
-- **IMP-05 (Test, S).** In both quick-add specs: no tags or unit fields are rendered, and the account options contain only `PAYMENT_ACCOUNT_TYPES`.
-- Close-out: tick the acceptance-criteria checkboxes in `features/transaction-dialogs.md`; set the four Transaction Dialogs matrix rows to `COVERED`.
-- Manual checklist to run and record in the PR: "Charts and Overlays" → transaction dialog date picker/autocomplete and top-bar quick-add forms.
+Sessions are in the suggested order. Each session is one PR. Sessions 2–3 are the ones that matter for correctness. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
 
 ### Session 2 — Error logging and toast alignment (P1/P2)
 
@@ -163,7 +136,7 @@ Documentation only; no code or tests. Can be folded into whichever session touch
   - `features/settings.md`: Error Handling has "CONFIRMED (current code, gap): `retryLogin()` … only handles a truthy result … Code status: SATISFIED", which contradicts itself; and the RT-018 criterion "(no toast is shown for any failure today)".
   - `features/authentication.md`: "Partial building blocks exist" duplicates the satisfied RT-020 line.
   - `product-overview.md` "Known risks": "no clear live stock-price fetch path was identified" contradicts `features/values.md` (AlphaVantage, MarketStack, RapidAPI); "service-worker source files include multiple variants" contradicts RT-039 in `architecture.md`.
-  - `testing-strategy.md` "Priority For Closing Gaps": replace with a pointer to this plan once Session 1 lands, so there is one ordered list.
+  - `testing-strategy.md` "Priority For Closing Gaps": replace with a pointer to this plan so there is one ordered list.
   - `spec-coverage.md` and `validation-and-errors.md` still mention `specs/requirements-triage.md`; that is fine now that `AGENTS.md` says the file is created when a new decision is opened.
 
 ## Needs a product decision before implementation
@@ -183,4 +156,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-044 is satisfied in code except RT-042 (Session 1). For the others, the only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-044 is satisfied in code. The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.

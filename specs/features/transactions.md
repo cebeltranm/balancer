@@ -19,7 +19,7 @@
 - REQUIRED (RT-008): Editing a transaction deletes the original id and saves a new transaction with a fresh id; stable ids across edits are out of scope.
 - REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep the form open with entered values, and do not mark the edit as saved.
 - RESOLVED (RT-044): The failed local queue write is also logged with `console.error`, following the default Logging rule in `specs/validation-and-errors.md`.
-- RESOLVED (RT-042): The description must be non-empty (at least 1 character); the earlier 5-character minimum is dropped. Contract status: not satisfied until the implementation PR (the dialog still uses `min(5)`).
+- RESOLVED (RT-042): The description must be non-empty (at least 1 character); the earlier 5-character minimum is dropped. Contract status: satisfied (`TransactionEditDialog.vue` uses `z.string().min(1, "Description is required")`); covered by `TransactionEditDialog.spec.ts`.
 
 ## User Flows
 - CONFIRMED: Select accounts and period, then view matching transaction value rows.
@@ -42,7 +42,7 @@
 ## Error Handling
 - CONFIRMED: Form errors are stored in `formErrors` and displayed next to fields.
 - CONFIRMED: Delete requires PrimeVue confirmation.
-- CONFIRMED: Future dates, empty descriptions (currently: descriptions under 5 characters, pending RT-042), invalid expense sign, missing units, and non-zero transaction sums are rejected.
+- CONFIRMED: Future dates, empty descriptions (RT-042), invalid expense sign, missing units, and non-zero transaction sums are rejected.
 - CONFIRMED: Local IndexedDB queue write failures are blocking save failures: the transaction form shows an error toast message, remains open with the current user-entered values, and does not emit the edit as saved or reset the form.
 
 ## Edge Cases
@@ -75,7 +75,7 @@
 - REQUIRED: Sync tests should continue to assert that deleted queued transaction ids are omitted from staged monthly files and non-deleted queued replacement transactions are appended.
 - CONFIRMED: Transaction store tests assert that rejected `idb.saveTransaction()` calls propagate failure and do not call `updatePendingToSync()` or reload the month.
 - CONFIRMED: Transaction dialog tests assert that a rejected local queue write shows an error message, logs the error with `console.error` (RT-044), and does not emit `update:transaction`.
-- CONFIRMED: `src/components/__tests__/TransactionEditDialog.spec.ts` covers dialog validation: a valid transaction saves, and a description shorter than 5 characters (to become an empty description under RT-042), a future date, a non-positive expense value, or values not summing to zero block the save with a visible error.
+- CONFIRMED: `src/components/__tests__/TransactionEditDialog.spec.ts` covers dialog validation: a valid transaction saves, an empty description (RT-042) blocks the save with "Description is required", a 1–4 character description saves (RT-042), and a future date, a non-positive expense value, or values not summing to zero block the save with a visible error.
 - CONFIRMED: `src/views/__tests__/Transactions.spec.ts` mounts `Transactions.vue` and covers listing the selected account's rows for the month, hiding deleted transactions, pending-sync row marking, opening the edit dialog with the selected transaction, and delete only after confirmation.
 
 ## Missing Tests / Coverage Gaps
@@ -84,7 +84,6 @@
 - CONFIRMED: The dialog's top-level "Sum of values should be 0" message is not rendered; unbalanced values are blocked through the appended balancing row's account error instead. Tests assert the blocked save, not that message.
 - CONFIRMED: Edit-as-delete-plus-new-id is covered at dialog level; no integration test covers the subsequent balance recalculation across real stores.
 - CONFIRMED: Local queue failure UX is covered for the edit dialog here and for the Expense and Transfer dialogs in `specs/features/transaction-dialogs.md`.
-- CONFIRMED: `TransactionEditDialog.spec.ts` asserts the 5-character description rule and must change with RT-042.
 
 ## Product Questions
 - RESOLVED: Editing continues to use delete-plus-new-id; preserving original transaction ids for audit/history is out of scope for the current product model.
