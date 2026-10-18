@@ -62,6 +62,14 @@
   <TransactionTypeDialog ref="transactionDialog" />
 </template>
 
+<style>
+#currencies_menu_list {
+  .pi-fw {
+    width: 14px;
+  }
+}
+</style>
+
 <script lang="ts" setup>
 import { ref, computed, inject, watch, type Ref } from "vue";
 import TransactionTypeDialog from "@/components/TransactionTypeDialog.vue";
