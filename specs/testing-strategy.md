@@ -61,6 +61,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - COVERED (RT-009, RT-044): A failed local queue write in either form shows the error message, logs it with `console.error`, keeps the form open with its values, and re-enables Save (`src/components/__tests__/TransactionExpenseDialog.spec.ts`, `src/components/__tests__/TransactionTransferDialog.spec.ts`).
   - COVERED (RT-042): An empty description is blocked, and a 1–4 character description saves, in the Expense form and in `TransactionEditDialog` (`TransactionExpenseDialog.spec.ts`, `TransactionEditDialog.spec.ts`).
   - COVERED (RT-043): Neither quick-add form offers tags or unit fields, and only payment-type accounts are listed (`TransactionExpenseDialog.spec.ts`, `TransactionTransferDialog.spec.ts`).
+  - COVERED (RT-048): The Expense form defaults the value currency to the payment account currency (manual pick and selected suggestion), fills the payment-side amount for a cross-currency suggestion, keeps a chosen currency, leaves same-currency suggestions unchanged, saves the same entries, and still blocks a missing exchange rate (`TransactionExpenseDialog.spec.ts`).
 - Integration: none required.
 - Manual: date picker, account select filters, and description autocomplete in a real browser.
 

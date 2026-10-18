@@ -374,6 +374,9 @@ function searchTransaction(event: { query: string }) {
           expenseAccountId: expenseValue.accountId,
           paymentAccountId: paymentValue.accountId,
           value: Math.abs(expenseValue.value || 0),
+          paymentValue: Math.abs(
+            paymentValue.accountValue ?? paymentValue.value ?? 0,
+          ),
         };
       },
     ) as {
@@ -382,6 +385,7 @@ function searchTransaction(event: { query: string }) {
       expenseAccountId: string;
       paymentAccountId: string;
       value: number;
+      paymentValue: number;
     }[];
   }, 50);
 }
@@ -447,14 +451,19 @@ function onSelectTransaction(event: {
     expenseAccountId: string;
     paymentAccountId: string;
     value: number;
+    paymentValue: number;
   };
 }) {
+  const expense = accountsStore.accounts[event.value.expenseAccountId];
+  const payment = accountsStore.accounts[event.value.paymentAccountId];
+  const crossCurrency =
+    !!expense && !!payment && expense.currency !== payment.currency;
+
   state.description = event.value.name;
   state.expenseAccountId = event.value.expenseAccountId;
   state.assetAccountId = event.value.paymentAccountId;
-  state.value = event.value.value;
-  state.valueCurrency =
-    accountsStore.accounts[event.value.expenseAccountId]?.currency || "";
+  state.value = crossCurrency ? event.value.paymentValue : event.value.value;
+  state.valueCurrency = payment?.currency || "";
 }
 
 function show() {
@@ -510,7 +519,7 @@ watch(
         state.valueCurrency,
       )
     ) {
-      state.valueCurrency = expenseCurrency.value;
+      state.valueCurrency = paymentCurrency.value;
     }
   },
   { immediate: true },

@@ -9,12 +9,14 @@ const mocks = vi.hoisted(() => ({
   saveTransaction: vi.fn(),
   emitMessage: vi.fn(),
   getValue: vi.fn(),
+  transactions: {} as Record<number, Record<number, unknown[]>>,
 }));
 
 const ACCOUNTS = {
   food: { id: "food", name: "Food", currency: "USD", type: "Expense" },
   cash: { id: "cash", name: "Cash", currency: "USD", type: "Cash" },
   euro: { id: "euro", name: "Euro", currency: "EUR", type: "Cash" },
+  travel: { id: "travel", name: "Travel", currency: "GBP", type: "Expense" },
   etf: { id: "etf", name: "ETF", currency: "USD", type: "ETF" },
 };
 
@@ -29,7 +31,7 @@ vi.mock("@/stores/accounts", () => ({
 vi.mock("@/stores/transactions", () => ({
   useTransactionsStore: () => ({
     saveTransaction: mocks.saveTransaction,
-    transactions: {},
+    transactions: mocks.transactions,
   }),
 }));
 
@@ -82,6 +84,26 @@ function fieldStub(parse: (value: string) => unknown) {
     },
   });
 }
+
+const autoCompleteStub = defineComponent({
+  props: {
+    modelValue: { type: null, default: null },
+    suggestions: { type: Array, default: () => [] },
+  },
+  emits: ["update:modelValue", "complete", "item-select"],
+  setup(props, { emit }) {
+    return () =>
+      h("input", {
+        value: props.modelValue ?? "",
+        onInput: (event: Event) => {
+          const value = (event.target as HTMLInputElement).value;
+          emit("update:modelValue", value);
+          emit("complete", { query: value });
+        },
+        onChange: () => emit("item-select", { value: props.suggestions[0] }),
+      });
+  },
+});
 
 const selectStub = defineComponent({
   props: {
@@ -138,6 +160,7 @@ describe("TransactionExpenseDialog", () => {
     vi.clearAllMocks();
     mocks.saveTransaction.mockResolvedValue(undefined);
     mocks.getValue.mockReturnValue(1);
+    mocks.transactions = {};
   });
 
   afterEach(() => {
@@ -156,10 +179,7 @@ describe("TransactionExpenseDialog", () => {
       "DatePicker",
       fieldStub((value) => new Date(value)),
     );
-    app.component(
-      "AutoComplete",
-      fieldStub((value) => value),
-    );
+    app.component("AutoComplete", autoCompleteStub);
     app.component("Select", selectStub);
     app.component(
       "InputNumber",
@@ -343,5 +363,150 @@ describe("TransactionExpenseDialog", () => {
     expect(
       root.querySelector("#asset-account")!.getAttribute("data-options"),
     ).toBe("cash,euro");
+  });
+
+  describe("default value currency (RT-048)", () => {
+    const CURRENCY_SELECT = '[data-options="USD,EUR"]';
+
+    function currencySelect() {
+      return root.querySelector<HTMLInputElement>(CURRENCY_SELECT);
+    }
+
+    function valueInput() {
+      return root.querySelector<HTMLInputElement>("#expense-value")!;
+    }
+
+    function recentExpense(
+      paymentId: string,
+      expense: number,
+      payment: number,
+    ) {
+      const now = new Date();
+      mocks.transactions = {
+        [now.getFullYear()]: {
+          [now.getMonth() + 1]: [
+            {
+              id: 1,
+              description: "Lunch",
+              values: [
+                { accountId: "food", value: expense, accountValue: expense },
+                {
+                  accountId: paymentId,
+                  value: -expense,
+                  accountValue: -payment,
+                },
+              ],
+            },
+          ],
+        },
+      };
+    }
+
+    async function selectSuggestion() {
+      setField(root, "expense-description", "Lunch");
+      await new Promise((resolve) => setTimeout(resolve, 70));
+      await flush();
+      root
+        .querySelector("#expense-description")!
+        .dispatchEvent(new Event("change"));
+      await flush();
+    }
+
+    it("selects the payment currency and fills the payment-side amount for a cross-currency suggestion", async () => {
+      recentExpense("euro", 18, 9);
+      mountDialog();
+      await flush();
+
+      await selectSuggestion();
+
+      expect(
+        root.querySelector<HTMLInputElement>("#asset-account")!.value,
+      ).toBe("euro");
+      expect(currencySelect()!.value).toBe("EUR");
+      expect(valueInput().value).toBe("9");
+    });
+
+    it("fills the expense amount and shows no selector for a same-currency suggestion", async () => {
+      recentExpense("cash", 12, 12);
+      mountDialog();
+      await flush();
+
+      await selectSuggestion();
+
+      expect(valueInput().value).toBe("12");
+      expect(currencySelect()).toBeNull();
+    });
+
+    it("defaults to the payment currency when the accounts are picked by hand", async () => {
+      mountDialog();
+      await flush();
+
+      await fillValid({ "asset-account": "euro" });
+
+      expect(currencySelect()!.value).toBe("EUR");
+    });
+
+    it("keeps a chosen currency while it is still one of the two account currencies", async () => {
+      mountDialog();
+      await flush();
+      await fillValid({ "asset-account": "euro" });
+
+      setField(root, "expense-account", "travel");
+      await flush();
+
+      expect(
+        root.querySelector<HTMLInputElement>('[data-options="GBP,EUR"]')!.value,
+      ).toBe("EUR");
+    });
+
+    it("falls back to the payment currency when the chosen currency is no longer an account currency", async () => {
+      mountDialog();
+      await flush();
+      await fillValid({ "asset-account": "euro" });
+      const select = currencySelect()!;
+      select.value = "USD";
+      select.dispatchEvent(new Event("input"));
+      await flush();
+      expect(currencySelect()!.value).toBe("USD");
+
+      setField(root, "expense-account", "travel");
+      await flush();
+
+      expect(
+        root.querySelector<HTMLInputElement>('[data-options="GBP,EUR"]')!.value,
+      ).toBe("EUR");
+    });
+
+    it("saves the same entries as before when the default payment currency is used", async () => {
+      mocks.getValue.mockReturnValue(0.5);
+      vi.spyOn(Date, "now").mockReturnValue(1700000000000);
+      recentExpense("euro", 18, 9);
+      mountDialog();
+      await flush();
+
+      await selectSuggestion();
+      await save();
+
+      expect(mocks.saveTransaction).toHaveBeenCalledTimes(1);
+      expect(mocks.saveTransaction.mock.calls[0][0].values).toEqual([
+        { accountId: "food", value: 18, accountValue: 18 },
+        { accountId: "euro", value: -18, accountValue: -9 },
+      ]);
+    });
+
+    it("still blocks a selected cross-currency suggestion without an exchange rate", async () => {
+      mocks.getValue.mockReturnValue(0);
+      recentExpense("euro", 18, 9);
+      mountDialog();
+      await flush();
+
+      await selectSuggestion();
+      await save();
+
+      expect(visibleErrors()).toEqual([
+        "No exchange rate available for these accounts",
+      ]);
+      expect(mocks.saveTransaction).not.toHaveBeenCalled();
+    });
   });
 });
