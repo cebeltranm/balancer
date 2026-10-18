@@ -79,7 +79,7 @@ Current code traceability only. Nothing here is a requirement.
 | Persistent-state `error` is persistent, closable, and grouped | satisfied | Sync failed (`storage.spec.ts`) and invalid file, one group per file (`files.spec.ts`), are persistent, closable, and grouped. |
 | Ongoing missing-data `warn` has an inline indicator | satisfied | RT-011; expense and investment summaries. |
 | `blocking` uses a dialog with explicit actions | satisfied | RT-020; `Auth.spec.ts`, `storage.spec.ts`. |
-| No silent failure | partially satisfied | Callers of `writeJsonFile` audited: `accounts` and `config` saves, account hide/restore (`Accounts.vue`), and sync show a message. The seed writes in `storage.ts` and `Auth.vue` ignore a `false` result; open as RT-045. |
+| No silent failure | partially satisfied | Callers of `writeJsonFile` audited: `accounts` and `config` saves, account hide/restore (`Accounts.vue`), and sync show a message. RESOLVED (RT-045): a failed seed write of `config.json` or `accounts.json` shows an `error` toast. The seed writes in `storage.ts` and `Auth.vue` still ignore a `false` result (IMP-10). |
 | Retry is user-initiated, no background loop | satisfied | Sync is debounced and user-retried; no retry loops found. |
 | Failure never discards queued data or credentials | satisfied | RT-002, RT-020; `sync.spec.ts`, `storage.spec.ts`. |
 | Logging uses `console.error`/`console.warn`, not `console.log` | satisfied | `files.ts`, `dropbox.ts`, and `Auth.vue` use `console.error`/`console.warn`; covered by `files.spec.ts`, `dropbox.spec.ts`, `Auth.spec.ts`. |
@@ -94,6 +94,7 @@ Current code traceability only. Nothing here is a requirement.
 - [ ] REQUIRED: GIVEN a state-based error (sync failed, invalid remote file) is raised twice, WHEN both are emitted, THEN one toast per group is visible.
 - [ ] REQUIRED: GIVEN field validation fails, WHEN the user submits, THEN the error appears inline next to the field, Save is blocked, and no toast or dialog is shown.
 - [x] REQUIRED: GIVEN an unexpected failure is caught, WHEN it is handled, THEN a user-visible message is shown and `console.error` is called with the error; `console.log` is not called for it.
+- [ ] RESOLVED (RT-045): GIVEN the seed write of `config.json` or `accounts.json` returns `false`, WHEN the seed is attempted, THEN an `error` toast is shown and the failure is logged with `console.error`.
 - [ ] REQUIRED: GIVEN a failure of any kind, WHEN it is handled, THEN queued `to_sync` data, pending edits, and local credentials are unchanged unless the user chose a reset action.
 - [ ] REQUIRED: GIVEN a log call from an error path, WHEN its arguments are inspected, THEN they contain no token or credential value.
 - [ ] REQUIRED: GIVEN a feature spec overrides a default, WHEN the spec is reviewed, THEN the override names the rule it replaces.
@@ -112,7 +113,7 @@ Follow the layers and conventions in `specs/testing-strategy.md`.
 
 ## Code Alignment Follow-Ups
 These are the gaps between the contract and current code. This spec change does not fix them. Each needs its own task and must not change an approved override.
-- Decide RT-045 (seed write failure) and then either toast it or record a console-only override.
+- Implement RT-045: show an `error` toast (and `console.error`) when the `config.json` seed write in `storage.ts` or the `accounts.json` seed write in `Auth.vue` returns `false`.
 - Add a "no token in logs" assertion to `storage.spec.ts`.
 
 ## Migration / Compatibility
