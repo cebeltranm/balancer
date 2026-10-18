@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan lists every place where the specs and the code or tests do not yet agree, after all triage decisions (RT-001 to RT-044) were recorded in the specs. It orders the work into sessions that can each be done and reviewed as one PR.
+This plan lists every place where the specs and the code or tests do not yet agree, after all triage decisions (RT-001 to RT-045) were recorded in the specs. It orders the work into sessions that can each be done and reviewed as one PR.
 
 It is a work list, not a requirement. The requirement is always the Product Contract in the cited spec. When an item is done, update the cited spec (`Contract status`, `Missing Tests / Coverage Gaps`, acceptance-criteria checkboxes) and the `specs/testing-strategy.md` matrix in the same PR, as `AGENTS.md` requires, and remove the item from this plan.
 
@@ -25,7 +25,7 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
 | IMP-09 | Error logs contain no token or credential: add the `storage.spec.ts` assertion (Dropbox part done) | `validation-and-errors.md` Test Expectations | Test | P3 | S | 2 |
-| IMP-10 | Seed writes in `storage.ts` and `Auth.vue` ignore a `false` result; blocked on RT-045 (audit and account hide/restore error toast done) | `validation-and-errors.md` No silent failure | Code | P2 | S | 2 |
+| IMP-10 | Seed writes in `storage.ts` and `Auth.vue` ignore a `false` result; show an `error` toast per RT-045 (audit and account hide/restore error toast done) | `validation-and-errors.md` No silent failure | Code | P2 | S | 2 |
 | IMP-11 | Dropbox provider: unparseable JSON is an invalid file | `data-model.md` Test Expectations | Test | P2 | S | 3 |
 | IMP-12 | Startup/bootstrap does not overwrite invalid config, values, budget, balance, or transaction files | `data-model.md` Test Expectations | Test | P2 | M | 3 |
 | IMP-13 | Invalid-file error is user-visible with file context | `data-model.md` Test Expectations | Test | P2 | S | 3 |
@@ -61,7 +61,7 @@ Done in this session: IMP-06 (`console.error`/`console.warn`), IMP-07 (invalid-f
 Remaining:
 
 - **IMP-09 (Test, S).** `storage.spec.ts`: error-path log calls contain no token value.
-- **IMP-10 (Code, S).** `src/stores/storage.ts:30` (config seed) and `src/components/Auth.vue:364` (accounts seed) do not check the write result. Blocked on RT-045 in `specs/requirements-triage.md` (error toast or console-only override in `features/authentication.md`).
+- **IMP-10 (Code, S).** `src/stores/storage.ts:30` (config seed) and `src/components/Auth.vue:364` (accounts seed) do not check the write result. Decided in RT-045: show an `error` toast and log with `console.error` (recorded in `features/authentication.md`, `features/settings.md`, and `validation-and-errors.md`). Write the failing tests first.
 - Close-out once both are done: remove the last bullets from "Code Alignment Follow-Ups" in `validation-and-errors.md`, tick the remaining acceptance criteria, and remove this session.
 
 ### Session 3 — Invalid persisted file coverage (P2)
@@ -131,14 +131,13 @@ Documentation only; no code or tests. Can be folded into whichever session touch
 
 ## Needs a product decision before implementation
 
-These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-046 onward in `specs/requirements-triage.md` (RT-045 is open there) for any you want to pursue.
+These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-046 onward in `specs/requirements-triage.md` for any you want to pursue.
 
 | Topic | Where it is mentioned | Question to decide | Suggested size |
 | --- | --- | --- | --- |
 | `syncCachedFiles()` uses `forEach(async …)` | `product-overview.md` Known risks; `Auth.vue:381` | Must startup refresh finish (all reloads awaited) before startup sync and balance work start? | Small change (authentication or storage-sync spec) |
 | `checkStore()` only on interactive login | `features/authentication.md` RT-023 | Should a missing `accounts.json` be re-seeded on a later load? Currently an accepted gap. | Small change |
 | Invalid-file recovery action | `data-model.md` ("until the user explicitly chooses a recovery action"; "recovery UI polish remains future work") | What recovery actions exist (reload from remote, discard local cache, open file in provider)? Today there is only the persistent toast. | New feature |
-| Seed write failure | IMP-10 | Is a failed `accounts.json`/`config.json` seed write an `error` toast or console-only? | Small change |
 | Base currency setting | `features/authentication.md` RT-023 | Out of scope by design; needs its own requirement and data-model change. | New feature |
 | Google Drive provider | `features/storage-sync.md` RT-029 | Out of scope until a provider helper, auth flow, and sync tests exist. | New feature |
 | Automated end-to-end tests | `testing-strategy.md` RT-031 | Out of scope; adding a tool needs a decision and a dependency. | New feature |
@@ -146,4 +145,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-044 is satisfied in code. The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-045 is satisfied in code except RT-045 (IMP-10). The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.
