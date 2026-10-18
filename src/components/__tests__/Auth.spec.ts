@@ -8,6 +8,7 @@ import { StorageAuthError } from "@/helpers/storageAuthError";
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
 import * as files from "@/helpers/files";
 import * as idb from "@/helpers/idb";
+import { EVENTS } from "@/helpers/events";
 import { useStorageStore } from "@/stores/storage";
 
 // RT-020: shared auth error state with retry, reset local credentials, and
@@ -488,6 +489,30 @@ describe("Auth dialog failure handling (RT-020)", () => {
         .mocked(files.writeJsonFile)
         .mock.calls.filter(([name]) => name === "accounts.json");
       expect(seedWrites).toEqual([["accounts.json", seed]]);
+    });
+
+    it("shows an error toast and logs with console.error when the accounts seed write fails (RT-045)", async () => {
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const messages: any[] = [];
+      const onMessage = (msg: any) => messages.push(msg);
+      EVENTS.on("message", onMessage);
+      vi.mocked(files.readJsonFile).mockResolvedValue(false);
+      vi.mocked(files.writeJsonFile).mockResolvedValue(false);
+
+      await loginToStore();
+
+      EVENTS.off("message", onMessage);
+      const accountMessages = messages.filter((m) =>
+        /accounts/i.test(m.summary),
+      );
+      expect(accountMessages).toEqual([
+        expect.objectContaining({ severity: "error", closable: true }),
+      ]);
+      expect(consoleError).toHaveBeenCalled();
+      consoleError.mockRestore();
+      vi.mocked(files.writeJsonFile).mockResolvedValue(true);
     });
 
     it("does not overwrite an existing valid accounts.json", async () => {

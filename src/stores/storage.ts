@@ -27,7 +27,16 @@ const MINIMUM_CONFIG = { stock_api: {}, inv_composition: {} };
 async function ensureMinimumConfigFile() {
   const config = await readJsonFile("config.json", false);
   if (!config) {
-    await writeJsonFile("config.json", MINIMUM_CONFIG);
+    const saved = await writeJsonFile("config.json", MINIMUM_CONFIG);
+    if (!saved) {
+      console.error("config.json seed could not be saved");
+      EVENTS.emit("message", {
+        severity: "error",
+        summary: "Config not saved",
+        message: "The default config.json file could not be saved.",
+        closable: true,
+      });
+    }
   }
 }
 
