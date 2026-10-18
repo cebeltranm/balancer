@@ -30,10 +30,12 @@ Intended behavior that must survive refactors. Anything not listed here is not a
 - RESOLVED (RT-042): A transaction description must be non-empty (at least 1 character) in both the Expense form and the general transaction form. This replaces the earlier 5-character minimum of the general form. The Transfer form has no description input; it generates one that names the source and destination accounts.
 - RESOLVED (RT-043): The quick-add forms intentionally do not offer tags or unit counts, and only list payment-type accounts (cash, bank, credit card, receivable, payable) for the payment, source, and destination accounts. Users who need tags, unit-based accounts (ETF, Stock, Crypto), or more than two entries use the General option.
 - REQUIRED: An Expense form entry is a debit of the expense account and an equal credit of the payment account. A Transfer form entry is a credit of the source account and a debit of the destination account.
+- RESOLVED (RT-048): In the Expense form, when the expense and payment accounts have different currencies, the value currency defaults to the payment account's currency. This holds when the user picks the accounts and when a description suggestion is selected. The user can switch to the expense currency, and a chosen currency is kept while it is still one of the two account currencies. When the currencies are equal there is no selector and nothing changes.
+- RESOLVED (RT-048): Selecting a description suggestion between accounts in different currencies fills the value with the payment-side amount (the absolute `accountValue` of the payment entry), shown in the payment currency. Same-currency suggestions fill the expense amount as before. The saved transaction, the entries' `value` and `accountValue`, and the missing exchange-rate rule are unchanged.
 
 ## User Flows
 - CONFIRMED: Open the top-bar add action, choose Expenses, fill date, description, expense account, payment account, and value, then save. The form closes and the transaction is queued locally.
-- CONFIRMED: In the Expense form, choosing a suggestion from the description autocomplete (recent simple expense transactions) fills description, accounts, and value.
+- CONFIRMED: In the Expense form, choosing a suggestion from the description autocomplete (recent simple expense transactions) fills description, accounts, and value. When the two accounts' currencies differ, the value is the payment-side amount in the payment currency (RT-048).
 - CONFIRMED: Choose Transfer, fill date, source account, destination account, and value (plus the destination currency value when the two currencies differ), then save.
 - CONFIRMED: Choose General to open the general transaction form (`specs/features/transactions.md`).
 - CONFIRMED: Cancel closes the form without saving.
@@ -43,6 +45,7 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - CONFIRMED: `src/layout/AppTopbar.vue` renders `TransactionTypeDialog`. Its add action calls `show()` on it.
 - CONFIRMED: `src/components/TransactionTypeDialog.vue` shows the three buttons. Each one closes the picker and calls `show()` on `TransactionExpenseDialog`, `TransactionTransferDialog`, or `TransactionEditDialog`.
 - CONFIRMED: `src/components/TransactionExpenseDialog.vue` validates with Zod: date not in the future, `description` at least 1 character, expense and payment accounts required and different, `value > 0`, and (cross-currency only) a chosen value currency and an exchange rate above 0. When the two accounts have different currencies the user can enter the value in either currency; the other side is derived from `valuesStore.getValue()`.
+- CONFIRMED: RT-048 is implemented: the currency-default watcher in `TransactionExpenseDialog.vue` falls back to the payment account currency, and `searchTransaction()` / `onSelectTransaction()` carry the payment-side amount (`Math.abs(paymentValue.accountValue)`) and select the payment currency when the currencies differ.
 - CONFIRMED: The Expense form builds a transaction with `id: Date.now()`, the expense entry (`value` and `accountValue` equal to the expense-currency amount) and the payment entry (`value` equal to the negative of that amount, `accountValue` equal to the negative payment-currency amount). It does not set `tags` or `units`.
 - CONFIRMED: The Expense form loads balance and budget data for the selected year and shows a remaining-budget summary under the expense account.
 - CONFIRMED: `src/components/TransactionTransferDialog.vue` validates date not in the future, source and destination required and different, `value > 0`, and (cross-currency only) a positive target value and an exchange rate above 0. The target value is pre-filled from the exchange rate until the user edits it.
@@ -58,6 +61,7 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
   - Failed local save is logged with `console.error` (RT-044): satisfied in both quick-add forms and the general form; covered by `TransactionExpenseDialog.spec.ts`, `TransactionTransferDialog.spec.ts`, and `TransactionEditDialog.spec.ts`.
   - Non-empty description (RT-042): satisfied in the Expense and general forms; covered by `TransactionExpenseDialog.spec.ts` and `TransactionEditDialog.spec.ts`. Transfer form not applicable.
   - Tags, units, and account types omitted from quick-add (RT-043): satisfied; covered by `TransactionExpenseDialog.spec.ts` and `TransactionTransferDialog.spec.ts`.
+  - Payment currency as the default value currency, and the payment-side amount for selected suggestions (RT-048): satisfied; covered by `TransactionExpenseDialog.spec.ts`.
 
 ## API / CLI / UI contract
 - CONFIRMED: Picker header "New transaction", buttons "Expenses", "Transfer", "General".
@@ -103,6 +107,12 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - [x] REQUIRED (RT-042): GIVEN an empty description, WHEN the user saves the Expense form or the general form, THEN the save is blocked with "Description is required".
 - [x] REQUIRED (RT-042): GIVEN a description of 1 to 4 characters, WHEN the user saves the Expense form or the general form with otherwise valid data, THEN the transaction is queued.
 - [x] REQUIRED (RT-043): GIVEN either quick-add form is open, THEN it offers no tags or unit fields and lists only payment-type accounts for the payment, source, and destination accounts.
+- [x] RESOLVED (RT-048): GIVEN a recent expense in a USD expense account paid from a EUR account (payment entry `accountValue` -9), WHEN the user selects it from the description autocomplete, THEN the value currency is EUR and the value is 9.
+- [x] RESOLVED (RT-048): GIVEN a recent expense whose expense and payment accounts share a currency, WHEN the user selects it, THEN the expense amount is filled and no currency selector is shown.
+- [x] RESOLVED (RT-048): GIVEN the user picks an expense account and a payment account in different currencies, WHEN the currency selector appears, THEN it defaults to the payment account currency.
+- [x] RESOLVED (RT-048): GIVEN a currency was chosen and the accounts change so that it is still one of the two account currencies, WHEN the form updates, THEN the chosen currency is kept.
+- [x] RESOLVED (RT-048): GIVEN the default payment currency is used and the user saves, THEN the saved entries equal those saved with the previous default: `value` is the expense-currency amount and `accountValue` of the payment entry is the payment-currency amount, converted with the date's rate.
+- [x] RESOLVED (RT-048): GIVEN a selected cross-currency suggestion and no exchange rate for the date, WHEN the user saves, THEN the save is blocked with "No exchange rate available for these accounts".
 
 ## Test plan
 Required coverage levels and conventions are defined in `specs/testing-strategy.md`; the matrix row for this feature is there.
@@ -120,3 +130,4 @@ Required coverage levels and conventions are defined in `specs/testing-strategy.
 - RESOLVED (RT-042): The description minimum is 1 character in the Expense and general forms.
 - RESOLVED (RT-043): Tags and units are intentionally absent from the quick-add forms.
 - RESOLVED (RT-044): A failed local save is logged with `console.error` as well as shown; no logging override.
+- RESOLVED (RT-048): The Expense form defaults the value currency to the payment account currency when currencies differ, and selecting a suggestion fills the payment-side amount.
