@@ -150,13 +150,16 @@ const syncLabel = computed(() => {
   return "Sync status";
 });
 
+// RT-047: currencies without an icon reserve an empty fixed-width slot so menu labels align.
+const EMPTY_CURRENCY_ICON = "pi pi-fw";
+
 function currencyToIcon(currency: Currency) {
   const iconMap = CURRENCY_ICONS[currency];
   if (!iconMap) {
-    return undefined;
+    return EMPTY_CURRENCY_ICON;
   }
   const iconClass = Object.keys(iconMap).find((key) => key !== "pi");
-  return iconClass ? `pi ${iconClass}` : undefined;
+  return iconClass ? `pi ${iconClass}` : EMPTY_CURRENCY_ICON;
 }
 
 function onMenuToggle(event: any) {

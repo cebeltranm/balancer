@@ -123,6 +123,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 
 ### Global Currency (`specs/architecture.md`)
 - Component — REQUIRED:
+  - COVERED (RT-047): Menu items for currencies without an icon reserve the `pi pi-fw` placeholder (`src/layout/__tests__/AppTopbar.spec.ts`).
   - COVERED (RT-046): Top-bar currency menu lists only currencies of active accounts in enum order, ignores unsupported codes, disables the button when empty, auto-switches `CURRENCY` to the first available currency, and picking an item sets `CURRENCY` (`src/layout/__tests__/AppTopbar.spec.ts`).
 - Manual: see "Charts and Overlays".
 

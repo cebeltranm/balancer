@@ -65,8 +65,14 @@ const menuStub = defineComponent({
     return () =>
       h(
         "ul",
-        (props.model as { label: string; command: () => void }[]).map((item) =>
-          h("li", { onClick: item.command }, item.label),
+        (
+          props.model as { label: string; icon?: string; command: () => void }[]
+        ).map((item) =>
+          h(
+            "li",
+            { onClick: item.command, "data-icon": item.icon },
+            item.label,
+          ),
         ),
       );
   },
@@ -166,6 +172,25 @@ describe("AppTopbar currencies", () => {
     );
 
     expect(listed()).toEqual(["COP", "USD", "EUR", "MXN"]);
+  });
+
+  it("reserves an icon slot for currencies without an icon (RT-047)", () => {
+    mountTopbar(
+      [account("a", "cop"), account("b", "usd"), account("c", "mxn")],
+      Currency.COP,
+    );
+
+    const icons = Object.fromEntries(
+      Array.from(root.querySelectorAll("li")).map((item) => [
+        item.textContent,
+        item.getAttribute("data-icon"),
+      ]),
+    );
+    expect(icons).toEqual({
+      COP: "pi pi-fw",
+      USD: "pi pi-dollar",
+      MXN: "pi pi-fw",
+    });
   });
 
   it("ignores account currencies outside the Currency enum (RT-046)", () => {

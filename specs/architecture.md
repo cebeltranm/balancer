@@ -52,6 +52,7 @@
 - RESOLVED (RT-046): The top-bar currency menu offers only the currencies of accounts active today (`activeAccounts(new Date())`, month-granular, all account types including income, expense, and liability). Items follow `Currency` enum order and are not sorted. A currency used by several active accounts appears once, and a single currency still shows a one-item menu. Account currencies outside the `Currency` enum are ignored.
 - RESOLVED (RT-046): With no active account in a supported currency, the menu is empty and the currency button is disabled; the full currency list is never used as a fallback, and `CURRENCY` is left unchanged.
 - RESOLVED (RT-046): When `CURRENCY` is not among the available currencies and at least one is available, the top bar switches `CURRENCY` to the first available currency in enum order, without a message. This re-runs when the accounts or the set of available currencies change.
+- RESOLVED (RT-047): Every menu item reserves a fixed-width icon slot so labels align. Currencies without an icon in `CURRENCY_ICONS` (COP, MXN) use the empty placeholder icon `pi pi-fw`.
 - CONFIRMED: Code status: SATISFIED. `AppTopbar.vue` derives the menu from `useAccountsStore().activeAccounts(new Date())` and a `watch` on that list applies the switch; covered by `src/layout/__tests__/AppTopbar.spec.ts`.
 - RESOLVED (RT-046): This is display-only. It never changes `accounts.json`, `activeAccounts()`, the currency choices in the account form (`Accounts.vue` still offers every `Currency`), exchange rates, persisted files, totals, or sync.
 
@@ -68,6 +69,7 @@
 - RESOLVED (RT-046): GIVEN the only EUR account has `hideSince` in a past month or `activeFrom` in a future month, WHEN the menu is opened, THEN EUR is not listed.
 - RESOLVED (RT-046): GIVEN income, expense, or liability accounts are the only active accounts in a currency, WHEN the menu is opened, THEN that currency is listed.
 - RESOLVED (RT-046): GIVEN an active account whose currency is not in the `Currency` enum, WHEN the menu is opened, THEN that currency is not listed.
+- RESOLVED (RT-047): GIVEN active accounts in COP and USD, WHEN the menu is opened, THEN the COP item has the placeholder icon `pi pi-fw` and the USD item has `pi pi-dollar`.
 - RESOLVED (RT-046): GIVEN `CURRENCY` is COP and the only active accounts are in USD and EUR, WHEN the top bar renders, THEN `CURRENCY` becomes USD.
 - RESOLVED (RT-046): GIVEN `CURRENCY` is USD and an active USD account exists, WHEN the top bar renders, THEN `CURRENCY` is unchanged.
 - RESOLVED (RT-046): GIVEN no active accounts, WHEN the top bar renders, THEN the menu has no items, the currency button is disabled, and `CURRENCY` is unchanged.
