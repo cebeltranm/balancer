@@ -1,9 +1,13 @@
 import * as idb from "./idb";
-import { EVENTS } from "./events";
+import { CLEAR_MESSAGES, EVENTS } from "./events";
 import { isPersistedFileError } from "./persistedFileErrors";
 import { getStorage } from "./storage";
 
 const invalidRemoteFiles = new Set<string>();
+
+// One toast group per file: a repeat for the same file replaces the earlier
+// toast, while two invalid files each keep their own.
+const invalidFileGroup = (fileName: string) => `invalid-file:${fileName}`;
 
 export async function readJsonFile(fileName: any, cache: boolean = true) {
   if (cache) {
@@ -31,6 +35,8 @@ export async function readJsonFile(fileName: any, cache: boolean = true) {
         summary: "Invalid file",
         message: `${error.fileName} could not be loaded. The remote file was not overwritten and needs recovery before saving.`,
         life: 0,
+        closable: true,
+        group: invalidFileGroup(fileName),
       });
     }
     // Uncached read while the provider is unreachable (network failure): report
@@ -42,7 +48,9 @@ export async function readJsonFile(fileName: any, cache: boolean = true) {
     throw error;
   }
   if (data) {
-    invalidRemoteFiles.delete(fileName);
+    if (invalidRemoteFiles.delete(fileName)) {
+      EVENTS.emit(CLEAR_MESSAGES, invalidFileGroup(fileName));
+    }
     idb.saveJsonFile({
       id: fileName,
       data,
@@ -70,7 +78,7 @@ export async function writeJsonFile(fileName: any, data: object) {
       return true;
     }
   } catch (e) {
-    console.log(e);
+    console.error(`Could not write ${fileName}`, e);
   }
   return false;
 }

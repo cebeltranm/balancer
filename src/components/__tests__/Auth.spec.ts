@@ -228,6 +228,21 @@ describe("Auth dialog failure handling (RT-020)", () => {
     expect(authError(store)).toBeNull();
   });
 
+  it("logs auth failures with console.error, not console.log, and no credential material", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const failure = new DOMException("denied", "NotAllowedError");
+    mocks.credentialsGet.mockRejectedValue(failure);
+    await mountAuth({ loggedIn: true, credentials: true });
+
+    await click(/authenticate with credentials/i);
+
+    expect(error).toHaveBeenCalledWith(expect.any(String), failure);
+    expect(log).not.toHaveBeenCalled();
+    error.mockRestore();
+    log.mockRestore();
+  });
+
   it("shows a webauthn auth error with recovery actions when authentication is rejected", async () => {
     mocks.credentialsGet.mockRejectedValue(
       new DOMException("denied", "NotAllowedError"),

@@ -88,6 +88,28 @@ describe("dropbox storage helper auth failures (RT-020)", () => {
     expect(info).toMatchObject({ loggedIn: true, offline: false });
   });
 
+  it("logs a failed token refresh with console.error and no token value", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    local.setItem("dbx_token", "old-access-secret");
+    local.setItem("dbx__refresh_token", "refresh-secret");
+    mocks.filesGetMetadata.mockRejectedValue(
+      new (DropboxResponseError as any)(401),
+    );
+    mocks.refreshAccessToken.mockRejectedValue(new Error("invalid_grant"));
+
+    await expect(new DropboxStore().getInfo()).rejects.toBeTruthy();
+
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("token refresh"),
+      expect.any(Error),
+    );
+    expect(log).not.toHaveBeenCalled();
+    const logged = JSON.stringify(error.mock.calls);
+    expect(logged).not.toContain("old-access-secret");
+    expect(logged).not.toContain("refresh-secret");
+  });
+
   it("throws a Dropbox StorageAuthError without redirecting when the token refresh fails", async () => {
     local.setItem("dbx_token", "old");
     local.setItem("dbx__refresh_token", "revoked");

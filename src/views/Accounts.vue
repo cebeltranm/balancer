@@ -750,14 +750,21 @@ function hideAccount(account: Account, event: Event) {
         ...account,
         hideSince: new Date(),
       });
-      if (saved) {
+      if (!saved) {
         toast.add({
-          severity: "warn",
-          summary: "Account hidden",
-          detail: `${account.name} is now hidden.`,
-          life: 2500,
+          severity: "error",
+          summary: "Account not hidden",
+          detail: `${account.name} could not be saved.`,
+          life: 3000,
         });
+        return;
       }
+      toast.add({
+        severity: "warn",
+        summary: "Account hidden",
+        detail: `${account.name} is now hidden.`,
+        life: 2500,
+      });
     },
   });
 }
@@ -769,14 +776,21 @@ function unhideAccount(account: Account, event: Event) {
     icon: "pi pi-eye",
     accept: async () => {
       const saved = await accountsStore.removeAccountHideSince(account.id);
-      if (saved) {
+      if (!saved) {
         toast.add({
-          severity: "success",
-          summary: "Account restored",
-          detail: `${account.name} is active again.`,
-          life: 2500,
+          severity: "error",
+          summary: "Account not restored",
+          detail: `${account.name} could not be saved.`,
+          life: 3000,
         });
+        return;
       }
+      toast.add({
+        severity: "success",
+        summary: "Account restored",
+        detail: `${account.name} is active again.`,
+        life: 2500,
+      });
     },
   });
 }
