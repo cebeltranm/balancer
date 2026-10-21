@@ -24,20 +24,11 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-27 | Integration: transaction edit → balance recalculation | `testing-strategy.md` Transactions | Test (rec.) | P3 | M | 7 |
-| IMP-28 | Integration: auth startup refresh → sync → balance → store reloads | `testing-strategy.md` Storage Sync | Test (rec.) | P3 | L | 7 |
 | IMP-29 | Remove stale and contradictory spec lines | several | Spec | P3 | S | 8 |
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Session 7 only adds tests and can be skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 7 — Cross-store integration flows (P3)
-
-Suggested PR title: "Add recommended integration flows".
-
-- **IMP-27 (M).** Real `transactions` and `balance` stores with mocked storage: editing a transaction (delete original + save new id), then sync, recalculates balances from the earliest changed month.
-- **IMP-28 (L).** `Auth.vue` startup refresh with stale cached files → `syncCachedFiles` reload → sync → balance recalculation → stores reloaded. This flow currently runs refreshes with `forEach(async …)` (see "Needs a product decision" below), so the test must wait on observable results, not on the outer promise.
+Sessions are in the suggested order. Each session is one PR. Session 8 can be done at any time.
 
 ### Session 8 — Spec hygiene (P3, any time)
 

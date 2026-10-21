@@ -91,7 +91,7 @@
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `src/helpers/__tests__/dropbox.spec.ts` covers Dropbox auth failure and token refresh paths; Dropbox file read/write/list operations are not directly tested.
-- CONFIRMED: No integration tests across Auth startup refresh, sync, balance recalculation, and store reloads.
+- CONFIRMED: `src/components/__tests__/AuthStartupSync.spec.ts` covers Auth startup refresh of stale cached files, the following sync, balance recalculation, and store reloads with real stores and in-memory IndexedDB/provider fakes (`src/test/fakeBackend.ts`). It waits on observable results because `syncCachedFiles()` does not await its reloads.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts the exact staged transaction merge payload for same-id replacement, deleted queued rows, and preserved remote rows.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts whole-file conflict detection, last-writer-wins upload, and visible warning state.
 - CONFIRMED: Sync helper tests prove failed file uploads are reported as failures and do not clear pending `to_sync` cache state.
