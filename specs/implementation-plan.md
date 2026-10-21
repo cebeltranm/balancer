@@ -24,12 +24,6 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-18 | Values: save triggers balance recalculation | `features/values.md` | Test | P2 | S | 5 |
-| IMP-19 | Values: manual editing and pending-row indication | `features/values.md` | Test | P2 | M | 5 |
-| IMP-20 | Budget: context menu apply-next and remove mark the row pending | `features/budget.md` | Test | P2 | M | 5 |
-| IMP-21 | Expenses: budget progress and comment popover | `features/expenses.md` | Test | P2 | M | 5 |
-| IMP-22 | Investments: ByRegion Unknown bucket; fully allocated account has no Unknown (RT-017) | `features/investments.md` | Test | P2 | S | 5 |
-| IMP-23 | Investments: table and bar views render missing-rate indicators (RT-011) | `features/investments.md` | Test | P2 | M | 5 |
 | IMP-24 | Values and balance offline queue (RT-024) | `features/pwa.md` | Test | P3 | S | 6 |
 | IMP-25 | Balance: formulas across account types; multi-month recursive recalculation | `features/balance.md` | Test (rec.) | P3 | M | 6 |
 | IMP-26 | Local dev server: `/list`, write, and `.tmp/` creation failures return 500 | `features/local-dev-server.md` | Test (rec.) | P3 | M | 6 |
@@ -39,21 +33,7 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Sessions 5–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 5 — Report and editor views coverage (P2)
-
-Why grouped: all are rendered-view tests on data-heavy screens that share the same store mocks (accounts, values, balance, budget). Needs stubs for PrimeVue `ContextMenu` and the chart components, so it is heavier than the earlier component-gap sessions. Can be split into 5a (Values, Budget) and 5b (Expenses, Investments) if the PR gets large.
-
-Suggested PR title: "Close REQUIRED component gaps for Values, Budget, Expenses, and Investments".
-
-- **IMP-18 (S).** `src/views/__tests__/Values.spec.ts`: saving calls `balanceStore.recalculateBalance(year, month, true)` (`Values.vue:579`).
-- **IMP-19 (M).** `Values.spec.ts`: an inline edit to a non-negative changed value marks the row pending; a negative or unchanged value does not.
-- **IMP-20 (M).** `src/views/__tests__/Budget.spec.ts`: context menu "apply next" copies the month value to later months and marks the row pending; "remove" clears the month and marks the row pending.
-- **IMP-21 (M).** New `src/views/__tests__/ExpensesBudget.spec.ts`: a budget progress bar renders only when a budget exists for the row/period; the comment badge opens the read-only comments with the concatenated `{ m, d }` comments.
-- **IMP-22 (S).** `src/views/__tests__/PortfolioUnknownAllocation.spec.ts`: ByRegion groups a legacy account under Unknown with the warning; a fully allocated account never creates an Unknown bucket. Also fix the wording in `features/investments.md` (it asks for an `investments.spec.ts`-level test while the matrix asks for component level; the Unknown bucket is built in `views/portafolio/index.vue`, so component level is right).
-- **IMP-23 (M).** Rendered `table.vue` and `bar.vue` with summary metadata that has a missing rate show the missing-rate indicator naming the currency/account.
-- Manual checklist to run and record: "Charts and Overlays" (Expenses charts, Portfolio charts, Budget context menu and comments dialog).
+Sessions are in the suggested order. Each session is one PR. Sessions 6–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
 
 ### Session 6 — Store-level recommended coverage (P3)
 

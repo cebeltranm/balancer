@@ -11,6 +11,22 @@ import Portfolio from "@/views/portafolio/index.vue";
 // analytics; they must be grouped under an "Unknown" bucket, and the UI must
 // show a visible warning naming the affected accounts (specs/features/investments.md).
 
+const allocated = {
+  id: "allocated",
+  name: "Allocated Fund",
+  type: AccountType.ETF,
+  currency: "usd",
+  class: { Equities: { US: 1 } },
+};
+const legacy = {
+  id: "legacy_no_allocation",
+  name: "Legacy Fund",
+  type: AccountType.ETF,
+  currency: "usd",
+  // No `class` allocation: this is the legacy/missing-allocation case.
+};
+const accountsMock = vi.hoisted(() => ({ list: [] as any[] }));
+
 const entries = Array.from({ length: 5 }, () => ({
   value: 0,
   in: 0,
@@ -50,22 +66,7 @@ vi.mock("@/stores/storage", () => ({
 vi.mock("@/stores/accounts", () => ({
   useAccountsStore: () => ({
     accountsGroupByCategories: () => ({}),
-    activeAccounts: () => [
-      {
-        id: "allocated",
-        name: "Allocated Fund",
-        type: AccountType.ETF,
-        currency: "usd",
-        class: { Equities: { US: 1 } },
-      },
-      {
-        id: "legacy_no_allocation",
-        name: "Legacy Fund",
-        type: AccountType.ETF,
-        currency: "usd",
-        // No `class` allocation: this is the legacy/missing-allocation case.
-      },
-    ],
+    activeAccounts: () => accountsMock.list,
   }),
 }));
 
@@ -136,6 +137,39 @@ const treeTableStub = defineComponent({
   },
 });
 
+// Select drives `typeInvestment` via v-model; emitting during setup picks the
+// grouping as soon as the pie display mounts it.
+function selectGroupStub(group: string) {
+  return defineComponent({
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+    setup(_, { emit }) {
+      emit("update:modelValue", group);
+      return () => h("div");
+    },
+  });
+}
+
+async function mountPortfolio(root: HTMLElement, group = "ByAssetClass") {
+  const app = createApp(Portfolio);
+  app.provide("CURRENCY", ref("usd"));
+  app.config.globalProperties.$format = format;
+  app.component("Toolbar", passthroughStub());
+  app.component("Select", selectGroupStub(group));
+  app.component("SelectButton", selectButtonToPieStub);
+  app.component("GChart", emptyStub);
+  app.component("TreeTable", treeTableStub);
+  app.component("Column", passthroughStub());
+  app.component("Avatar", emptyStub);
+  app.directive("tooltip", {});
+
+  app.mount(root);
+  await nextTick();
+  await nextTick();
+  await nextTick();
+  return app;
+}
+
 describe("Portfolio ByAssetClass grouping for legacy missing allocation (RT-017)", () => {
   let root: HTMLDivElement;
   let app: ReturnType<typeof createApp> | undefined;
@@ -143,6 +177,7 @@ describe("Portfolio ByAssetClass grouping for legacy missing allocation (RT-017)
   beforeEach(() => {
     root = document.createElement("div");
     document.body.appendChild(root);
+    accountsMock.list = [allocated, legacy];
   });
 
   afterEach(() => {
@@ -200,4 +235,44 @@ describe("Portfolio ByAssetClass grouping for legacy missing allocation (RT-017)
       /unknown|unallocated|missing allocation/,
     );
   });
+});
+
+describe("Portfolio Unknown bucket by grouping (RT-017)", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+  });
+
+  it("ByRegion groups a legacy account under Unknown with the warning naming it", async () => {
+    accountsMock.list = [allocated, legacy];
+    app = await mountPortfolio(root, "ByRegion");
+
+    expect(root.textContent).toContain('"name":"Unknown"');
+    expect(root.textContent).toContain('"value":50');
+    // The allocated account is still grouped under its own region.
+    expect(root.textContent).toContain('"name":"US"');
+    expect(root.textContent).toContain(
+      "Missing class allocation, shown as Unknown: Legacy Fund",
+    );
+  });
+
+  it.each(["ByAssetClass", "ByRegion"])(
+    "%s never creates an Unknown bucket or warning for a fully allocated account",
+    async (group) => {
+      accountsMock.list = [allocated];
+      app = await mountPortfolio(root, group);
+
+      expect(root.textContent).toContain('"name":"Allocated Fund"');
+      expect(root.textContent).not.toContain("Unknown");
+      expect(root.textContent).not.toContain("Missing class allocation");
+    },
+  );
 });

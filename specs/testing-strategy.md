@@ -69,7 +69,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED (RT-011): Partial totals with a missing-rate indicator, and explicit zero rates not flagged (`src/views/__tests__/ExpensesMissingRates.spec.ts`).
   - COVERED (RT-016): Income hidden when unauthenticated and shown when authenticated (`src/views/__tests__/ExpensesIncomeVisibility.spec.ts`).
-  - GAP: Budget progress rendering and comment dialog behavior.
+  - COVERED: Budget progress renders only for periods with a budget; comment badges open the read-only comments with the concatenated comments (`src/views/__tests__/ExpensesBudget.spec.ts`).
 - Integration: none required.
 - Manual: treemap and bar charts render (Google Charts / Chart.js) on desktop and mobile.
 
@@ -91,8 +91,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Values (`specs/features/values.md`)
 - Component — REQUIRED:
   - COVERED: External provider failures show one generic error; prior-month fallback shows no warning; MXN sync and save (`src/views/__tests__/Values.spec.ts`).
-  - GAP: Saving values triggers balance recalculation.
-  - GAP: Manual editing and pending-row indication.
+  - COVERED: Saving values triggers `recalculateBalance(year, month, true)`; a non-negative inline edit marks the row pending, negative and unchanged values do not (`Values.spec.ts`).
   - COVERED (RT-040): Row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order unchanged after an edit, alphabetical Entity filter options (`ValuesRowOrder.spec.ts`).
 - Unit — COVERED: default and USD cross-rate fallback windows (`src/stores/__tests__/values.spec.ts`).
 - Manual: real external rate/stock providers respond and are parsed (requires network; never automated).
@@ -101,7 +100,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED: Editing a budget cell marks the row pending, blocks navigation, and saving calls `setBudgetForYear()`; negative values are ignored (`src/views/__tests__/Budget.spec.ts`).
   - COVERED (RT-009, RT-044): A failed local budget queue write shows an error, logs it with `console.error`, and keeps edits pending with Save available (`Budget.spec.ts`).
-  - GAP: Context menu actions (apply next, remove) update the row and mark it pending.
+  - COVERED: Context menu actions (apply next, remove) update the row and mark it pending (`Budget.spec.ts`).
 - Unit — COVERED: load, group, save, and failed queue write (`src/stores/__tests__/budget.spec.ts`).
 - Manual: context menu and comments dialog interaction.
 
@@ -115,8 +114,8 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 ### Investments (`specs/features/investments.md`)
 - Component — REQUIRED:
   - COVERED (RT-017): Legacy account with no class allocation grouped under Unknown with a visible warning (`src/views/__tests__/PortfolioUnknownAllocation.spec.ts`, ByAssetClass).
-  - GAP (RT-017): ByRegion Unknown grouping, and a fully allocated account never produces an Unknown bucket.
-  - GAP: Table and bar child views render missing-rate indicators.
+  - COVERED (RT-017): ByRegion Unknown grouping with the warning, and a fully allocated account never produces an Unknown bucket in ByAssetClass or ByRegion (`PortfolioUnknownAllocation.spec.ts`).
+  - COVERED (RT-011): Table and bar child views render missing-rate indicators (`src/views/__tests__/PortfolioMissingRates.spec.ts`).
   - COVERED (RT-041): Table order: groups then accounts by name, no-entity accounts last, case/accent/numeric collation, empty names last, totals and pie order unchanged (`PortfolioRowOrder.spec.ts`).
 - Unit — COVERED (RT-041): shared comparator and tree sort (`src/helpers/__tests__/ordering.spec.ts`).
 - Unit — COVERED: investment mapping and grouping (`src/helpers/__tests__/investments.spec.ts`); missing-rate totals (`src/composables/__tests__/totalByCategory.spec.ts`).
@@ -198,9 +197,9 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 
 ## Priority For Closing Gaps
 
-1. Budget component coverage (editing/save and failed-save UX) — closed by `Budget.spec.ts`; context menu actions remain.
+1. Budget component coverage (editing/save, failed-save UX, context menu actions) — closed by `Budget.spec.ts`.
 2. Transactions component coverage (dialog validation, view list/open dialog) — closed by `Transactions.spec.ts` and `TransactionEditDialog.spec.ts`.
 3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts` and `AccountsRestore.spec.ts`.
-4. Remaining component gaps: Values save → balance recalculation, Investments ByRegion and child views.
+4. Remaining component gaps — closed (Values, Expenses, Investments).
 5. Local dev server path traversal integration test — closed by `localDevServer.spec.ts` (RT-028).
 6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload).

@@ -161,6 +161,12 @@ const pendingToSave = ref(false);
 const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const selecteMenuData: Ref<any> = ref(null);
 
+function markRowPending(data: any) {
+  data.to_sync = true;
+  pendingToSave.value = true;
+  EVENTS.emit(FORM_WITH_PENDING_EVENTS, true);
+}
+
 const contextMenuItems = [
   {
     label: "Apply next",
@@ -170,6 +176,7 @@ const contextMenuItems = [
         selecteMenuData.value.data[i] =
           selecteMenuData.value.data[selecteMenuData.value.month];
       }
+      markRowPending(selecteMenuData.value.data);
     },
   },
   {
@@ -177,6 +184,7 @@ const contextMenuItems = [
     icon: "pi pi-delete-left",
     command: () => {
       selecteMenuData.value.data[selecteMenuData.value.month] = undefined;
+      markRowPending(selecteMenuData.value.data);
     },
     // shortcut: '⌘+D'
   },

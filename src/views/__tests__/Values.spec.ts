@@ -10,6 +10,9 @@ const valueStoreMocks = vi.hoisted(() => ({
   getValue: vi.fn(() => 1),
   loadValuesForYear: vi.fn(),
   setValuesForMonth: vi.fn(),
+  recalculateBalance: vi.fn(),
+  cellEditComplete: undefined as undefined | ((event: any) => void),
+  rows: [] as any[],
 }));
 
 vi.mock("@/components/PeriodSelector.vue", () => ({
@@ -74,7 +77,7 @@ vi.mock("@/stores/storage", () => ({
 
 vi.mock("@/stores/balance", () => ({
   useBalanceStore: () => ({
-    recalculateBalance: vi.fn(),
+    recalculateBalance: valueStoreMocks.recalculateBalance,
   }),
 }));
 
@@ -119,6 +122,32 @@ const emptyStub = defineComponent({
   },
 });
 
+// Renders one row per value and exposes the cell-edit-complete handler so
+// tests can drive inline edits the way PrimeVue's DataTable reports them.
+const dataTableStub = defineComponent({
+  inheritAttrs: false,
+  props: {
+    value: { type: Array, default: () => [] },
+    rowClass: { type: Function, default: undefined },
+  },
+  setup(props, { attrs }) {
+    return () => {
+      valueStoreMocks.cellEditComplete = attrs.onCellEditComplete as any;
+      valueStoreMocks.rows = props.value as any[];
+      return h(
+        "table",
+        (props.value as any[]).map((row) =>
+          h(
+            "tr",
+            { "data-id": row.id, class: props.rowClass?.(row) },
+            row.name,
+          ),
+        ),
+      );
+    };
+  },
+});
+
 function response(status: number, data: unknown = {}) {
   return {
     status,
@@ -126,12 +155,12 @@ function response(status: number, data: unknown = {}) {
   } as unknown as Response;
 }
 
-async function mountValues(root: HTMLElement) {
+async function mountValues(root: HTMLElement, dataTable = emptyStub) {
   const app = createApp(Values);
   app.config.errorHandler = vi.fn();
   app.component("Toolbar", toolbarStub());
   app.component("Button", buttonStub);
-  app.component("DataTable", emptyStub);
+  app.component("DataTable", dataTable);
   app.component("Column", emptyStub);
   app.component("MultiSelect", emptyStub);
   app.component("InputNumber", emptyStub);
@@ -319,5 +348,98 @@ describe("Values external sync", () => {
           payload.severity === "error",
       ),
     ).toHaveLength(0);
+  });
+});
+
+describe("Values manual editing and save", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    valueStoreMocks.getValue.mockReturnValue(1);
+    valueStoreMocks.loadValuesForYear.mockReset();
+    valueStoreMocks.setValuesForMonth.mockReset();
+    valueStoreMocks.recalculateBalance.mockReset();
+    valueStoreMocks.cellEditComplete = undefined;
+    valueStoreMocks.rows = [];
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  function saveButton() {
+    return Array.from(root.querySelectorAll("button")).find(
+      (button) => button.textContent === "Save",
+    ) as HTMLButtonElement;
+  }
+
+  function rowOf(id: string) {
+    return root.querySelector(`tr[data-id="${id}"]`);
+  }
+
+  function editRow(id: string, value: unknown) {
+    const row = valueStoreMocks.rows.find((r) => r.id === id);
+    expect(row).toBeTruthy();
+    valueStoreMocks.cellEditComplete?.({
+      data: row,
+      newData: { ...row, value },
+    });
+  }
+
+  it("marks the row pending and enables Save after a non-negative edit", async () => {
+    app = await mountValues(root, dataTableStub);
+    expect(saveButton().disabled).toBe(true);
+    expect(rowOf("btc_wallet")?.className ?? "").not.toContain("bg-red-900");
+
+    editRow("btc_wallet", 70000);
+    await nextTick();
+
+    expect(saveButton().disabled).toBe(false);
+    expect(rowOf("btc_wallet")?.className).toContain("bg-red-900");
+    expect(rowOf("mxn_checking_usd")?.className ?? "").not.toContain(
+      "bg-red-900",
+    );
+  });
+
+  it("ignores negative and unchanged values", async () => {
+    app = await mountValues(root, dataTableStub);
+
+    editRow("btc_wallet", -1);
+    await nextTick();
+    expect(saveButton().disabled).toBe(true);
+    expect(rowOf("btc_wallet")?.className ?? "").not.toContain("bg-red-900");
+
+    // getValue returns 1 for every row, so 1 is the unchanged value.
+    editRow("btc_wallet", 1);
+    await nextTick();
+    expect(saveButton().disabled).toBe(true);
+    expect(rowOf("btc_wallet")?.className ?? "").not.toContain("bg-red-900");
+  });
+
+  it("saves the edited value and triggers a forced balance recalculation for the period", async () => {
+    app = await mountValues(root, dataTableStub);
+    editRow("btc_wallet", 70000);
+    await nextTick();
+
+    await clickSave(root);
+
+    expect(valueStoreMocks.setValuesForMonth).toHaveBeenCalledWith(
+      2026,
+      5,
+      expect.objectContaining({ btc_wallet: { usd: 70000 } }),
+    );
+    expect(valueStoreMocks.recalculateBalance).toHaveBeenCalledTimes(1);
+    expect(valueStoreMocks.recalculateBalance).toHaveBeenCalledWith(
+      2026,
+      5,
+      true,
+    );
   });
 });
