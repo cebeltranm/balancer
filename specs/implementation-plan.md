@@ -24,23 +24,10 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-29 | Remove stale and contradictory spec lines | several | Spec | P3 | S | 8 |
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Session 8 can be done at any time.
-
-### Session 8 — Spec hygiene (P3, any time)
-
-Documentation only; no code or tests. Can be folded into whichever session touches the file.
-
-- **IMP-29 (S).** Fix lines that are stale or contradict other specs:
-  - `features/storage-sync.md`: Observed Implementation says "Google Drive test coverage is still missing" and Product Questions says "Test coverage for it is not yet present", but Missing Tests records it as implemented in `storageIndex.spec.ts`.
-  - `features/settings.md`: Error Handling has "CONFIRMED (current code, gap): `retryLogin()` … only handles a truthy result … Code status: SATISFIED", which contradicts itself; and the RT-018 criterion "(no toast is shown for any failure today)".
-  - `features/authentication.md`: "Partial building blocks exist" duplicates the satisfied RT-020 line.
-  - `product-overview.md` "Known risks": "no clear live stock-price fetch path was identified" contradicts `features/values.md` (AlphaVantage, MarketStack, RapidAPI); "service-worker source files include multiple variants" contradicts RT-039 in `architecture.md`.
-  - `testing-strategy.md` "Priority For Closing Gaps": replace with a pointer to this plan so there is one ordered list.
-  - `spec-coverage.md` and `validation-and-errors.md` still mention `specs/requirements-triage.md`; that is fine now that `AGENTS.md` says the file is created when a new decision is opened.
+No sessions remain. Session 8 (spec hygiene, IMP-29) is done.
 
 ## Needs a product decision before implementation
 
@@ -58,4 +45,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-048 is satisfied in code. The only open work is the test coverage and follow-ups listed above. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-048 is satisfied in code. No work items remain in this plan; only the product decisions below are open. RT-004 and RT-022 are not referenced by any spec.

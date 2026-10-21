@@ -13,7 +13,7 @@
 - CONFIRMED: Startup compares remote file modification timestamps with cached timestamps and reloads stale cached files by file prefix.
 - CONFIRMED: Code satisfies the RT-001 conflict policy: queued transaction rows merge by `id`, and whole-file conflicts use last writer wins with a visible warning.
 - CONFIRMED: Code satisfies RT-002 by keeping pending items queued after sync failure, setting shared sync-failed state, showing a persistent sync-failed toast, and keeping retry available from sync status.
-- CONFIRMED: Contract status: satisfied for RT-001, RT-002, and RT-029; Google Drive test coverage is still missing (see Missing Tests).
+- CONFIRMED: Contract status: satisfied for RT-001, RT-002, and RT-029; Google Drive out-of-scope behavior is covered in `storageIndex.spec.ts` (see Missing Tests).
 
 ## Product Contract
 - REQUIRED (RT-001): Transaction queue conflicts merge by id; whole-file conflicts use last writer wins with a visible warning.
@@ -102,4 +102,4 @@
 ## Product Questions
 - RESOLVED: File conflicts use last writer wins with a visible warning; transaction queue conflicts merge by id until a richer conflict UI exists.
 - RESOLVED: RT-002 sync failures use a shared pattern: keep pending items queued, show a persistent sync-failed status/toast, and provide retry from sync status.
-- RESOLVED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist. Current code satisfies the behavior (unavailable, unselectable, falls back to the host default; no provider or auth code exists). Test coverage for it is not yet present (see Missing Tests).
+- RESOLVED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist. Current code satisfies the behavior (unavailable, unselectable, falls back to the host default; no provider or auth code exists). It is covered in `storageIndex.spec.ts` (see Missing Tests).
