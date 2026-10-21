@@ -197,9 +197,4 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 
 ## Priority For Closing Gaps
 
-1. Budget component coverage (editing/save, failed-save UX, context menu actions) — closed by `Budget.spec.ts`.
-2. Transactions component coverage (dialog validation, view list/open dialog) — closed by `Transactions.spec.ts` and `TransactionEditDialog.spec.ts`.
-3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts` and `AccountsRestore.spec.ts`.
-4. Remaining component gaps — closed (Values, Expenses, Investments).
-5. Local dev server path traversal integration test — closed by `localDevServer.spec.ts` (RT-028).
-6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload) — closed by `transactionBalanceFlow.spec.ts` and `AuthStartupSync.spec.ts`.
+See `specs/implementation-plan.md` for the single ordered list of remaining gaps. All gaps previously listed here are closed.

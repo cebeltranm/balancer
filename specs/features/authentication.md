@@ -48,7 +48,6 @@
 - RESOLVED (RT-020): A failed Dropbox token refresh must not silently redirect to Dropbox sign-in from `getInfo()`. It surfaces a `StorageAuthError` and the user chooses Retry or Restart provider login. Redirecting is allowed only from an explicit user-initiated login.
 - RESOLVED (RT-020): Failure messages shown to users come from `StorageAuthError.message` or a friendly mapping of WebAuthn `DOMException` names (for example `NotAllowedError`, `InvalidStateError`); raw error text and stack traces are logged, not displayed.
 - CONFIRMED: Code satisfies RT-020. `src/stores/storage.ts` holds `status.authError` with `setAuthError()`, `clearAuthError()`, and `restartProviderLogin()`; `refreshStoreInfo()` converts a Dropbox `StorageAuthError` into a `token-refresh` error. `src/components/Auth.vue` catches WebAuthn and provider-login failures and renders the message with Retry, Reset local credentials, and Restart provider login actions. `src/helpers/storage/dropbox.ts` throws `StorageAuthError` for a failed refresh or rejected authorization code instead of redirecting silently.
-- CONFIRMED: Partial building blocks exist: `src/helpers/storageAuthError.ts` (`StorageAuthError`, `isStorageAuthError`), HTTP server `doAuth()` throwing `StorageAuthError` when unreachable, and `storage.ts` `resetLocalCredentials()`.
 
 ## Edge Cases
 - CONFIRMED: Auth dialog is closable only when local credentials exist.

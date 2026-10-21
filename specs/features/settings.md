@@ -45,7 +45,6 @@
 - CONFIRMED (decision RT-018): When retry login fails, Settings shows an error toast. If the provider supplies a specific failure message, the toast detail uses it; otherwise the detail is a generic retry-later message (e.g. "Could not log in to {provider}. Please try again later.").
 - CONFIRMED (decision RT-018): A failed retry keeps existing state unchanged: no page reload, no change to `storeInfo`/`status`, and no local credentials or queued data are cleared.
 - CONFIRMED (decision RT-018): A provider returning `false` because it is redirecting to an external sign-in (Dropbox OAuth) is not a failure and shows no error toast.
-- CONFIRMED (current code, gap): `retryLogin()` in `src/views/Settings.vue` only handles a truthy result; a `false` result is silent and a thrown error is not caught. Code status: SATISFIED.
 
 ## Edge Cases
 - CONFIRMED: `normalizeComposition()` includes default asset classes plus config-defined classes.
@@ -65,7 +64,7 @@
 - CONFIRMED (decision RT-018): GIVEN retry login fails AND the provider supplied a specific failure message, WHEN the toast is shown, THEN its detail is that provider message. Code status: SATISFIED (HttpServer supplies a message via `StorageAuthError` when the server is unreachable; other failures use the generic message).
 - CONFIRMED (decision RT-018): GIVEN retry login fails AND no provider-specific message is available, WHEN the toast is shown, THEN its detail is the generic retry-later message. Code status: SATISFIED.
 - CONFIRMED (decision RT-018): GIVEN retry login fails, WHEN the toast is shown, THEN `storeInfo`, `status`, and stored credentials are identical to their values before the click. Code status: SATISFIED (`storage.login()` does not refresh state when `doAuth` returns `false`; the view catches thrown errors).
-- CONFIRMED (decision RT-018): GIVEN the provider is redirecting to external sign-in (Dropbox `doAuth` returns `false`), WHEN retry login completes, THEN no error toast is shown. Code status: SATISFIED (no toast is shown for any failure today); must be preserved when the error toast is added.
+- CONFIRMED (decision RT-018): GIVEN the provider is redirecting to external sign-in (Dropbox `doAuth` returns `false`), WHEN retry login completes, THEN no error toast is shown. Code status: SATISFIED (the redirect case is not treated as a failure, so no error toast is shown).
 - CONFIRMED (decision RT-018): GIVEN retry login succeeds, WHEN it completes, THEN the success toast is shown and the page reloads. Code status: SATISFIED.
 - REQUIRED (decision RT-019): GIVEN the composition matrix contains zero-valued cells, WHEN the user saves, THEN `inv_composition` in `config.json` contains only cells with a weight greater than 0. Code status: SATISFIED.
 - REQUIRED (decision RT-019): GIVEN a region has no non-zero instrument types, WHEN the user saves, THEN that region key is omitted (no empty `{}` region object). Code status: SATISFIED.

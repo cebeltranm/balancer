@@ -159,9 +159,9 @@ Validation scripts defined in `package.json` are:
 - Dropbox credentials, local HTTP tokens, and local WebAuthn metadata are stored in browser storage. This is common for a client-only app but has the usual browser-storage exposure risks.
 - The local HTTP server uses a fixed development bearer token and writes to `.tmp/`; it should be treated as development-only.
 - Google Drive appears in the storage provider type/options but is unavailable and out of scope until a provider helper, auth flow, and sync tests exist (RT-029).
-- Stock API settings are configurable in `config.json`, but no clear live stock-price fetch path was identified in the core files reviewed.
+- Stock API settings are configurable in `config.json` and drive live stock-price fetches during Values sync (AlphaVantage, MarketStack, RapidAPI/Yahoo Finance; see `features/values.md`). Stock prices are only fetched for the current selected month on some paths, and real-provider sync is covered only by the manual checklist.
 - Balance files are calculated snapshots saved back to storage. If transaction, value, or account data changes out of band, snapshots may need explicit recalculation to stay trustworthy.
-- PWA behavior is configured, but service-worker source files include multiple variants and only generated build output determines the active runtime behavior.
+- PWA behavior is configured through VitePWA, which generates the only service worker (RT-039). Its runtime behavior is determined by generated build output and is not covered by automated tests.
 - Most tests are unit tests with mocks. There is limited coverage of full user flows, real Dropbox integration, service-worker behavior, and rendered PrimeVue component interactions.
 
 ## Product Flow Coverage
