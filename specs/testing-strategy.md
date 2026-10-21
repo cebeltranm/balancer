@@ -50,7 +50,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - COVERED: Edit as delete-original-plus-new-id, and local queue failure keeps the dialog from reporting success and logs the error (RT-044) (`src/components/__tests__/TransactionEditDialog.spec.ts`).
   - COVERED: `TransactionEditDialog.vue` validation blocks saving an empty description (RT-042), a future date, a non-positive expense value, or values not summing to zero (`TransactionEditDialog.spec.ts`).
   - COVERED: `Transactions.vue` lists the selected account's rows, hides deleted transactions, marks pending rows, opens the edit dialog, and deletes only after confirmation (`src/views/__tests__/Transactions.spec.ts`).
-- Integration — RECOMMENDED: edit-as-delete-plus-new-save followed by balance recalculation across the real transactions and balance stores.
+- Integration — COVERED (RECOMMENDED): edit-as-delete-plus-new-save followed by sync and balance recalculation across the real transactions, balance, and storage stores (`src/stores/__tests__/transactionBalanceFlow.spec.ts`).
 - Manual: date picker and autocomplete interaction in a real browser.
 
 ### Transaction Dialogs (`specs/features/transaction-dialogs.md`)
@@ -139,7 +139,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED: Offline indicator (`src/layout/__tests__/AppTopbar.spec.ts`).
   - COVERED (RT-002): Sync status button label/icon in the sync-failed state remains the retry action (`AppTopbar.spec.ts`).
-- Integration — RECOMMENDED: Auth startup refresh → sync → balance recalculation → store reloads.
+- Integration — COVERED (RECOMMENDED): Auth startup refresh → sync → balance recalculation → store reloads (`src/components/__tests__/AuthStartupSync.spec.ts`).
 - Manual: Dropbox sync between two devices, including a whole-file conflict warning.
 
 ### Authentication (`specs/features/authentication.md`)
@@ -202,4 +202,4 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts` and `AccountsRestore.spec.ts`.
 4. Remaining component gaps — closed (Values, Expenses, Investments).
 5. Local dev server path traversal integration test — closed by `localDevServer.spec.ts` (RT-028).
-6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload).
+6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload) — closed by `transactionBalanceFlow.spec.ts` and `AuthStartupSync.spec.ts`.

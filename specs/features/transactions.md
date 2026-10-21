@@ -82,7 +82,7 @@
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `Transactions.vue` rendered tests do not cover the account balance summary, account/period selector changes, or row selection.
 - CONFIRMED: The dialog's top-level "Sum of values should be 0" message is not rendered; unbalanced values are blocked through the appended balancing row's account error instead. Tests assert the blocked save, not that message.
-- CONFIRMED: Edit-as-delete-plus-new-id is covered at dialog level; no integration test covers the subsequent balance recalculation across real stores.
+- CONFIRMED: Edit-as-delete-plus-new-id is covered at dialog level, and `src/stores/__tests__/transactionBalanceFlow.spec.ts` covers the subsequent sync and balance recalculation from the edited month across the real transactions, balance, and storage stores.
 - CONFIRMED: Local queue failure UX is covered for the edit dialog here and for the Expense and Transfer dialogs in `specs/features/transaction-dialogs.md`.
 
 ## Product Questions
