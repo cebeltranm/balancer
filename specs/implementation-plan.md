@@ -24,10 +24,6 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-14 | Dashboard: authenticated vs. unauthenticated group visibility | `features/dashboard.md` | Test | P2 | S | 4 |
-| IMP-15 | Accounts: restore hidden account asks for confirmation | `features/accounts.md` | Test | P2 | S | 4 |
-| IMP-16 | Settings: clearing local credentials shows its toast | `features/settings.md` | Test | P2 | S | 4 |
-| IMP-17 | Top bar: sync-failed button label/icon stays the retry action (RT-002) | `features/storage-sync.md` | Test | P2 | S | 4 |
 | IMP-18 | Values: save triggers balance recalculation | `features/values.md` | Test | P2 | S | 5 |
 | IMP-19 | Values: manual editing and pending-row indication | `features/values.md` | Test | P2 | M | 5 |
 | IMP-20 | Budget: context menu apply-next and remove mark the row pending | `features/budget.md` | Test | P2 | M | 5 |
@@ -43,23 +39,11 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 4 — Small component gaps (P2)
-
-Why grouped: four independent, small REQUIRED `GAP` rows that each copy an existing mounted-view pattern. One PR, one test file each.
-
-Suggested PR title: "Close small REQUIRED component coverage gaps".
-
-- **IMP-14 (S).** `src/views/__tests__/HomeView.spec.ts`: with `status.authenticated` false, Cash, Bank Accounts, and Accounts Receivable cards are hidden; with true, they are shown (`HomeView.vue:42`).
-- **IMP-15 (S).** `src/views/__tests__/AccountsClassAllocation.spec.ts` (or a new `AccountsRestore.spec.ts`): restoring a hidden account opens a confirmation, and only accepting it calls `removeAccountHideSince()` (`Accounts.vue:766-771`).
-- **IMP-16 (S).** `src/views/__tests__/Settings.spec.ts`: clearing local credentials removes `crlocal` and shows its toast.
-- **IMP-17 (S).** `src/layout/__tests__/AppTopbar.spec.ts`: with `status.syncFailed` true, the sync button shows `pi-exclamation-circle` and the red class, and clicking it calls the sync retry (`AppTopbar.vue:112-125`).
-- Close-out: matrix rows for Dashboard, Accounts, Settings, and Storage Sync → `COVERED`; update each feature's Missing Tests.
+Sessions are in the suggested order. Each session is one PR. Sessions 5–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
 
 ### Session 5 — Report and editor views coverage (P2)
 
-Why grouped: all are rendered-view tests on data-heavy screens that share the same store mocks (accounts, values, balance, budget). Needs stubs for PrimeVue `ContextMenu` and the chart components, so it is heavier than Session 4. Can be split into 5a (Values, Budget) and 5b (Expenses, Investments) if the PR gets large.
+Why grouped: all are rendered-view tests on data-heavy screens that share the same store mocks (accounts, values, balance, budget). Needs stubs for PrimeVue `ContextMenu` and the chart components, so it is heavier than the earlier component-gap sessions. Can be split into 5a (Values, Budget) and 5b (Expenses, Investments) if the PR gets large.
 
 Suggested PR title: "Close REQUIRED component gaps for Values, Budget, Expenses, and Investments".
 

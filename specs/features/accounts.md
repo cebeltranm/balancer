@@ -76,12 +76,13 @@
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: Rendered `Accounts.vue` tests do not cover field validation other than class allocation (id, name, category, entity, risk, hide date), the visibility filter, or restore of hidden accounts.
+- CONFIRMED: Rendered `Accounts.vue` tests do not cover field validation other than class allocation (id, name, category, entity, risk, hide date), or the visibility filter.
 - CONFIRMED: `AccountsClassAllocation.spec.ts` verifies an investment allocation that does not sum to 100% shows the error and disables Save (RT-017).
 - COVERED (RT-034): `src/stores/__tests__/accounts.spec.ts` ("legacy account type aliases (RT-034)") covers `cash` → `Cash`, `SavingAccount` → `BankAccount`, group resolution via `getAccountGroupType`, no write on load, the migrated type in the next `saveAccount()` payload, rejection of near-misses (`CASH`, `savingaccount`, `Cash Account`, `Savingaccount`, ` cash`), and whole-file rejection when one entry is unsupported. The existing rejection test is unchanged. The alias map lives in `accounts.ts`, so no `persistedShapes.spec.ts` test is needed.
 - CONFIRMED: Store tests assert that account hide/archive persists `hideSince` while preserving the account key.
 - CONFIRMED: Store tests assert that hard deletion is blocked and does not write an `accounts.json` payload with the account key removed.
 - CONFIRMED: `AccountsClassAllocation.spec.ts` verifies the list and edit dialog expose hide and no hard-delete action, and hiding requires confirmation and saves `hideSince` under the same id (RT-003).
+- CONFIRMED: `AccountsRestore.spec.ts` verifies restoring a hidden account opens a confirmation, calls `removeAccountHideSince()` only after it is accepted, and shows a success or error toast.
 
 ## Product Questions
 - RESOLVED (RT-034): Legacy account type strings are migrated through the fixed alias list (`cash`, `SavingAccount`) in memory on load; everything else is rejected. No open questions remain.

@@ -96,7 +96,7 @@
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts whole-file conflict detection, last-writer-wins upload, and visible warning state.
 - CONFIRMED: Sync helper tests prove failed file uploads are reported as failures and do not clear pending `to_sync` cache state.
 - CONFIRMED: Storage store tests prove failed sync sets shared sync-failed state, keeps pending counters, clears `inSync`, emits persistent failure metadata, and clears failure state after a successful retry.
-- CONFIRMED: The sync status button remains the retry action when sync has failed; no rendered component test currently covers the visual label/icon state.
+- IMPLEMENTED (RT-002): `src/layout/__tests__/AppTopbar.spec.ts` asserts that when sync has failed the sync button is labelled "Retry sync", shows the exclamation icon and red class, and calls `sync()` on click.
 - IMPLEMENTED (RT-029): `src/helpers/__tests__/storageIndex.spec.ts` asserts `googleDrive` is `available: false, planned: true` on localhost and non-localhost, a stored `"googleDrive"` selection falls back to the host default, `setSelectedStorageProvider("googleDrive")` stores the host default, and `getStorage()` returns Dropbox in that case. The optional `Auth.vue` rendering assertion is not added.
 
 ## Product Questions

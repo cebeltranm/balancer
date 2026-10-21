@@ -268,3 +268,75 @@ describe("HomeView dashboard currency splitting (RT-015)", () => {
     expect(root.textContent).not.toContain("mxn");
   });
 });
+
+// specs/features/dashboard.md: Cash, Bank Accounts, and Accounts Receivable
+// cards are only shown when the user is locally authenticated.
+describe("HomeView dashboard authenticated visibility", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    storeMocks.authenticated = false;
+    storeMocks.accounts = {
+      cash: {
+        id: "cash",
+        name: "Cash",
+        type: AccountType.Cash,
+        currency: "usd",
+      },
+      bank: {
+        id: "bank",
+        name: "Bank",
+        type: AccountType.BankAccount,
+        currency: "usd",
+      },
+      receivable: {
+        id: "receivable",
+        name: "Receivable",
+        type: AccountType.AccountReceivable,
+        currency: "usd",
+      },
+      groceries: {
+        id: "groceries",
+        name: "Groceries",
+        type: AccountType.Expense,
+        currency: "usd",
+      },
+    };
+    storeMocks.balance = {
+      2026: {
+        cash: { 5: entry(10) },
+        bank: { 5: entry(20) },
+        receivable: { 5: entry(30) },
+        groceries: { 5: entry(40) },
+      },
+    };
+  });
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+  });
+
+  it("hides Cash, Bank Accounts, and Accounts Receivable cards when not authenticated", async () => {
+    app = await mountHome(root);
+
+    expect(root.textContent).toContain("Expenses: 40 usd");
+    expect(root.textContent).not.toContain("Cash:");
+    expect(root.textContent).not.toContain("Bank Accounts:");
+    expect(root.textContent).not.toContain("Accounts Receivable:");
+  });
+
+  it("shows Cash, Bank Accounts, and Accounts Receivable cards when authenticated", async () => {
+    storeMocks.authenticated = true;
+
+    app = await mountHome(root);
+
+    expect(root.textContent).toContain("Expenses: 40 usd");
+    expect(root.textContent).toContain("Cash: 10 usd");
+    expect(root.textContent).toContain("Bank Accounts: 20 usd");
+    expect(root.textContent).toContain("Accounts Receivable: 30 usd");
+  });
+});
