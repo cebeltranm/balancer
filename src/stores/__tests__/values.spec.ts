@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useValuesStore } from "@/stores/values";
+import { useStorageStore } from "@/stores/storage";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
@@ -160,6 +161,23 @@ describe("values store", () => {
     );
 
     expect(total).toBe(9000);
+  });
+
+  it("keeps an offline values save queued with to_sync (RT-024)", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue(false);
+    useStorageStore().status.offline = true;
+
+    const store = useValuesStore();
+    await store.setValuesForMonth(2025, 2, { usd: { cop: 4000 } } as any);
+
+    expect(idb.saveJsonFile).toHaveBeenCalledTimes(1);
+    expect(idb.saveJsonFile).toHaveBeenCalledWith({
+      id: "values_2025.json",
+      data: { 2: { usd: { cop: 4000 } } },
+      date_cached: expect.any(Number),
+      to_sync: true,
+    });
+    expect(store.values[2025][2].usd.cop).toBe(4000);
   });
 
   it("ignores deprecated value structures when loading versionless files", async () => {

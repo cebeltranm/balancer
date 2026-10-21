@@ -94,12 +94,12 @@ Acceptance criteria:
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `src/helpers/__tests__/localDevServer.spec.ts` runs a copy of `server/index.js` as a child process and covers `.tmp/` creation, `/list`, JSON writes, and unauthorized requests (RT-027).
-- CONFIRMED: No tests for `/list` filesystem failures or write failures.
+- CONFIRMED: `localDevServer.spec.ts` covers `/list` and write filesystem failures returning 500 (a `.tmp/` replaced by a file, a dangling symlink in `.tmp/`, and a directory in place of the target file).
 - CONFIRMED: `.tmp` path traversal rejection is covered by `localDevServer.spec.ts` (RT-028).
-- CONFIRMED: `.tmp/` auto-creation is covered by `localDevServer.spec.ts` (runs a copy of `server/index.js` as a child process); the creation-failure-returns-500 criterion is not tested.
+- CONFIRMED: `.tmp/` auto-creation is covered by `localDevServer.spec.ts` (runs a copy of `server/index.js` as a child process); the creation-failure-returns-500 criterion is covered by forcing the failure after startup.
 
 ## Test Expectations (RT-027)
-- IMPLEMENTED (except the creation-failure case): Server-level tests (the server must be importable without auto-listening, or `.tmp` creation extracted into a testable helper such as `ensureTmpDir(dir)`), using a temporary directory rather than the real `.tmp/`:
+- IMPLEMENTED: Server-level tests (the server must be importable without auto-listening, or `.tmp` creation extracted into a testable helper such as `ensureTmpDir(dir)`), using a temporary directory rather than the real `.tmp/`:
   - Helper/startup creates a missing directory, including nested parents.
   - Helper/startup is a no-op when the directory exists and preserves existing files.
   - `GET /list` with missing `.tmp/` and valid bearer token returns 200 and `[]`.

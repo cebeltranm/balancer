@@ -156,6 +156,72 @@ describe("local dev server (RT-027, RT-028)", () => {
     expect(fs.existsSync(tmpDir)).toBe(false);
   });
 
+  describe("filesystem failures return 500 JSON", () => {
+    // Failures are forced after startup (which needs a working `.tmp/`) in
+    // ways that also fail when the tests run as root.
+    function replaceTmpDirWithFile() {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+      fs.writeFileSync(tmpDir, "not a directory");
+    }
+
+    function postJson(name: string) {
+      return fetch(`${BASE_URL}/${name}`, {
+        method: "POST",
+        headers: { ...AUTH, "Content-Type": "application/json" },
+        body: JSON.stringify({ a: 1 }),
+      });
+    }
+
+    it("GET /list returns 500 JSON when .tmp/ cannot be created", async () => {
+      await startServer();
+      replaceTmpDirWithFile();
+      const res = await fetch(`${BASE_URL}/list`, { headers: AUTH });
+      expect(res.status).toBe(500);
+      expect(res.headers.get("content-type")).toContain("application/json");
+      await expect(res.json()).resolves.toBeDefined();
+    });
+
+    it("GET /list returns 500 JSON when reading the directory entries fails", async () => {
+      await startServer();
+      fs.symlinkSync(
+        path.join(root, "missing-target"),
+        path.join(tmpDir, "dangling.json"),
+      );
+      const res = await fetch(`${BASE_URL}/list`, { headers: AUTH });
+      expect(res.status).toBe(500);
+      expect(res.headers.get("content-type")).toContain("application/json");
+      await expect(res.json()).resolves.toBeDefined();
+    });
+
+    it("POST /<name>.json returns 500 when .tmp/ cannot be created", async () => {
+      await startServer();
+      replaceTmpDirWithFile();
+      const res = await postJson("data.json");
+      expect(res.status).toBe(500);
+      expect(fs.statSync(tmpDir).isFile()).toBe(true);
+    });
+
+    it("POST /<name>.json returns 500 when the file cannot be written", async () => {
+      await startServer();
+      fs.mkdirSync(path.join(tmpDir, "blocked.json"));
+      const res = await postJson("blocked.json");
+      expect(res.status).toBe(500);
+      expect(fs.statSync(path.join(tmpDir, "blocked.json")).isDirectory()).toBe(
+        true,
+      );
+    });
+
+    it("keeps serving requests after a failed write", async () => {
+      await startServer();
+      fs.mkdirSync(path.join(tmpDir, "blocked.json"));
+      expect((await postJson("blocked.json")).status).toBe(500);
+      expect((await postJson("ok.json")).status).toBe(200);
+      expect(
+        JSON.parse(fs.readFileSync(path.join(tmpDir, "ok.json"), "utf8")),
+      ).toEqual({ a: 1 });
+    });
+  });
+
   describe("JSON write path safety (RT-028)", () => {
     // Anything outside `.tmp/` that a traversal could create.
     const outside = () => [

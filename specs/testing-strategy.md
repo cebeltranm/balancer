@@ -93,7 +93,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - COVERED: External provider failures show one generic error; prior-month fallback shows no warning; MXN sync and save (`src/views/__tests__/Values.spec.ts`).
   - COVERED: Saving values triggers `recalculateBalance(year, month, true)`; a non-negative inline edit marks the row pending, negative and unchanged values do not (`Values.spec.ts`).
   - COVERED (RT-040): Row order: Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, order unchanged after an edit, alphabetical Entity filter options (`ValuesRowOrder.spec.ts`).
-- Unit — COVERED: default and USD cross-rate fallback windows (`src/stores/__tests__/values.spec.ts`).
+- Unit — COVERED: default and USD cross-rate fallback windows; an offline save stays queued with `to_sync: true` (RT-024) (`src/stores/__tests__/values.spec.ts`).
 - Manual: real external rate/stock providers respond and are parsed (requires network; never automated).
 
 ### Budget (`specs/features/budget.md`)
@@ -108,7 +108,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED (RT-010): Force-recalculate action shown only when authenticated, and missing-source warnings rendered (`src/views/__tests__/Balance.spec.ts`).
 - Unit — COVERED: grouping, current-month recalculation, offline cache, warnings (`src/stores/__tests__/balance.spec.ts`).
-- Unit — RECOMMENDED: recalculation formulas across all account types; multi-month recursive recalculation.
+- Unit — COVERED: recalculation formulas across all account types; multi-month recursive recalculation (`balance.spec.ts`).
 - Manual: none beyond general UI review.
 
 ### Investments (`specs/features/investments.md`)
@@ -154,7 +154,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Integration — REQUIRED:
   - COVERED (RT-027): Real `server/index.js` child process creates `.tmp/`, serves `/list`, writes files, rejects unauthorized requests (`src/helpers/__tests__/localDevServer.spec.ts`).
   - COVERED (RT-028): Path traversal, nested paths, backslash, NUL byte, and malformed encoding are rejected with 400 and nothing is written outside `.tmp/` (`src/helpers/__tests__/localDevServer.spec.ts`).
-  - RECOMMENDED: `/list` and write filesystem failures return errors; `.tmp/` creation failure returns 500.
+  - COVERED: `/list` and write filesystem failures return 500 JSON; `.tmp/` creation failure on `/list` and writes returns 500 (`localDevServer.spec.ts`).
 - Unit — COVERED: HTTP storage client (`httpServer.spec.ts`).
 
 ### PWA (`specs/features/pwa.md`)
