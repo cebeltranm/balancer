@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   filesGetMetadata: vi.fn(),
+  filesDownload: vi.fn(),
   refreshAccessToken: vi.fn(),
   getAccessToken: vi.fn(),
   getAccessTokenFromCode: vi.fn(),
@@ -29,12 +30,14 @@ vi.mock("dropbox", () => {
   }
   class Dropbox {
     filesGetMetadata = mocks.filesGetMetadata;
+    filesDownload = mocks.filesDownload;
   }
   return { Dropbox, DropboxAuth, DropboxResponseError };
 });
 
 import { DropboxResponseError } from "dropbox";
 import DropboxStore from "@/helpers/storage/dropbox";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 function makeStorage() {
   const map = new Map<string, string>();
@@ -143,5 +146,49 @@ describe("dropbox storage helper auth failures (RT-020)", () => {
 
     expect(result).toBe(false);
     expect(location.href).toBe("https://dropbox.test/auth");
+  });
+});
+
+describe("dropbox storage helper invalid files (data-model.md)", () => {
+  const download = (text: string) => ({
+    status: 200,
+    result: { fileBlob: { text: async () => text } },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("throws an invalid_file PersistedFileError for a downloaded file that is not valid JSON", async () => {
+    mocks.filesDownload.mockResolvedValue(download("{not json"));
+
+    const error = await new DropboxStore()
+      .readJsonFile("values_2025.json")
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(PersistedFileError);
+    expect(error).toMatchObject({
+      code: "invalid_file",
+      fileName: "values_2025.json",
+      recoverable: true,
+    });
+  });
+
+  it("returns undefined, not an error, for a missing file", async () => {
+    mocks.filesDownload.mockRejectedValue(
+      new (DropboxResponseError as any)(409),
+    );
+
+    await expect(
+      new DropboxStore().readJsonFile("values_2025.json"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("parses a valid downloaded file", async () => {
+    mocks.filesDownload.mockResolvedValue(download('{"a":1}'));
+
+    await expect(
+      new DropboxStore().readJsonFile("config.json"),
+    ).resolves.toEqual({ a: 1 });
   });
 });

@@ -34,7 +34,8 @@
 - REQUIRED: Store tests for each persisted file family must cover required-field and invalid-enum failures where applicable, and assert that invalid data is not accepted into normal store state.
 - REQUIRED: Startup/bootstrap tests must cover invalid `accounts.json`, `config.json`, values, budget, balance, and transaction files and assert that no automatic seed, default, derived, or sync write overwrites the invalid remote file.
 - REQUIRED: UI or storage-state tests must assert that invalid-file failures produce a recoverable user-visible error with enough file context for the user to choose a recovery action.
-- CONFIRMED: Current tests cover HTTP provider invalid JSON, helper-level invalid-read write blocking, and account required-field/unsupported-type rejection.
+- CONFIRMED: Current tests cover invalid JSON in the HTTP and Dropbox providers (`httpServer.spec.ts`, `dropbox.spec.ts`), helper-level invalid-read write blocking and the persistent toast naming the file for every file family (`files.spec.ts`), account required-field/unsupported-type rejection (`accounts.spec.ts`), invalid and malformed-shape rejection without state or write side effects for config, values, budget, balance, and transactions (the matching `src/stores/__tests__/*.spec.ts`), and the startup path not seeding over an invalid `accounts.json` or `config.json` and not bootstrapping default values or balance over an invalid values file (`Auth.spec.ts`, `storage.spec.ts`).
+- CONFIRMED: Values, budget, balance, config, and transactions loaders already reject non-object or non-array content as `malformed_file`, so no further required-field validation is open for them.
 
 ## `accounts.json`
 - CONFIRMED: File name pattern is exactly `accounts.json`.

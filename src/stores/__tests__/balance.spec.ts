@@ -5,6 +5,7 @@ import { useBalanceStore } from "@/stores/balance";
 import { useStorageStore } from "@/stores/storage";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 import {
   AccountGroupType,
   AccountType,
@@ -466,5 +467,88 @@ describe("balance store", () => {
         }),
       ]),
     );
+  });
+});
+
+describe("balance store invalid persisted files (data-model.md)", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.mocked(readJsonFile).mockReset();
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([]);
+    vi.mocked(idb.saveJsonFile).mockReset();
+  });
+
+  it("does not recalculate or save over an invalid balance file when bootstrapping the current month", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "balance_2026.json",
+      "balance_2026.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockRejectedValue(error);
+    const balanceStore = useBalanceStore();
+
+    await expect(balanceStore.ensureCurrentMonthBalance(true)).rejects.toBe(
+      error,
+    );
+
+    expect(balanceStore.balance).toEqual({});
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("does not save a recalculation when the values file is invalid", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "values_2026.json",
+      "values_2026.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockImplementation(async (fileName: string) => {
+      if (fileName === "values_2026.json") {
+        throw error;
+      }
+      return {};
+    });
+    const balanceStore = useBalanceStore();
+
+    await expect(balanceStore.recalculateBalance(2026, 5, true)).rejects.toBe(
+      error,
+    );
+
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("does not save a recalculation when a transactions file is invalid", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "transactions_2026_5.json",
+      "transactions_2026_5.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockImplementation(async (fileName: string) => {
+      if (fileName === "transactions_2026_5.json") {
+        throw error;
+      }
+      return {};
+    });
+    const balanceStore = useBalanceStore();
+
+    await expect(balanceStore.recalculateBalance(2026, 5, true)).rejects.toBe(
+      error,
+    );
+
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects a balance file with a malformed shape without accepting it", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([1]);
+    const balanceStore = useBalanceStore();
+
+    await expect(
+      balanceStore.loadBalanceForYear(2026, true),
+    ).rejects.toMatchObject({
+      code: "malformed_file",
+      fileName: "balance_2026.json",
+    });
+
+    expect(balanceStore.balance[2026]).toBeUndefined();
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
   });
 });

@@ -24,9 +24,6 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-11 | Dropbox provider: unparseable JSON is an invalid file | `data-model.md` Test Expectations | Test | P2 | S | 3 |
-| IMP-12 | Startup/bootstrap does not overwrite invalid config, values, budget, balance, or transaction files | `data-model.md` Test Expectations | Test | P2 | M | 3 |
-| IMP-13 | Invalid-file error is user-visible with file context | `data-model.md` Test Expectations | Test | P2 | S | 3 |
 | IMP-14 | Dashboard: authenticated vs. unauthenticated group visibility | `features/dashboard.md` | Test | P2 | S | 4 |
 | IMP-15 | Accounts: restore hidden account asks for confirmation | `features/accounts.md` | Test | P2 | S | 4 |
 | IMP-16 | Settings: clearing local credentials shows its toast | `features/settings.md` | Test | P2 | S | 4 |
@@ -46,19 +43,7 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Session 3 is the one that matters for correctness. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 3 — Invalid persisted file coverage (P2)
-
-Why: `specs/data-model.md` has four REQUIRED test expectations. The code paths exist (`PersistedFileError`, `invalidRemoteFiles` write blocking), but only HTTP provider JSON, helper-level write blocking, and `accounts.json` are tested. It touches `files.ts` after the error-logging work.
-
-Suggested PR title: "Cover invalid persisted file handling across file families".
-
-- **IMP-11 (Test, S).** `src/helpers/__tests__/dropbox.spec.ts`: a downloaded file that is not valid JSON throws `PersistedFileError` (`invalid_file`), not a missing-file result (`dropbox.ts:160-162`).
-- **IMP-12 (Test, M).** Startup/bootstrap tests for invalid `config.json`, `values_<year>.json`, `budget_<year>.json`, `balance_<year>.json`, and `transactions_<year>_<month>.json`: no seed, default (`ensureCurrentMonthValues`, `ensureCurrentMonthBalance`), derived, or sync write overwrites the invalid remote file. Best placed in the store specs plus one `Auth.spec.ts` case for the startup path.
-  - While doing this, check whether the values, budget, and balance loaders need required-field validation. `data-model.md` says "where applicable"; today they normalize through `persistedShapes.ts` instead of throwing `malformed_file`. If a file family should reject malformed content and does not, that is a product decision: open RT-049 rather than changing behavior here.
-- **IMP-13 (Test, S).** A storage-state or UI test that the invalid-file toast names the file (overlaps with IMP-07; keep in whichever session runs first).
-- Close-out: change the `data-model.md` "Current tests cover…" line and the four REQUIRED test-expectation lines to point at the new tests.
+Sessions are in the suggested order. Each session is one PR. Sessions 4–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
 
 ### Session 4 — Small component gaps (P2)
 

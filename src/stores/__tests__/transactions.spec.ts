@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { useTransactionsStore } from "@/stores/transactions";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 const updatePendingToSync = vi.fn().mockResolvedValue(undefined);
 
@@ -192,5 +193,44 @@ describe("transactions store", () => {
     ).rejects.toBe(error);
 
     expect(updatePendingToSync).not.toHaveBeenCalled();
+  });
+});
+
+describe("transactions store invalid persisted file (data-model.md)", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([]);
+  });
+
+  it("does not accept state when the month file is invalid", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "transactions_2025_2.json",
+      "transactions_2025_2.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockRejectedValue(error);
+    const store = useTransactionsStore();
+
+    await expect(store.loadTransactionsForMonth(2025, 2, true)).rejects.toBe(
+      error,
+    );
+
+    expect(store.transactions[2025]).toBeUndefined();
+    expect(idb.saveTransaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects a month file with a malformed entry without accepting it", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([{ id: 1, date: "2025-02-01" }]);
+    const store = useTransactionsStore();
+
+    await expect(
+      store.loadTransactionsForMonth(2025, 2, true),
+    ).rejects.toMatchObject({
+      code: "malformed_file",
+      fileName: "transactions_2025_2.json",
+    });
+
+    expect(store.transactions[2025]).toBeUndefined();
   });
 });

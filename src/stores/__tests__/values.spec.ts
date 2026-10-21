@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { useValuesStore } from "@/stores/values";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 vi.mock("@/helpers/files", () => ({
   readJsonFile: vi.fn(),
@@ -240,6 +241,42 @@ describe("values store", () => {
     expect(store.values[2026][5]).toEqual({
       usd: { cop: 4100 },
     });
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("values store invalid persisted file (data-model.md)", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it("does not accept or default over an invalid values file when bootstrapping the current month", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "values_2026.json",
+      "values_2026.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockRejectedValue(error);
+    const store = useValuesStore();
+
+    await expect(store.ensureCurrentMonthValues(true)).rejects.toBe(error);
+
+    expect(store.values).toEqual({});
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects a values file with a malformed shape without accepting it", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([1, 2]);
+    const store = useValuesStore();
+
+    await expect(store.loadValuesForYear(2026, true)).rejects.toMatchObject({
+      name: "PersistedFileError",
+      code: "malformed_file",
+      fileName: "values_2026.json",
+    });
+
+    expect(store.values[2026]).toBeUndefined();
     expect(idb.saveJsonFile).not.toHaveBeenCalled();
   });
 });

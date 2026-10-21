@@ -92,6 +92,44 @@ describe("files helper", () => {
     });
   });
 
+  it.each([
+    "accounts.json",
+    "config.json",
+    "values_2025.json",
+    "budget_2025.json",
+    "balance_2025.json",
+    "transactions_2025_2.json",
+  ])(
+    "shows a persistent error toast naming %s and blocks writes to it",
+    async (fileName) => {
+      const emit = vi.spyOn(EVENTS, "emit");
+      vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
+      readJsonFileMock.mockRejectedValueOnce(
+        new PersistedFileError("malformed_file", fileName, "malformed"),
+      );
+
+      await expect(readJsonFile(fileName, true)).rejects.toMatchObject({
+        code: "malformed_file",
+        fileName,
+        recoverable: true,
+      });
+
+      expect(emit).toHaveBeenCalledWith(
+        "message",
+        expect.objectContaining({
+          severity: "error",
+          life: 0,
+          closable: true,
+          message: expect.stringContaining(fileName),
+          group: `invalid-file:${fileName}`,
+        }),
+      );
+      await expect(writeJsonFile(fileName, {})).resolves.toBe(false);
+      expect(writeJsonFileMock).not.toHaveBeenCalled();
+      expect(idb.saveJsonFile).not.toHaveBeenCalled();
+    },
+  );
+
   it("clears the invalid-file toast group when a later read succeeds", async () => {
     const emit = vi.spyOn(EVENTS, "emit");
     vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
