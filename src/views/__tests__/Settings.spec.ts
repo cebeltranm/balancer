@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   toastAdd: vi.fn(),
   login: vi.fn(),
   refreshStoreInfo: vi.fn(),
+  resetLocalCredentials: vi.fn(),
   storeInfo: null as any,
   status: {} as Record<string, unknown>,
 }));
@@ -30,7 +31,7 @@ vi.mock("@/stores/storage", () => ({
     status: mocks.status,
     login: mocks.login,
     refreshStoreInfo: mocks.refreshStoreInfo,
-    resetLocalCredentials: vi.fn(),
+    resetLocalCredentials: mocks.resetLocalCredentials,
   }),
 }));
 
@@ -74,7 +75,7 @@ describe("Settings retry login (RT-018)", () => {
   let reload: ReturnType<typeof vi.fn>;
   let originalLocation: Location;
 
-  async function mountAndRetry() {
+  async function mountSettings() {
     app = createApp(Settings);
     for (const name of ["Card", "Message", "Tabs", "TabPanel"]) {
       app.component(name, passthrough("div"));
@@ -91,6 +92,10 @@ describe("Settings retry login (RT-018)", () => {
     }
     app.mount(root);
     await flush();
+  }
+
+  async function mountAndRetry() {
+    await mountSettings();
     const retry = Array.from(root.querySelectorAll("button")).find(
       (button) => button.textContent === "Retry login",
     ) as HTMLButtonElement;
@@ -198,5 +203,25 @@ describe("Settings retry login (RT-018)", () => {
     expect(mocks.status).toEqual(statusBefore);
     // only the initial refresh on mount; no refresh triggered by the failure
     expect(mocks.refreshStoreInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears local credentials and shows its info toast", async () => {
+    await mountSettings();
+    const clear = Array.from(root.querySelectorAll("button")).find(
+      (button) => button.textContent === "Clear device credentials",
+    ) as HTMLButtonElement;
+    expect(clear).toBeTruthy();
+
+    clear.click();
+    await flush();
+
+    expect(mocks.resetLocalCredentials).toHaveBeenCalledTimes(1);
+    expect(mocks.toastAdd).toHaveBeenCalledTimes(1);
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: "info",
+        summary: "Credentials cleared",
+      }),
+    );
   });
 });

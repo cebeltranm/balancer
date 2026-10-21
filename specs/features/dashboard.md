@@ -63,7 +63,7 @@
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: No test verifies authenticated vs unauthenticated dashboard group visibility.
+- IMPLEMENTED: `src/views/__tests__/HomeView.spec.ts` asserts that Cash, Bank Accounts, and Accounts Receivable cards are hidden when not locally authenticated and shown when authenticated.
 - IMPLEMENTED (RT-015): `src/views/__tests__/HomeView.spec.ts` asserts that same-group balances in two currencies render as separate cards, same-group same-currency accounts are summed into one card, and a global `CURRENCY` selection does not change card amounts or currencies.
 
 ## Product Questions

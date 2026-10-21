@@ -41,7 +41,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED: Empty state vs. current balance cards (`src/views/__tests__/HomeView.spec.ts`).
   - COVERED (RT-015): Per-currency card split, same-currency summing, and independence from the global `CURRENCY` (`HomeView.spec.ts`).
-  - GAP: Authenticated vs. unauthenticated account-group visibility (`HomeView.vue` shows extra groups when `storageStore.status.authenticated`).
+  - COVERED: Authenticated vs. unauthenticated account-group visibility (`HomeView.spec.ts`).
 - Integration: none required.
 - Manual: card layout on desktop and mobile widths.
 
@@ -78,7 +78,7 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
   - COVERED: Global geographic exposure column and Global weights kept on save (`src/views/__tests__/AccountsClassAllocation.spec.ts`).
   - COVERED (RT-017): An investment account whose class allocation does not sum to 100% cannot be saved (`AccountsClassAllocation.spec.ts`).
   - COVERED (RT-003): The list and edit dialog expose hide and no hard-delete action; hiding requires confirmation and keeps the account id (`AccountsClassAllocation.spec.ts`).
-  - GAP: Restoring a hidden account requires confirmation and calls `removeAccountHideSince()`.
+  - COVERED: Restoring a hidden account requires confirmation and calls `removeAccountHideSince()` (`src/views/__tests__/AccountsRestore.spec.ts`).
 - Unit — COVERED: hide/archive persists `hideSince`; hard delete is blocked (`src/stores/__tests__/accounts.spec.ts`).
 - Unit — REQUIRED (RT-034):
   - COVERED: `cash` → `Cash` and `SavingAccount` → `BankAccount` on load, with correct grouping (`src/stores/__tests__/accounts.spec.ts`).
@@ -132,14 +132,14 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED (RT-018): Retry login toasts and unchanged state on failure (`src/views/__tests__/Settings.spec.ts`).
   - COVERED (RT-019): Composition save compaction and round trip (`src/views/__tests__/SettingsComposition.spec.ts`).
-  - GAP: Clearing local credentials shows its toast.
+  - COVERED: Clearing local credentials shows its toast (`Settings.spec.ts`).
 - Manual: none beyond general UI review.
 
 ### Storage Sync (`specs/features/storage-sync.md`)
 - Unit — COVERED: file cache, IndexedDB, merge-by-id, whole-file conflict warning, failed upload keeps queue, sync-failed state and retry, provider selection including Google Drive fallback (RT-029), HTTP client, Dropbox helper (`files.spec.ts`, `idb.spec.ts`, `sync.spec.ts`, `storage.spec.ts`, `storageIndex.spec.ts`, `httpServer.spec.ts`, `dropbox.spec.ts`).
 - Component — REQUIRED:
   - COVERED: Offline indicator (`src/layout/__tests__/AppTopbar.spec.ts`).
-  - GAP (RT-002): Sync status button label/icon in the sync-failed state remains the retry action.
+  - COVERED (RT-002): Sync status button label/icon in the sync-failed state remains the retry action (`AppTopbar.spec.ts`).
 - Integration — RECOMMENDED: Auth startup refresh → sync → balance recalculation → store reloads.
 - Manual: Dropbox sync between two devices, including a whole-file conflict warning.
 
@@ -200,7 +200,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 
 1. Budget component coverage (editing/save and failed-save UX) — closed by `Budget.spec.ts`; context menu actions remain.
 2. Transactions component coverage (dialog validation, view list/open dialog) — closed by `Transactions.spec.ts` and `TransactionEditDialog.spec.ts`.
-3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts`; restore remains.
-4. Remaining component gaps: Values save → balance recalculation, Dashboard auth visibility, Investments ByRegion and child views, Settings credential toast, sync-failed button.
+3. Accounts component coverage (allocation-sum validation RT-017, hide/no hard delete RT-003) — closed by `AccountsClassAllocation.spec.ts` and `AccountsRestore.spec.ts`.
+4. Remaining component gaps: Values save → balance recalculation, Investments ByRegion and child views.
 5. Local dev server path traversal integration test — closed by `localDevServer.spec.ts` (RT-028).
 6. RECOMMENDED integration flows (transactions → balance, auth startup → sync → reload).

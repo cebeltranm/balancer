@@ -22,6 +22,7 @@ const storageState = vi.hoisted(() => ({
     loggedIn: false,
     offline: false,
   },
+  sync: vi.fn(),
 }));
 
 vi.mock("@/stores/storage", () => ({
@@ -31,7 +32,7 @@ vi.mock("@/stores/storage", () => ({
       files: 0,
     },
     status: storageState.status,
-    sync: vi.fn(),
+    sync: storageState.sync,
   }),
 }));
 
@@ -274,5 +275,57 @@ describe("AppTopbar currencies", () => {
     storageState.status.offline = false;
     mountTopbar([account("a", "usd")]);
     expect(root.querySelector('[data-testid="offline-indicator"]')).toBe(null);
+  });
+});
+
+describe("AppTopbar sync status button (RT-002)", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+    storageState.status.syncFailed = false;
+    storageState.sync.mockClear();
+  });
+
+  function mountTopbar() {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    app = createApp(AppTopbar);
+    app.use(createPinia());
+    app.provide("CURRENCY", ref(Currency.USD));
+    app.component("Toolbar", toolbarStub);
+    app.component("Button", buttonStub);
+    app.component("Menu", menuStub);
+    app.mount(root);
+  }
+
+  it("keeps the sync button as the retry action with the failed icon and red class", async () => {
+    storageState.status.syncFailed = true;
+    mountTopbar();
+
+    const button = root.querySelector(
+      '[aria-label="Retry sync"]',
+    ) as HTMLButtonElement;
+    expect(button).toBeTruthy();
+    expect(button.textContent).toContain("pi pi-exclamation-circle");
+    expect(button.classList.contains("text-red-500")).toBe(true);
+
+    button.click();
+    await nextTick();
+
+    expect(storageState.sync).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the neutral sync status button when sync has not failed", () => {
+    mountTopbar();
+
+    const button = root.querySelector(
+      '[aria-label="Sync status"]',
+    ) as HTMLButtonElement;
+    expect(button).toBeTruthy();
+    expect(button.textContent).not.toContain("pi-exclamation-circle");
+    expect(button.classList.contains("text-red-500")).toBe(false);
   });
 });
