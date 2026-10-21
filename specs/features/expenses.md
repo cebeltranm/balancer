@@ -66,7 +66,7 @@
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: No rendered tests for table, treemap, or bar displays.
 - CONFIRMED: `src/views/__tests__/ExpensesIncomeVisibility.spec.ts` covers unauthenticated vs authenticated income visibility (RT-016).
-- CONFIRMED: No tests for budget progress rendering or comment dialog behavior.
+- CONFIRMED: `src/views/__tests__/ExpensesBudget.spec.ts` verifies that a budget progress bar renders only for the row/period with a budget and shows spent as a truncated percentage of it (a category sums its children's budgets); that a comment badge renders only for periods with comments and caps its count at `+9`; and that clicking a badge opens the read-only `CommentsDialog` with the row's comments, or a category's concatenated children's comments. The dialog is stubbed there; its own behavior is covered by `CommentsDialog.spec.ts`.
 - CONFIRMED: Rendered expense summary coverage verifies missing conversion rates produce partial totals plus a visible missing-rate indicator with affected currencies/accounts.
 - CONFIRMED: Rendered expense summary coverage verifies explicit zero rates/values are not flagged as missing.
 - IMPLEMENTED (RT-016): `src/views/__tests__/ExpensesIncomeVisibility.spec.ts` mounts `Expenses.vue` with a `accountsGroupByCategories` mock that honors its `groups` argument, and asserts income is hidden when unauthenticated and shown alongside expenses when authenticated.

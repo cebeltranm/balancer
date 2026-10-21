@@ -12,7 +12,7 @@
 - CONFIRMED: `useTotalByCategory()` converts child values and investment flow fields into the global currency and computes gain/loss-like fields `gp` and `gp_value`.
 - CONFIRMED: `accountsGrupedByAttribute()` groups investments by a selected account attribute with a default fallback.
 - CONFIRMED: RT-041 is implemented: `accountsGroupBy` in `src/views/portafolio/index.vue` passes the table-display groups through `sortTreeByName()` (`src/helpers/ordering.ts`), a sorted copy: categories and entity groups first, then accounts, each by name, at every level. Pie and bar keep the order from `Object.keys(accounts.json)` through `accountsGroupByCategories()` and `useTotalByCategory()`.
-- CONFIRMED: Contract status: satisfied for RT-017 and RT-011; some RT-017 tests are not yet added (see Missing Tests). RT-041 (table order): satisfied.
+- CONFIRMED: Contract status: satisfied for RT-017 and RT-011; its tests are in place (see Missing Tests). RT-041 (table order): satisfied.
 
 ## Product Contract
 - REQUIRED (RT-017): Investment accounts require a class allocation; legacy accounts with missing allocation are grouped under "Unknown" with a visible warning instead of being dropped.
@@ -81,13 +81,12 @@
 ## Missing Tests / Coverage Gaps
 - CONFIRMED (RT-041): `src/views/__tests__/PortfolioRowOrder.spec.ts` verifies groups before accounts, no-entity accounts last, case/accent/numeric collation, id tie-break, empty names last, nested categories, unchanged total, and unchanged pie order. `src/helpers/__tests__/ordering.spec.ts` covers the comparator and tree sort.
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: Rendered portfolio coverage is limited to the ByAssetClass pie Unknown-allocation case (`PortfolioUnknownAllocation.spec.ts`); other groupings and displays are not rendered in tests.
+- CONFIRMED: Rendered portfolio coverage: the Unknown-allocation case for ByAssetClass and ByRegion in the pie display (`PortfolioUnknownAllocation.spec.ts`), table order (`PortfolioRowOrder.spec.ts`), and missing-rate indicators in the table and bar children (`PortfolioMissingRates.spec.ts`). Other groupings (ByRisk, ByType, ByCurrency) and the chart rendering itself are not rendered in tests.
 - CONFIRMED: `useTotalByCategory()` missing-rate conversion behavior is covered; broader performance calculations still need coverage.
-- CONFIRMED: No tests for chart/table child component rendering.
 - CONFIRMED: `useTotalByCategory()` tests prove missing conversion rates return partial converted totals, preserve missing-rate metadata, and do not flag explicit zero rates as missing.
-- CONFIRMED: Portfolio table, treemap, and bar views render missing-rate indicators from summary metadata; rendered child component tests remain a broader coverage gap.
+- CONFIRMED: Portfolio table, treemap, and bar views render missing-rate indicators from summary metadata. `src/views/__tests__/PortfolioMissingRates.spec.ts` renders `table.vue` (account row and footer total) and `bar.vue` with metadata naming `eur->usd (eur_fund)` and asserts the indicator is shown there and absent when nothing is missing. The pie/treemap child is not covered by that file.
 - IMPLEMENTED (RT-017): `src/views/__tests__/PortfolioUnknownAllocation.spec.ts` mounts the portfolio view (ByAssetClass, pie display) with a legacy account that has no `class` allocation and asserts its value is grouped under "Unknown" rather than dropped, and that its account id is present in the rendered output alongside Unknown/unallocated wording.
-- REQUIRED (RT-017, NOT YET ADDED): A focused `src/helpers/__tests__/investments.spec.ts`-level test for the ByRegion case specifically (currently only exercised indirectly via the portfolio-level test's ByAssetClass path), and a test proving a fully allocated account never produces an "Unknown" bucket.
+- IMPLEMENTED (RT-017): `PortfolioUnknownAllocation.spec.ts` also covers ByRegion (legacy account under Unknown with the warning naming it; allocated account still under its region) and asserts that, for both ByAssetClass and ByRegion, a fully allocated account produces no Unknown bucket and no warning. This is a component-level test because the Unknown bucket is built in `src/views/portafolio/index.vue`, not in `src/helpers/investments.ts`.
 - IMPLEMENTED (RT-017): `src/views/__tests__/AccountsClassAllocation.spec.ts` asserts an investment account whose allocation sums to something other than 100% shows the allocation error and cannot be saved.
 
 ## Product Questions

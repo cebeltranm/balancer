@@ -93,8 +93,7 @@
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` verifies the default fallback window returns prior-month values within the window and `0` outside it.
 - CONFIRMED: `src/stores/__tests__/values.spec.ts` verifies USD cross-rate legs use bounded fallback windows.
 - CONFIRMED: `src/views/__tests__/Values.spec.ts` verifies prior-month fallback does not show a warning by itself.
-- CONFIRMED: No rendered `Values.vue` tests for manual editing, filtering, or pending-row styling; successful MXN external sync and save are covered.
-- CONFIRMED: No test verifies balance recalculation is called by the values view save action.
+- CONFIRMED: `src/views/__tests__/Values.spec.ts` verifies a non-negative inline edit marks only the edited row pending (`bg-red-900`) and enables Save; negative and unchanged values do not; and saving calls `balanceStore.recalculateBalance(year, month, true)` for the saved period. Filtering is not rendered in tests.
 - CONFIRMED (RT-040): `src/views/__tests__/ValuesRowOrder.spec.ts` verifies the Currency block by code, entity then name then id, no-entity rows last, case/accent/numeric collation, id tie-break, order unchanged by an edit, unchanged saved payload, and Entity/Type filter options built from the ordered rows.
 
 ## Product Questions

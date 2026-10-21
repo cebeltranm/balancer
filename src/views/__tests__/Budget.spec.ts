@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   emit: vi.fn(),
   cellEditComplete: undefined as undefined | ((event: any) => void),
   rows: [] as any[],
+  contextMenuItems: [] as any[],
 }));
 
 // Every month is filled: Budget.vue coerces empty (null) months to 0 on any
@@ -112,16 +113,47 @@ const dataTableStub = defineComponent({
     value: { type: Array, default: () => [] },
     rowClass: { type: Function, default: undefined },
   },
-  setup(props, { attrs }) {
+  setup(props, { attrs, slots }) {
     return () => {
       mocks.cellEditComplete = attrs.onCellEditComplete as any;
       mocks.rows = props.value as any[];
-      return h(
-        "table",
-        (props.value as any[]).map((row) =>
+      return h("table", [
+        ...(props.value as any[]).map((row) =>
           h("tr", { class: props.rowClass?.(row) }, row.name),
         ),
+        slots.default?.(),
+      ]);
+    };
+  },
+});
+
+// Renders each expense row's body slot so the month cell's contextmenu
+// handler (`onShowContextMenu`) is reachable from the DOM.
+const cellColumnStub = defineComponent({
+  inheritAttrs: false,
+  props: { header: { type: String, default: "" } },
+  setup(props, { slots }) {
+    return () =>
+      h(
+        "div",
+        { "data-col": props.header },
+        mocks.rows
+          .filter((row) => row.type === AccountType.Expense)
+          .map((row) =>
+            h("div", { "data-row": row.id }, slots.body?.({ data: row })),
+          ),
       );
+  },
+});
+
+const contextMenuStub = defineComponent({
+  inheritAttrs: false,
+  props: { model: { type: Array, default: () => [] } },
+  setup(props, { expose }) {
+    expose({ show: vi.fn() });
+    return () => {
+      mocks.contextMenuItems = props.model as any[];
+      return h("div");
     };
   },
 });
@@ -132,15 +164,15 @@ async function flush() {
   await nextTick();
 }
 
-async function mountBudget(root: HTMLElement) {
+async function mountBudget(root: HTMLElement, renderCells = false) {
   const app = createApp(Budget);
   app.provide("CURRENCY", { value: "usd" });
   app.directive("ripple", {});
   app.component("Toolbar", passthroughStub());
   app.component("Button", buttonStub);
   app.component("DataTable", dataTableStub);
-  app.component("Column", emptyStub());
-  app.component("ContextMenu", emptyStub());
+  app.component("Column", renderCells ? cellColumnStub : emptyStub());
+  app.component("ContextMenu", renderCells ? contextMenuStub : emptyStub());
   app.component("Badge", emptyStub());
   app.component("InputNumber", emptyStub());
   app.mount(root);
@@ -169,6 +201,7 @@ describe("Budget view (RT-009)", () => {
     vi.clearAllMocks();
     mocks.cellEditComplete = undefined;
     mocks.rows = [];
+    mocks.contextMenuItems = [];
     mocks.loadBudgetForYear.mockResolvedValue({ rent: FULL_YEAR_RENT });
     mocks.setBudgetForYear.mockResolvedValue(undefined);
   });
@@ -249,5 +282,100 @@ describe("Budget view (RT-009)", () => {
     );
     expect(pendingEvents.at(-1)).toEqual([FORM_WITH_PENDING_EVENTS, true]);
     expect(saveButton(root).disabled).toBe(false);
+  });
+});
+
+describe("Budget context menu", () => {
+  let root: HTMLDivElement;
+  let app: ReturnType<typeof createApp> | undefined;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    vi.clearAllMocks();
+    mocks.cellEditComplete = undefined;
+    mocks.rows = [];
+    mocks.contextMenuItems = [];
+    mocks.loadBudgetForYear.mockResolvedValue({
+      rent: { 1: 100, 2: 150, 3: 200 },
+    });
+    mocks.setBudgetForYear.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    app?.unmount();
+    root.remove();
+    vi.restoreAllMocks();
+  });
+
+  async function openMenuOn(monthName: string) {
+    const cell = root.querySelector(
+      `[data-col="${monthName}"] [data-row="rent"] > div`,
+    );
+    expect(cell).toBeTruthy();
+    cell?.dispatchEvent(
+      new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+    );
+    await flush();
+  }
+
+  function runCommand(label: string) {
+    const item = mocks.contextMenuItems.find((i) => i.label === label);
+    expect(item).toBeTruthy();
+    item.command();
+  }
+
+  function rentRow() {
+    return mocks.rows.find((r) => r.id === "rent");
+  }
+
+  function expectRentPending() {
+    expect(saveButton(root).disabled).toBe(false);
+    expect(mocks.emit).toHaveBeenLastCalledWith(FORM_WITH_PENDING_EVENTS, true);
+    const row = Array.from(root.querySelectorAll("tr")).find(
+      (tr) => tr.textContent === "Rent",
+    );
+    expect(row?.className).toContain("bg-red-900");
+  }
+
+  it("apply next copies the month value to later months and marks the row pending", async () => {
+    app = await mountBudget(root, true);
+    expect(saveButton(root).disabled).toBe(true);
+
+    await openMenuOn("February");
+    runCommand("Apply next");
+    await flush();
+
+    expect(rentRow()[1]).toBe(100);
+    for (let m = 2; m <= 12; m++) {
+      expect(rentRow()[m]).toBe(150);
+    }
+    expectRentPending();
+
+    saveButton(root).click();
+    await flush();
+    expect(mocks.setBudgetForYear.mock.calls[0][1].rent).toEqual(
+      Object.fromEntries(
+        Array.from({ length: 12 }, (_, i) => [i + 1, i === 0 ? 100 : 150]),
+      ),
+    );
+  });
+
+  it("remove clears the month value and marks the row pending", async () => {
+    app = await mountBudget(root, true);
+    expect(saveButton(root).disabled).toBe(true);
+
+    await openMenuOn("February");
+    runCommand("Remove");
+    await flush();
+
+    expect(rentRow()[2]).toBeUndefined();
+    expect(rentRow()[1]).toBe(100);
+    expect(rentRow()[3]).toBe(200);
+    expectRentPending();
+
+    saveButton(root).click();
+    await flush();
+    expect(mocks.setBudgetForYear.mock.calls[0][1].rent[2]).toBeUndefined();
   });
 });

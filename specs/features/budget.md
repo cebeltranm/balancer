@@ -7,7 +7,7 @@
 - CONFIRMED: `/settings/budget` maps to `src/views/Budget.vue`.
 - CONFIRMED: The view displays expense accounts grouped under category rows, with 12 editable monthly columns.
 - CONFIRMED: Users can edit monthly budget cells, apply a month value to subsequent months, remove a month value, and add comments.
-- CONFIRMED: Edited rows are marked pending and the router pending-change flag is emitted.
+- CONFIRMED: Edited rows are marked pending and the router pending-change flag is emitted. The context-menu actions "Apply next" and "Remove" do the same (`markRowPending()`): they set the row's `to_sync`, enable Save, and emit `FORM_WITH_PENDING_EVENTS`.
 - CONFIRMED: Saving writes `{ values, comments }` to `budget_<year>.json` in IndexedDB cache with `to_sync: true`.
 - CONFIRMED: Budget totals convert currencies through `valuesStore.joinValues()`.
 - CONFIRMED: `src/components/CommentsDialog.vue` creates each comment as `{ m: <text>, d: Date.now() }` (`addComment`), edits only `m` (`updateComment`), and uses `d` as the list key and as the id for edit and delete (`deleteComment` removes every comment whose `d` matches). `src/views/Budget.vue` (`addComments`) stores the emitted array unchanged, so saved files already contain `{ m, d }` objects. No author is stored.
@@ -27,7 +27,7 @@
 ## User Flows
 - CONFIRMED: Select budget year.
 - CONFIRMED: Edit one or more month cells.
-- CONFIRMED: Right-click an expense row/month for apply-next, remove, or add-comment actions.
+- CONFIRMED: Right-click an expense row/month for apply-next, remove, or add-comment actions. Apply next and Remove mark the row pending like an inline edit.
 - CONFIRMED: Save when pending changes exist.
 
 ## Inputs And Outputs
@@ -80,13 +80,14 @@
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: Rendered `Budget.vue` tests cover editing, pending/navigation state, and save (`Budget.spec.ts`); the context menu (apply next, remove) is not rendered in tests, and the comments dialog is mocked there (it is tested on its own in `CommentsDialog.spec.ts`).
+- CONFIRMED: Rendered `Budget.vue` tests cover editing, pending/navigation state, and save (`Budget.spec.ts`); the context menu actions (apply next, remove) are driven through a `ContextMenu` stub that exposes its `model`, and the comments dialog is mocked there (it is tested on its own in `CommentsDialog.spec.ts`).
 - CONFIRMED: No tests for currency-converted budget totals.
 - CONFIRMED: RT-033 tests (implemented in `budget.spec.ts`, `persistedShapes.spec.ts`, and `CommentsDialog.spec.ts`):
   - `src/stores/__tests__/budget.spec.ts`: change the comment fixtures from plain strings (`["note"]`, `["a", "b", "c"]`, `["ok"]`, `["existing"]`) to `{ m, d }` objects.
   - `src/stores/__tests__/budget.spec.ts`: loading plain-string comments yields `{ m: <string>, d: 0 }`; a mixed array keeps order, converts strings, and leaves objects (including their `d`) unchanged; `setBudgetForYear()` after a legacy load writes only `{ m, d }` objects; grouping concatenates `{ m, d }` objects across months.
   - Load-normalizer unit tests if the normalizer lives in `src/helpers/persistedShapes.ts`, following the existing `normalize*` helper tests.
   - New `src/components/__tests__/CommentsDialog.spec.ts`: add emits `{ m, d }` with numeric `d` and no author; edit changes `m` and keeps `d`; delete removes only the targeted comment; with two comments sharing `d: 0`, editing or deleting one leaves the other unchanged; saving an edit with empty text deletes only that comment; read-only mode renders each `m`.
+- CONFIRMED: `Budget.spec.ts` ("Budget context menu") verifies that Apply next copies the selected month's value to every later month and marks the row pending (Save enabled, row `bg-red-900`, navigation guard emitted), that Remove clears the selected month and marks the row pending, and that the saved payload carries the change. Before this change the two commands changed the values but left Save disabled and the row unmarked; fixed by `markRowPending()` in `Budget.vue`.
 - CONFIRMED: Budget store tests cover local queue write failure state preservation; `Budget.spec.ts` covers the failure message and pending UI.
 
 ## Product Questions
