@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useConfigStore } from "@/stores/config";
 import { readJsonFile, writeJsonFile } from "@/helpers/files";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 vi.mock("@/helpers/files", () => ({
   readJsonFile: vi.fn(),
@@ -109,5 +110,40 @@ describe("config store", () => {
     expect(result).toBe(true);
     expect(writeJsonFile).toHaveBeenCalledWith("config.json", nextConfig);
     expect(store.config).toEqual(nextConfig);
+  });
+});
+
+describe("config store invalid persisted file (data-model.md)", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it("does not accept state or write defaults over an invalid config file", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "config.json",
+      "config.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockRejectedValue(error);
+    const store = useConfigStore();
+
+    await expect(store.loadConfig(true)).rejects.toBe(error);
+
+    expect(store.config).toEqual({});
+    expect(writeJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects a config file with a malformed shape without accepting it", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([1]);
+    const store = useConfigStore();
+
+    await expect(store.loadConfig(true)).rejects.toMatchObject({
+      code: "malformed_file",
+      fileName: "config.json",
+    });
+
+    expect(store.config).toEqual({});
+    expect(writeJsonFile).not.toHaveBeenCalled();
   });
 });

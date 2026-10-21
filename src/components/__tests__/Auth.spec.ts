@@ -20,13 +20,18 @@ const mocks = vi.hoisted(() => ({
   logout: vi.fn(),
   credentialsGet: vi.fn(),
   credentialsCreate: vi.fn(),
+  loadValues: vi.fn(),
+  ensureValues: vi.fn(),
+  ensureBalance: vi.fn(),
   dataStoreStub: () => ({
     loadAccounts: vi.fn(),
     loadConfig: vi.fn(),
-    loadValuesForYear: vi.fn(),
-    ensureCurrentMonthValues: vi.fn(),
+    loadValuesForYear: (...args: unknown[]) => mocks.loadValues(...args),
+    ensureCurrentMonthValues: (...args: unknown[]) =>
+      mocks.ensureValues(...args),
     loadBalanceForYear: vi.fn(),
-    ensureCurrentMonthBalance: vi.fn(),
+    ensureCurrentMonthBalance: (...args: unknown[]) =>
+      mocks.ensureBalance(...args),
     loadBudgetForYear: vi.fn(),
     loadTransactionsForMonth: vi.fn(),
   }),
@@ -543,6 +548,27 @@ describe("Auth dialog failure handling (RT-020)", () => {
       expect(fetchMock).not.toHaveBeenCalled();
       expect(files.writeJsonFile).not.toHaveBeenCalledWith(
         "accounts.json",
+        expect.anything(),
+      );
+    });
+
+    it("does not bootstrap default values or balance over an invalid values file", async () => {
+      vi.mocked(files.readJsonFile).mockResolvedValue({});
+      mocks.loadValues.mockRejectedValue(
+        new PersistedFileError(
+          "invalid_file",
+          "values_2026.json",
+          "values_2026.json contains invalid JSON.",
+        ),
+      );
+
+      await loginToStore();
+
+      expect(mocks.loadValues).toHaveBeenCalled();
+      expect(mocks.ensureValues).not.toHaveBeenCalled();
+      expect(mocks.ensureBalance).not.toHaveBeenCalled();
+      expect(files.writeJsonFile).not.toHaveBeenCalledWith(
+        expect.stringMatching(/^(values|balance)_/),
         expect.anything(),
       );
     });

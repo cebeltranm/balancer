@@ -5,6 +5,7 @@ import { useBudgetStore } from "@/stores/budget";
 import { Period } from "@/types";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
+import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 const updatePendingToSync = vi.fn();
 
@@ -283,5 +284,40 @@ describe("budget store", () => {
         { m: "current", d: 9 },
       ]);
     });
+  });
+});
+
+describe("budget store invalid persisted file (data-model.md)", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it("does not accept state or save over an invalid budget file", async () => {
+    const error = new PersistedFileError(
+      "invalid_file",
+      "budget_2025.json",
+      "budget_2025.json contains invalid JSON.",
+    );
+    vi.mocked(readJsonFile).mockRejectedValue(error);
+    const store = useBudgetStore();
+
+    await expect(store.loadBudgetForYear(2025, true)).rejects.toBe(error);
+
+    expect(store.budget[2025]).toBeUndefined();
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects a budget file with a malformed shape without accepting it", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([1]);
+    const store = useBudgetStore();
+
+    await expect(store.loadBudgetForYear(2025, true)).rejects.toMatchObject({
+      code: "malformed_file",
+      fileName: "budget_2025.json",
+    });
+
+    expect(store.budget[2025]).toBeUndefined();
+    expect(idb.saveJsonFile).not.toHaveBeenCalled();
   });
 });
