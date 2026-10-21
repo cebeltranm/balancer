@@ -24,24 +24,13 @@ It is a work list, not a requirement. The requirement is always the Product Cont
 
 | ID | Item | Spec source | Type | Priority | Complexity | Session |
 | --- | --- | --- | --- | --- | --- | --- |
-| IMP-24 | Values and balance offline queue (RT-024) | `features/pwa.md` | Test | P3 | S | 6 |
-| IMP-25 | Balance: formulas across account types; multi-month recursive recalculation | `features/balance.md` | Test (rec.) | P3 | M | 6 |
-| IMP-26 | Local dev server: `/list`, write, and `.tmp/` creation failures return 500 | `features/local-dev-server.md` | Test (rec.) | P3 | M | 6 |
 | IMP-27 | Integration: transaction edit → balance recalculation | `testing-strategy.md` Transactions | Test (rec.) | P3 | M | 7 |
 | IMP-28 | Integration: auth startup refresh → sync → balance → store reloads | `testing-strategy.md` Storage Sync | Test (rec.) | P3 | L | 7 |
 | IMP-29 | Remove stale and contradictory spec lines | several | Spec | P3 | S | 8 |
 
 ## Sessions
 
-Sessions are in the suggested order. Each session is one PR. Sessions 6–7 only add tests and can be done in any order or skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
-
-### Session 6 — Store-level recommended coverage (P3)
-
-Suggested PR title: "Add recommended store and dev-server coverage".
-
-- **IMP-24 (S).** `src/stores/__tests__/values.spec.ts` and `balance.spec.ts`: an offline save stays queued (`to_sync: true` for values; balance cached only, per RT-024) and the pending counters reflect it. Called out as missing in `features/pwa.md`.
-- **IMP-25 (M).** `balance.spec.ts`: recalculation results for each account type (cash, bank, credit card, loan, receivable/payable, income, expense, property, investment with units), and recalculating an earlier month updates every later month through the current month.
-- **IMP-26 (M).** `src/helpers/__tests__/localDevServer.spec.ts`: `/list` and JSON write filesystem failures return 500 JSON; a `.tmp/` creation failure on `/list`/write returns 500. Needs a way to force the failure in the child process (for example, a read-only temp root).
+Sessions are in the suggested order. Each session is one PR. Session 7 only adds tests and can be skipped until the feature changes; the Change Gate in `specs/testing-strategy.md` forces the related REQUIRED rows to be closed before a broad change to that feature anyway. Session 8 can be done at any time.
 
 ### Session 7 — Cross-store integration flows (P3)
 

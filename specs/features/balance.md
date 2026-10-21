@@ -70,8 +70,8 @@
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: Rendered `Balance.vue` tests now cover RT-010 force recalculation and warning behavior.
-- CONFIRMED: No tests for full recalculation formulas across all account types.
-- CONFIRMED: No tests for recursive multi-month recalculation side effects.
+- CONFIRMED: `src/stores/__tests__/balance.spec.ts` covers recalculation formulas across all account types (cash, bank, credit card, loan, receivable/payable, income, expense, property, investment, ETF units).
+- CONFIRMED: `balance.spec.ts` covers recursive multi-month recalculation: an earlier month updates every later month through the current month, December carries into January of the next year, and only the current month is saved.
 
 ## Product Questions
 - RESOLVED: Balance snapshots are derived cache, not durable financial records. Authenticated users must be able to force recalculation when balances look stale.
