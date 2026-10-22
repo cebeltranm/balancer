@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan lists every place where the specs and the code or tests do not yet agree, after all triage decisions (RT-001 to RT-048) were recorded in the specs. It orders the work into sessions that can each be done and reviewed as one PR.
+This plan lists every place where the specs and the code or tests do not yet agree, after all triage decisions (RT-001 to RT-050) were recorded in the specs. It orders the work into sessions that can each be done and reviewed as one PR.
 
 It is a work list, not a requirement. The requirement is always the Product Contract in the cited spec. When an item is done, update the cited spec (`Contract status`, `Missing Tests / Coverage Gaps`, acceptance-criteria checkboxes) and the `specs/testing-strategy.md` matrix in the same PR, as `AGENTS.md` requires, and remove the item from this plan.
 
@@ -31,12 +31,10 @@ No sessions remain. Session 8 (spec hygiene, IMP-29) is done.
 
 ## Needs a product decision before implementation
 
-These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-049 onward in `specs/requirements-triage.md` for any you want to pursue.
+These are known issues or ideas that no Product Contract line requires. Per `AGENTS.md`, do not change code for them until a spec says so. Open RT-051 onward in `specs/requirements-triage.md` for any you want to pursue.
 
 | Topic | Where it is mentioned | Question to decide | Suggested size |
 | --- | --- | --- | --- |
-| `syncCachedFiles()` uses `forEach(async …)` | `product-overview.md` Known risks; `Auth.vue:381` | Must startup refresh finish (all reloads awaited) before startup sync and balance work start? | Small change (authentication or storage-sync spec) |
-| `checkStore()` only on interactive login | `features/authentication.md` RT-023 | Should a missing `accounts.json` be re-seeded on a later load? Currently an accepted gap. | Small change |
 | Invalid-file recovery action | `data-model.md` ("until the user explicitly chooses a recovery action"; "recovery UI polish remains future work") | What recovery actions exist (reload from remote, discard local cache, open file in provider)? Today there is only the persistent toast. | New feature |
 | Base currency setting | `features/authentication.md` RT-023 | Out of scope by design; needs its own requirement and data-model change. | New feature |
 | Google Drive provider | `features/storage-sync.md` RT-029 | Out of scope until a provider helper, auth flow, and sync tests exist. | New feature |
@@ -45,4 +43,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-048 is satisfied in code. No work items remain in this plan; only the product decisions below are open. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-050 is satisfied in code. No work items remain in this plan; only the product decisions below are open. RT-004 and RT-022 are not referenced by any spec.

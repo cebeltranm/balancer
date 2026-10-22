@@ -11,6 +11,7 @@
 - CONFIRMED: Pending transaction changes are stored in IndexedDB `transactions`; pending JSON file changes are stored in IndexedDB `files` with `to_sync: true`.
 - CONFIRMED: Sync merges pending transactions by year/month, stages monthly transaction files, removes transaction queue entries, recalculates affected balances, and then uploads files marked `to_sync`.
 - CONFIRMED: Startup compares remote file modification timestamps with cached timestamps and reloads stale cached files by file prefix.
+- RESOLVED (RT-049): GIVEN stale cached files exist at startup, WHEN the startup refresh runs, THEN every reload is awaited before the refresh completes; startup balance work (`ensureCurrentMonthValues`/`ensureCurrentMonthBalance`) and any queued sync begin only after it completes. A failed refresh is logged and does not block sync. Code status: SATISFIED (`Auth.vue` `syncCachedFiles()`/`startupLoad()`, `storage.ts` `holdSyncUntil()`).
 - CONFIRMED: Code satisfies the RT-001 conflict policy: queued transaction rows merge by `id`, and whole-file conflicts use last writer wins with a visible warning.
 - CONFIRMED: Code satisfies RT-002 by keeping pending items queued after sync failure, setting shared sync-failed state, showing a persistent sync-failed toast, and keeping retry available from sync status.
 - CONFIRMED: Contract status: satisfied for RT-001, RT-002, and RT-029; Google Drive out-of-scope behavior is covered in `storageIndex.spec.ts` (see Missing Tests).
@@ -91,7 +92,7 @@
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
 - CONFIRMED: `src/helpers/__tests__/dropbox.spec.ts` covers Dropbox auth failure and token refresh paths; Dropbox file read/write/list operations are not directly tested.
-- CONFIRMED: `src/components/__tests__/AuthStartupSync.spec.ts` covers Auth startup refresh of stale cached files, the following sync, balance recalculation, and store reloads with real stores and in-memory IndexedDB/provider fakes (`src/test/fakeBackend.ts`). It waits on observable results because `syncCachedFiles()` does not await its reloads.
+- CONFIRMED: `src/components/__tests__/AuthStartupSync.spec.ts` covers Auth startup refresh of stale cached files, the following sync, balance recalculation, and store reloads with real stores and in-memory IndexedDB/provider fakes (`src/test/fakeBackend.ts`). It also asserts RT-049: a slow reload holds the queued sync until it finishes. `storage.spec.ts` covers the sync hold (RT-049).
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts the exact staged transaction merge payload for same-id replacement, deleted queued rows, and preserved remote rows.
 - CONFIRMED: `src/helpers/__tests__/sync.spec.ts` asserts whole-file conflict detection, last-writer-wins upload, and visible warning state.
 - CONFIRMED: Sync helper tests prove failed file uploads are reported as failures and do not clear pending `to_sync` cache state.

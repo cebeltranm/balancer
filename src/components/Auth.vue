@@ -189,13 +189,25 @@ defineExpose({
 
 onMounted(async () => {
   selectedProvider.value = storageStore.selectedProvider;
-  await refreshStoreInfo();
+  // RT-049: held before the first await so a queued sync cannot start ahead
+  // of the startup load and refresh.
+  let releaseSync: () => void = () => {};
+  storageStore.holdSyncUntil(
+    new Promise<void>((resolve) => {
+      releaseSync = resolve;
+    }),
+  );
+  try {
+    await refreshStoreInfo();
+  } catch (error) {
+    releaseSync();
+    throw error;
+  }
   localCredentials.value = !!localStorage.getItem("crlocal");
   if (storeInfo.value.loggedIn) {
-    loadBasicFiles();
-  }
-  if (storeInfo.value.loggedIn && !storeInfo.value.offline) {
-    setTimeout(() => syncCachedFiles(), 200);
+    startupLoad().finally(releaseSync);
+  } else {
+    releaseSync();
   }
   if (storeInfo.value.type === "Dropbox" && route.query.code) {
     doLoginStore();
@@ -349,12 +361,28 @@ async function attemptLogin(login: () => Promise<boolean>) {
   }
   await refreshStoreInfo();
   if (success && storeInfo.value.loggedIn) {
-    await checkStore();
-    await loadBasicFiles();
-    setTimeout(() => syncCachedFiles(), 5000);
+    const loading = (async () => {
+      await checkStore();
+      await loadBasicFiles();
+    })();
+    storageStore.holdSyncUntil(loading);
+    await loading;
   } else if (!success && !failed && storeInfo.value?.type !== "Dropbox") {
     // Dropbox returns false while it redirects to external sign-in.
     reportLoginError();
+  }
+}
+
+// RT-050: a later load re-seeds a missing accounts.json, but never while
+// offline, when a missing read may only mean an empty cache.
+async function startupLoad() {
+  try {
+    if (!storeInfo.value.offline) {
+      await checkStore();
+    }
+    await loadBasicFiles();
+  } catch (error) {
+    console.error("Startup load failed", error);
   }
 }
 
@@ -379,7 +407,7 @@ async function checkStore() {
 }
 
 async function syncCachedFiles() {
-  storageStore.executeInSync(
+  await storageStore.executeInSync(
     (async () => {
       const storage = getStorage();
       const listFiles = (await storage.listFiles()).reduce(
@@ -391,42 +419,54 @@ async function syncCachedFiles() {
       );
 
       const cached = await sync.getAllFilesInCache();
-      Object.keys(cached).forEach(async (e: string) => {
-        if (listFiles[e] && listFiles[e] > cached[e]) {
-          const fileNameData = e.split(".")[0].split("_");
-          switch (fileNameData[0]) {
-            case "accounts":
-              await files.readJsonFile(e, false);
-              accountsStore.loadAccounts(true);
-              break;
-            case "config":
-              configStore.loadConfig(true);
-              break;
-            case "transactions":
-              await files.readJsonFile(e, false);
-              transactionsStore.loadTransactionsForMonth(
-                Number(fileNameData[1]),
-                Number(fileNameData[2]),
-                true,
-              );
-              break;
-            case "values":
-              await files.readJsonFile(e, false);
-              valuesStore.loadValuesForYear(Number(fileNameData[1]), true);
-              break;
-            case "budget":
-              await files.readJsonFile(e, false);
-              budgetStore.loadBudgetForYear(Number(fileNameData[1]), true);
-              break;
-            case "balance":
-              await files.readJsonFile(e, false);
-              balanceStore.loadBalanceForYear(Number(fileNameData[1]), true);
-              break;
-            default:
-              console.warn("Needs to reload the file: ", e);
+      // RT-049: every reload is awaited before the refresh completes.
+      await Promise.all(
+        Object.keys(cached).map(async (e: string) => {
+          if (listFiles[e] && listFiles[e] > cached[e]) {
+            const fileNameData = e.split(".")[0].split("_");
+            switch (fileNameData[0]) {
+              case "accounts":
+                await files.readJsonFile(e, false);
+                await accountsStore.loadAccounts(true);
+                break;
+              case "config":
+                await configStore.loadConfig(true);
+                break;
+              case "transactions":
+                await files.readJsonFile(e, false);
+                await transactionsStore.loadTransactionsForMonth(
+                  Number(fileNameData[1]),
+                  Number(fileNameData[2]),
+                  true,
+                );
+                break;
+              case "values":
+                await files.readJsonFile(e, false);
+                await valuesStore.loadValuesForYear(
+                  Number(fileNameData[1]),
+                  true,
+                );
+                break;
+              case "budget":
+                await files.readJsonFile(e, false);
+                await budgetStore.loadBudgetForYear(
+                  Number(fileNameData[1]),
+                  true,
+                );
+                break;
+              case "balance":
+                await files.readJsonFile(e, false);
+                await balanceStore.loadBalanceForYear(
+                  Number(fileNameData[1]),
+                  true,
+                );
+                break;
+              default:
+                console.warn("Needs to reload the file: ", e);
+            }
           }
-        }
-      });
+        }),
+      );
     })(),
   );
 }
@@ -445,6 +485,11 @@ async function loadBasicFiles() {
       budgetStore.loadBudgetForYear(year, false),
     ]),
   );
+
+  // RT-049: refresh stale cached files before balance work starts.
+  if (!storeInfo.value.offline) {
+    await syncCachedFiles();
+  }
 
   await valuesStore.ensureCurrentMonthValues(true);
   await balanceStore.ensureCurrentMonthBalance(true);

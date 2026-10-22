@@ -12,7 +12,7 @@
 - CONFIRMED: WebAuthn registration creates a public-key credential and stores local metadata in `localStorage.crlocal`.
 - CONFIRMED: WebAuthn authentication sets `storageStore.status.authenticated = true` and closes the dialog.
 - CONFIRMED: Logout clears provider credentials through the selected provider, clears IndexedDB, resets storage state, navigates home, and re-emits authentication check.
-- CONFIRMED: Contract status: satisfied for RT-020, RT-021, RT-023, and RT-029 as recorded in the per-criterion "Code status" notes below, including the noted `checkStore()` gap.
+- CONFIRMED: Contract status: satisfied for RT-020, RT-021, RT-023, RT-029, and RT-050 as recorded in the per-criterion "Code status" notes below.
 
 ## Product Contract
 - REQUIRED (RT-021): Local WebAuthn is mandatory for Dropbox-backed sensitive routes with no opt-out; the HTTP server bypass is development-only and available only on the local dev host.
@@ -32,7 +32,7 @@
 - CONFIRMED: Outputs are storage login state, local authenticated state, seeded initial files, loaded stores, and cleared state on logout.
 
 ## Data Files Read/Written
-- CONFIRMED: During first storage check, missing `accounts.json` is seeded from `public/accounts.json`.
+- CONFIRMED: During the storage check on interactive login and on every later load of a logged-in online session, missing `accounts.json` is seeded from `public/accounts.json` (RT-050).
 - CONFIRMED: After login, basic loading reads `accounts.json`, `config.json`, current and previous year values/balance/budget files, and recent transactions.
 - CONFIRMED: Authentication writes no domain JSON except initial `accounts.json` seeding and current-month values/balance bootstrapping.
 
@@ -78,7 +78,8 @@
 - RESOLVED (RT-023): First-run is a documented checklist, not a dedicated onboarding wizard. A user is "set up" after completing, in order: (1) storage login, (2) seed accounts, (3) register local credential, (4) review/edit accounts, (5) confirm base currency/config. Code status per step is listed below.
 - RESOLVED (RT-023): GIVEN the user has no storage login, WHEN the app opens, THEN the auth dialog is shown with the provider selector and "Login to store"; no domain file is read or written before login succeeds. Code status: SATISFIED (`Auth.vue` `onMounted`, `doLoginStore()`).
 - RESOLVED (RT-045): GIVEN the `accounts.json` seed write in `checkStore()` returns `false`, WHEN the write completes, THEN the user sees an `error` toast (closable, default lifetime) saying the accounts file could not be saved, the failure is logged with `console.error`, and the write is not reported as saved. This follows the default presentation rules in `specs/validation-and-errors.md`; there is no console-only override. Code status: SATISFIED (`checkStore()` in `Auth.vue`; covered by `Auth.spec.ts`).
-- RESOLVED (RT-023): GIVEN storage login succeeds and `accounts.json` is missing from storage, WHEN `checkStore()` runs, THEN `accounts.json` is written once from `public/accounts.json`. Code status: SATISFIED for the interactive-login path (`Auth.vue` `attemptLogin()` -> `checkStore()`). GAP: `checkStore()` is not called on `onMounted` for an already-logged-in session, so a missing `accounts.json` is not re-seeded on a later load; this is accepted for now and not required by RT-023.
+- RESOLVED (RT-023): GIVEN storage login succeeds and `accounts.json` is missing from storage, WHEN `checkStore()` runs, THEN `accounts.json` is written once from `public/accounts.json`. Code status: SATISFIED for the interactive-login path (`Auth.vue` `attemptLogin()` -> `checkStore()`). The later-load path is RT-050 below.
+- RESOLVED (RT-050): GIVEN the app opens with a logged-in, online storage session, WHEN the startup load runs, THEN a missing `accounts.json` is written once from `public/accounts.json` before basic files load; an existing valid file is not overwritten, an invalid file is never replaced (the load error is logged and invalid-file rules apply), and nothing is seeded while offline. Code status: SATISFIED (`Auth.vue` `startupLoad()` -> `checkStore()`).
 - RESOLVED (RT-023): GIVEN `accounts.json` already exists and is valid, WHEN `checkStore()` runs, THEN it is not overwritten. Code status: SATISFIED (the file is only written when the read returns nothing).
 - RESOLVED (RT-023): GIVEN `accounts.json` exists but is invalid or malformed, WHEN `checkStore()` runs, THEN the seed must not overwrite it and the recoverable invalid-file rules in `specs/data-model.md` apply. Code status: SATISFIED. `readJsonFile` throws a `PersistedFileError` for an invalid remote file instead of returning a falsy value, so `checkStore()` never reaches the seed write; covered by `Auth.spec.ts`. The thrown error is caught by Vue's error handler and no dedicated recovery message is shown at this step.
 - RESOLVED (RT-023): GIVEN storage login succeeded and the user has no `crlocal`, WHEN the dialog is shown, THEN Register Credentials is the next action and is enabled only after storage login. Code status: SATISFIED (see RT-021 criteria).
@@ -124,6 +125,7 @@
 - IMPLEMENTED: `src/stores/__tests__/accounts.spec.ts` — a test that parses `public/accounts.json` through the account loader and asserts every entry has a valid `AccountType` and a non-empty `currency`, so the seed stays loadable.
 - EXISTING: `src/stores/__tests__/storage.spec.ts:124-164` already covers `config.json` seeding, no seeding when login returns false, and no seeding over an invalid config file.
 - EXISTING: `Auth.spec.ts` RT-020/RT-021 tests cover the credential registration step (register after login, no skip); the RT-023 block also asserts Register Credentials is offered after login.
+- IMPLEMENTED (RT-050): `Auth.spec.ts` "later loads of a logged-in session" — missing file seeded once on mount; valid file untouched; invalid file untouched; no seed while offline.
 - NOT REQUIRED: tests for a base-currency setting; none exists.
 
 ## Product Questions

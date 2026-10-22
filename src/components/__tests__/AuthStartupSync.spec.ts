@@ -9,6 +9,7 @@ import { useStorageStore } from "@/stores/storage";
 import { useTransactionsStore } from "@/stores/transactions";
 import {
   cachedFile,
+  fakeStorage,
   idbFake,
   remote,
   resetFakeBackend,
@@ -22,8 +23,8 @@ import {
 // and balance calculation; only IndexedDB, the remote provider, and the
 // router are replaced.
 //
-// syncCachedFiles() fires its reloads with forEach(async …), so the outer
-// promise does not cover them. The test waits on observable results instead.
+// RT-049: the startup refresh awaits every reload, and startup sync and
+// balance work begin only after it has finished.
 
 vi.mock("vue-router", () => ({
   useRoute: () => ({ query: {} }),
@@ -149,15 +150,7 @@ describe("Auth startup refresh → sync → balance recalculation (IMP-28)", () 
     const balanceStore = useBalanceStore();
     const storageStore = useStorageStore();
 
-    // Startup loads the stale cache first: only the queued spend is visible.
-    await vi.waitFor(() => {
-      expect(
-        transactionsStore.transactions[2026]?.[5]?.map((t) => t.id),
-      ).toEqual([2]);
-      expect(balanceStore.balance[2026]?.cash?.[5]?.value).toBe(1000);
-    });
-
-    // The startup refresh then reloads the files the remote has newer copies of.
+    // The startup refresh reloads the files the remote has newer copies of.
     await vi.waitFor(
       () => {
         expect(
@@ -197,5 +190,47 @@ describe("Auth startup refresh → sync → balance recalculation (IMP-28)", () 
     expect(balanceStore.balance[2026].food[5].value).toBe(70);
     expect(storageStore.pendingToSync).toEqual({ transactions: 0, files: 0 });
     expect(storageStore.status.syncFailed).toBe(false);
+  });
+
+  it("holds startup sync and balance work until a slow reload has finished (RT-049)", async () => {
+    await idbFake.saveTransaction(spend(2, 20));
+    const readJsonFile = fakeStorage.readJsonFile;
+    let releaseTransactions: () => void = () => {};
+    const transactionsGate = new Promise<void>((resolve) => {
+      releaseTransactions = resolve;
+    });
+    fakeStorage.readJsonFile = async (fileName: string) => {
+      if (fileName === "transactions_2026_5.json") await transactionsGate;
+      return readJsonFile(fileName);
+    };
+
+    try {
+      const pinia = createPinia();
+      setActivePinia(pinia);
+      app = createApp(Auth);
+      app.use(pinia);
+      app.component("Dialog", passthrough("div"));
+      app.component("Select", passthrough("div"));
+      app.component("Divider", passthrough("hr"));
+      app.component("Message", passthrough("div"));
+      app.component("Button", passthrough("button"));
+      app.mount(root);
+
+      const storageStore = useStorageStore();
+
+      // App.vue checks the queue on mount, which would start the sync.
+      await storageStore.updatePendingToSync();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(remote.writes).toEqual([]);
+
+      releaseTransactions();
+      await vi.waitFor(() => {
+        expect(remote.files.get("balance_2026.json")?.cash?.[5]?.value).toBe(
+          930,
+        );
+      });
+    } finally {
+      fakeStorage.readJsonFile = readJsonFile;
+    }
   });
 });

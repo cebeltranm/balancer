@@ -94,6 +94,36 @@ describe("storage store", () => {
     expect(store.pendingToSync).toEqual({ transactions: 2, files: 1 });
   });
 
+  it("holds sync until the startup refresh has finished (RT-049)", async () => {
+    const store = useStorageStore();
+    let finishRefresh: () => void = () => {};
+    store.holdSyncUntil(
+      new Promise<void>((resolve) => {
+        finishRefresh = resolve;
+      }),
+    );
+
+    store.sync();
+    await flushPromises();
+    expect(syncHelpers.syncTransactions).not.toHaveBeenCalled();
+    expect(syncHelpers.syncFiles).not.toHaveBeenCalled();
+
+    finishRefresh();
+    await flushPromises();
+    expect(syncHelpers.syncTransactions).toHaveBeenCalled();
+    expect(syncHelpers.syncFiles).toHaveBeenCalled();
+  });
+
+  it("still syncs when the startup refresh fails (RT-049)", async () => {
+    const store = useStorageStore();
+    store.holdSyncUntil(Promise.reject(new Error("refresh failed")));
+
+    store.sync();
+    await flushPromises();
+
+    expect(syncHelpers.syncFiles).toHaveBeenCalled();
+  });
+
   it("refreshes store info and syncs queued changes when the browser comes back online (RT-024)", async () => {
     const listeners: Record<string, () => void> = {};
     (window as any).addEventListener = vi.fn(

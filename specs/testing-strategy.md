@@ -139,12 +139,12 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED: Offline indicator (`src/layout/__tests__/AppTopbar.spec.ts`).
   - COVERED (RT-002): Sync status button label/icon in the sync-failed state remains the retry action (`AppTopbar.spec.ts`).
-- Integration — COVERED (RECOMMENDED): Auth startup refresh → sync → balance recalculation → store reloads (`src/components/__tests__/AuthStartupSync.spec.ts`).
+- Integration — COVERED (RECOMMENDED): Auth startup refresh → sync → balance recalculation → store reloads, including RT-049 ordering (`src/components/__tests__/AuthStartupSync.spec.ts`).
 - Manual: Dropbox sync between two devices, including a whole-file conflict warning.
 
 ### Authentication (`specs/features/authentication.md`)
 - Component — REQUIRED:
-  - COVERED (RT-020, RT-021, RT-023): `src/components/__tests__/Auth.spec.ts`.
+  - COVERED (RT-020, RT-021, RT-023, RT-050): `src/components/__tests__/Auth.spec.ts`.
 - Integration — REQUIRED:
   - COVERED (RT-021): Real router guard emits auth checks only for sensitive routes (`src/router/__tests__/guard.spec.ts`).
 - Unit — COVERED: Dropbox token refresh and rejected codes (`dropbox.spec.ts`); auth error state (`storage.spec.ts`).
@@ -169,6 +169,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 
 ### Authentication
 - [ ] First run on a clean browser profile: storage login, accounts seeded, Register Credentials offered.
+- [ ] Delete `accounts.json` from storage and reload while logged in: it is seeded again (RT-050).
 - [ ] WebAuthn registration succeeds and a reload requires WebAuthn authentication.
 - [ ] Cancelling WebAuthn shows the auth error with Retry, Reset local credentials, and Restart provider login.
 - [ ] Reset local credentials keeps provider login and allows re-registration.

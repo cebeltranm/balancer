@@ -143,11 +143,12 @@ describe("Auth dialog failure handling (RT-020)", () => {
     type?: string;
     loggedIn: boolean;
     credentials: boolean;
+    offline?: boolean;
   }) {
     mocks.getInfo.mockResolvedValue({
       type: options.type ?? "Dropbox",
       loggedIn: options.loggedIn,
-      offline: true,
+      offline: options.offline ?? true,
     });
     if (options.credentials) {
       storage.set(
@@ -571,6 +572,69 @@ describe("Auth dialog failure handling (RT-020)", () => {
         expect.stringMatching(/^(values|balance)_/),
         expect.anything(),
       );
+    });
+
+    describe("later loads of a logged-in session (RT-050)", () => {
+      async function mountLoggedIn(offline: boolean) {
+        await mountAuth({
+          type: "Dropbox",
+          loggedIn: true,
+          credentials: true,
+          offline,
+        });
+      }
+
+      const seedWrites = () =>
+        vi
+          .mocked(files.writeJsonFile)
+          .mock.calls.filter(([name]) => name === "accounts.json");
+
+      it("re-seeds a missing accounts.json once when the app opens already logged in", async () => {
+        vi.mocked(files.readJsonFile).mockResolvedValue(false);
+
+        await mountLoggedIn(false);
+
+        expect(seedWrites()).toEqual([["accounts.json", seed]]);
+      });
+
+      it("does not overwrite an existing valid accounts.json on load", async () => {
+        vi.mocked(files.readJsonFile).mockResolvedValue({
+          mine: { type: "Cash", name: "Mine", currency: "cop" },
+        });
+
+        await mountLoggedIn(false);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(seedWrites()).toEqual([]);
+      });
+
+      it("does not seed over an invalid accounts.json on load", async () => {
+        vi.mocked(files.readJsonFile).mockRejectedValue(
+          new PersistedFileError(
+            "invalid_file",
+            "accounts.json",
+            "accounts.json contains invalid JSON.",
+          ),
+        );
+        const consoleError = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => {});
+
+        await mountLoggedIn(false);
+
+        consoleError.mockRestore();
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(seedWrites()).toEqual([]);
+      });
+
+      it("does not seed while offline", async () => {
+        vi.mocked(files.readJsonFile).mockResolvedValue(false);
+
+        await mountLoggedIn(true);
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(seedWrites()).toEqual([]);
+      });
     });
 
     it("offers Register Credentials after storage login when no local credential exists", async () => {

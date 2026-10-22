@@ -76,7 +76,7 @@ The router also blocks navigation while forms report pending changes and emits a
 
 - `src/helpers/pwa.ts` registers the service worker immediately and checks for service-worker updates every 120 seconds when `__RELOAD_SW__` is replaced with `"true"`.
 - `src/App.vue` checks pending local sync work on mount.
-- `src/components/Auth.vue` loads basic files after login, seeds `accounts.json` from `public/accounts.json` if missing, refreshes stale cached files from remote storage, ensures current-month values/balance exist, and preloads recent transactions.
+- `src/components/Auth.vue` loads basic files after login, seeds `accounts.json` from `public/accounts.json` if missing (on every load while online), refreshes stale cached files from remote storage (awaited before sync and balance work start), ensures current-month values/balance exist, and preloads recent transactions.
 - `src/stores/storage.ts` debounces full sync work and serializes explicit sync operations.
 
 ## External dependencies
@@ -154,7 +154,6 @@ Validation scripts defined in `package.json` are:
 ## Known risks or unclear areas
 
 - Dropbox is the production storage backend, but data consistency depends on client-side JSON file reads/writes and IndexedDB sync state. Conflict handling appears limited, especially when multiple devices modify the same monthly files.
-- `syncCachedFiles()` in `Auth.vue` uses `forEach(async ...)`, so refresh operations are started without being awaited as a group. That can make completion timing unclear.
 - Local device authentication uses WebAuthn as a local gate, but the durable app data is still protected mainly by storage-provider credentials and local storage/session storage tokens.
 - Dropbox credentials, local HTTP tokens, and local WebAuthn metadata are stored in browser storage. This is common for a client-only app but has the usual browser-storage exposure risks.
 - The local HTTP server uses a fixed development bearer token and writes to `.tmp/`; it should be treated as development-only.

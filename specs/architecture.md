@@ -57,7 +57,7 @@
 - RESOLVED (RT-046): This is display-only. It never changes `accounts.json`, `activeAccounts()`, the currency choices in the account form (`Accounts.vue` still offers every `Currency`), exchange rates, persisted files, totals, or sync.
 
 ## Main Risks And Assumptions
-- CONFIRMED: `syncCachedFiles()` in `Auth.vue` uses `Object.keys(...).forEach(async ...)`, so refresh tasks are launched without being awaited as a group.
+- RESOLVED (RT-049): `syncCachedFiles()` in `Auth.vue` awaits all reload tasks as a group, and startup sync and balance work wait for it; see `features/storage-sync.md`.
 - RESOLVED (RT-034): Files seeded before RT-006 may contain legacy account type strings (`cash`, `SavingAccount`) that do not match `AccountType` enum values. They are migrated in memory on load by a fixed alias list; see `features/accounts.md`.
 - CONFIRMED: `balance_<year>.json` is calculated and persisted; stale balances are possible if source files change without recalculation.
 - INFERRED: The app assumes account ids are stable because transactions, budget, values, and balance files reference account ids.
