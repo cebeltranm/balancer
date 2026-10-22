@@ -22,6 +22,7 @@ export interface AuthErrorState {
 }
 
 let currentSyncPromise: Promise<any> | null = null;
+let startupRefreshPromise: Promise<void> | null = null;
 const MINIMUM_CONFIG = { stock_api: {}, inv_composition: {} };
 
 async function ensureMinimumConfigFile() {
@@ -59,6 +60,10 @@ export const useStorageStore = defineStore("storage", () => {
     let failureMessage = "";
     try {
       status.value.inSync = true;
+      // RT-049: startup refresh finishes before the startup sync starts.
+      if (startupRefreshPromise) {
+        await startupRefreshPromise;
+      }
       const trans = await syncHelpers.syncTransactions();
       if (trans) {
         const { useTransactionsStore } = await import("./transactions");
@@ -136,6 +141,21 @@ export const useStorageStore = defineStore("storage", () => {
       status.value.inSync = true;
       syncAll();
     }
+  }
+  // RT-049: sync waits for `promise` (the startup refresh), whether it
+  // succeeds or fails.
+  function holdSyncUntil(promise: Promise<unknown>) {
+    const held: Promise<void> = promise
+      .then(
+        () => {},
+        () => {},
+      )
+      .then(() => {
+        if (startupRefreshPromise === held) {
+          startupRefreshPromise = null;
+        }
+      });
+    startupRefreshPromise = held;
   }
   async function updatePendingToSync() {
     const transactions = await idb.countTransactions();
@@ -287,6 +307,7 @@ export const useStorageStore = defineStore("storage", () => {
     selectedProvider,
     providerOptions,
     sync,
+    holdSyncUntil,
     updatePendingToSync,
     executeInSync,
     refreshStoreInfo,
