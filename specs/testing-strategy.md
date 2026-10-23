@@ -135,6 +135,8 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Manual: none beyond general UI review.
 
 ### Storage Sync (`specs/features/storage-sync.md`)
+- Unit — COVERED (RT-051): invalid-file Retry, cached copy kept, balance Rebuild and overwrite, no overwrite for other files (`files.spec.ts`, `storage.spec.ts`).
+- UI — GAP (RECOMMENDED, RT-051): `App.vue` invalid-file toast actions and overwrite confirmation.
 - Unit — COVERED: file cache, IndexedDB, merge-by-id, whole-file conflict warning, failed upload keeps queue, sync-failed state and retry, provider selection including Google Drive fallback (RT-029), HTTP client, Dropbox helper (`files.spec.ts`, `idb.spec.ts`, `sync.spec.ts`, `storage.spec.ts`, `storageIndex.spec.ts`, `httpServer.spec.ts`, `dropbox.spec.ts`).
 - Component — REQUIRED:
   - COVERED: Offline indicator (`src/layout/__tests__/AppTopbar.spec.ts`).
@@ -182,6 +184,7 @@ Run against `npm run build` + `npm run https-preview` unless noted. Record resul
 - [ ] Deploying a new build shows the update toast; closing it does not update; "Update now" reloads into the new version.
 
 ### Storage Sync
+- [ ] RT-051: with an invalid remote `values_<year>.json`, the toast shows only Retry; fix the file remotely, press Retry, and the toast clears and data loads. With an invalid `balance_<year>.json`, Rebuild and overwrite asks for confirmation first.
 - [ ] Two devices editing the same whole file: the later writer wins and a visible conflict warning appears.
 - [ ] A failed sync shows the persistent sync-failed state and the sync button retries.
 

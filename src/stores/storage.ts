@@ -5,7 +5,12 @@ import * as syncHelpers from "@/helpers/sync";
 import * as idb from "@/helpers/idb";
 import { EVENTS, CLEAR_MESSAGES, SYNC_FAILED_GROUP } from "@/helpers/events";
 import { isStorageAuthError } from "@/helpers/storageAuthError";
-import { readJsonFile, writeJsonFile } from "@/helpers/files";
+import {
+  approveInvalidFileOverwrite,
+  isInvalidRemoteFile,
+  readJsonFile,
+  writeJsonFile,
+} from "@/helpers/files";
 import {
   getAvailableStorageProviders,
   getSelectedStorageProvider,
@@ -274,6 +279,79 @@ export const useStorageStore = defineStore("storage", () => {
     return refreshStoreInfo();
   }
 
+  // RT-051: re-reads an invalid file from the remote store (the source of
+  // truth) and reloads its owning store. Returns true once the file is valid.
+  async function retryInvalidFile(fileName: string) {
+    if (status.value.offline) {
+      EVENTS.emit("message", {
+        severity: "warn",
+        summary: "Offline",
+        message: `${fileName} cannot be retried while offline.`,
+      });
+      return false;
+    }
+    const [name] = fileName.split(".");
+    const [family, a, b] = name.split("_");
+    try {
+      switch (family) {
+        case "accounts":
+          await (await import("./accounts"))
+            .useAccountsStore()
+            .loadAccounts(true);
+          break;
+        case "config":
+          await (await import("./config")).useConfigStore().loadConfig(true);
+          break;
+        case "transactions":
+          await (await import("./transactions"))
+            .useTransactionsStore()
+            .loadTransactionsForMonth(Number(a), Number(b), true);
+          break;
+        case "values":
+          await (await import("./values"))
+            .useValuesStore()
+            .loadValuesForYear(Number(a), true);
+          break;
+        case "budget":
+          await (await import("./budget"))
+            .useBudgetStore()
+            .loadBudgetForYear(Number(a), true);
+          break;
+        case "balance":
+          await (await import("./balance"))
+            .useBalanceStore()
+            .loadBalanceForYear(Number(a), true);
+          break;
+        default:
+          await readJsonFile(fileName, false);
+      }
+    } catch (error) {
+      console.error(`Retry of ${fileName} failed`, error);
+    }
+    if (isInvalidRemoteFile(fileName)) {
+      return false;
+    }
+    sync();
+    return true;
+  }
+
+  // RT-051: balance files are derived data. After the user confirmed, rebuild
+  // the year from source data and let the rebuilt file replace the invalid one.
+  async function rebuildInvalidBalance(fileName: string) {
+    const match = /^balance_(\d{4})\.json$/.exec(fileName);
+    if (!match) {
+      return false;
+    }
+    approveInvalidFileOverwrite(fileName);
+    const { useBalanceStore } = await import("./balance");
+    const balanceStore = useBalanceStore();
+    // Start from source data, not from a copy of the invalid file kept in memory.
+    delete balanceStore.balance[Number(match[1])];
+    await balanceStore.recalculateBalance(Number(match[1]), 1, true);
+    sync();
+    return true;
+  }
+
   function resetLocalCredentials() {
     window.localStorage.removeItem("crlocal");
     status.value.authenticated = false;
@@ -318,5 +396,7 @@ export const useStorageStore = defineStore("storage", () => {
     restartProviderLogin,
     selectProvider,
     resetLocalCredentials,
+    retryInvalidFile,
+    rebuildInvalidBalance,
   };
 });

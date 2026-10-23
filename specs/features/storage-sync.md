@@ -18,6 +18,7 @@
 
 ## Product Contract
 - REQUIRED (RT-001): Transaction queue conflicts merge by id; whole-file conflicts use last writer wins with a visible warning.
+- REQUIRED (RT-051): Queued transactions and staged files survive an invalid remote file and sync after a successful Retry; see `data-model.md`.
 - REQUIRED (RT-002): Sync failures keep pending items queued, show a persistent sync-failed status/toast, and offer retry from sync status.
 - REQUIRED (RT-029): Google Drive is out of scope until a provider helper, auth flow, and sync tests exist.
 

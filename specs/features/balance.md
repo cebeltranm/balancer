@@ -14,6 +14,7 @@
 - CONFIRMED: Contract status: satisfied (RT-010 is implemented in `src/stores/balance.ts` and `src/views/Balance.vue`, covered by `balance.spec.ts` and `Balance.spec.ts`).
 
 ## Product Contract
+- REQUIRED (RT-051): An invalid `balance_<year>.json` can be rebuilt and overwritten only after explicit user confirmation; see `data-model.md`.
 - REQUIRED (RT-010): Balance snapshots are derived cache, not durable financial records; authenticated users can force recalculation.
 - REQUIRED (RT-010): Recalculation with missing transaction, values, or rate/value source data shows a warning identifying the source and that totals may be incomplete.
 - REQUIRED: Hidden accounts inactive for the recalculated month produce no missing-source warnings, and a stored value or rate of `0` is valid data.
