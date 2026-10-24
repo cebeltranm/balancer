@@ -35,7 +35,6 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 | Topic | Where it is mentioned | Question to decide | Suggested size |
 | --- | --- | --- | --- |
-| Invalid-file recovery action | `data-model.md` ("until the user explicitly chooses a recovery action"; "recovery UI polish remains future work") | What recovery actions exist (reload from remote, discard local cache, open file in provider)? Today there is only the persistent toast. | New feature |
 | Base currency setting | `features/authentication.md` RT-023 | Out of scope by design; needs its own requirement and data-model change. | New feature |
 | Google Drive provider | `features/storage-sync.md` RT-029 | Out of scope until a provider helper, auth flow, and sync tests exist. | New feature |
 | Automated end-to-end tests | `testing-strategy.md` RT-031 | Out of scope; adding a tool needs a decision and a dependency. | New feature |
@@ -43,4 +42,4 @@ These are known issues or ideas that no Product Contract line requires. Per `AGE
 
 ## Already satisfied (no action)
 
-Every recorded decision from RT-001 to RT-050 is satisfied in code. No work items remain in this plan; only the product decisions below are open. RT-004 and RT-022 are not referenced by any spec.
+Every recorded decision from RT-001 to RT-051 is satisfied in code. No work items remain in this plan; only the product decisions below are open. RT-004 and RT-022 are not referenced by any spec.

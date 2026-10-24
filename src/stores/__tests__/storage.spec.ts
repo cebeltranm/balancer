@@ -19,6 +19,33 @@ vi.mock("@/helpers/idb", () => ({
 vi.mock("@/helpers/files", () => ({
   readJsonFile: vi.fn(),
   writeJsonFile: vi.fn(),
+  isInvalidRemoteFile: vi.fn(() => false),
+  approveInvalidFileOverwrite: vi.fn(),
+}));
+
+const recoveryMocks = vi.hoisted(() => ({
+  loadValuesForYear: vi.fn().mockResolvedValue({}),
+  loadTransactionsForMonth: vi.fn().mockResolvedValue([]),
+  recalculateBalance: vi.fn().mockResolvedValue({}),
+  balance: { 2025: { a: {} } } as Record<number, unknown>,
+}));
+
+vi.mock("@/stores/values", () => ({
+  useValuesStore: () => ({
+    loadValuesForYear: recoveryMocks.loadValuesForYear,
+  }),
+}));
+vi.mock("@/stores/transactions", () => ({
+  useTransactionsStore: () => ({
+    loadTransactionsForMonth: recoveryMocks.loadTransactionsForMonth,
+  }),
+}));
+vi.mock("@/stores/balance", () => ({
+  useBalanceStore: () => ({
+    balance: recoveryMocks.balance,
+    recalculateBalance: recoveryMocks.recalculateBalance,
+    loadBalanceForYear: vi.fn(),
+  }),
 }));
 
 const storageMocks = vi.hoisted(() => ({
@@ -50,7 +77,12 @@ vi.mock("@/helpers/storage", () => ({
 import * as idb from "@/helpers/idb";
 import * as syncHelpers from "@/helpers/sync";
 import { EVENTS } from "@/helpers/events";
-import { readJsonFile, writeJsonFile } from "@/helpers/files";
+import {
+  approveInvalidFileOverwrite,
+  isInvalidRemoteFile,
+  readJsonFile,
+  writeJsonFile,
+} from "@/helpers/files";
 import { useStorageStore } from "@/stores/storage";
 
 async function flushPromises() {
@@ -496,6 +528,76 @@ describe("storage store", () => {
       expect(idb.clearDatabase).not.toHaveBeenCalled();
       expect(store.pendingToSync).toEqual({ transactions: 3, files: 2 });
       expect(authError(store)).toBeNull();
+    });
+  });
+
+  describe("invalid file recovery (RT-051)", () => {
+    it("retry reloads the owning store from the remote and starts a sync", async () => {
+      const store = useStorageStore();
+      await expect(store.retryInvalidFile("values_2025.json")).resolves.toBe(
+        true,
+      );
+      expect(recoveryMocks.loadValuesForYear).toHaveBeenCalledWith(2025, true);
+      expect(syncHelpers.syncTransactions).toHaveBeenCalled();
+    });
+
+    it("retry parses the month of a transactions file", async () => {
+      const store = useStorageStore();
+      await store.retryInvalidFile("transactions_2025_3.json");
+      expect(recoveryMocks.loadTransactionsForMonth).toHaveBeenCalledWith(
+        2025,
+        3,
+        true,
+      );
+    });
+
+    it("retry keeps the file invalid and does not sync when the remote is still invalid", async () => {
+      vi.mocked(isInvalidRemoteFile).mockReturnValueOnce(true);
+      const store = useStorageStore();
+      await expect(store.retryInvalidFile("values_2025.json")).resolves.toBe(
+        false,
+      );
+      expect(syncHelpers.syncTransactions).not.toHaveBeenCalled();
+      expect(writeJsonFile).not.toHaveBeenCalled();
+    });
+
+    it("retry does nothing but warn while offline", async () => {
+      const store = useStorageStore();
+      store.status.offline = true;
+      const emit = vi.spyOn(EVENTS, "emit");
+      await expect(store.retryInvalidFile("values_2025.json")).resolves.toBe(
+        false,
+      );
+      expect(recoveryMocks.loadValuesForYear).not.toHaveBeenCalled();
+      expect(emit).toHaveBeenCalledWith(
+        "message",
+        expect.objectContaining({ severity: "warn" }),
+      );
+    });
+
+    it("rebuilds an invalid balance year from source data after approval", async () => {
+      const store = useStorageStore();
+      await expect(
+        store.rebuildInvalidBalance("balance_2025.json"),
+      ).resolves.toBe(true);
+      expect(approveInvalidFileOverwrite).toHaveBeenCalledWith(
+        "balance_2025.json",
+      );
+      expect(recoveryMocks.balance[2025]).toBeUndefined();
+      expect(recoveryMocks.recalculateBalance).toHaveBeenCalledWith(
+        2025,
+        1,
+        true,
+      );
+    });
+
+    it("offers no overwrite for files other than balance", async () => {
+      const store = useStorageStore();
+      await expect(
+        store.rebuildInvalidBalance("values_2025.json"),
+      ).resolves.toBe(false);
+      expect(approveInvalidFileOverwrite).not.toHaveBeenCalled();
+      expect(recoveryMocks.recalculateBalance).not.toHaveBeenCalled();
     });
   });
 });

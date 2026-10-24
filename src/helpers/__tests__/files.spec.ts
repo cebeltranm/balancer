@@ -17,7 +17,12 @@ vi.mock("@/helpers/storage", () => ({
 
 import * as idb from "@/helpers/idb";
 import { CLEAR_MESSAGES, EVENTS } from "@/helpers/events";
-import { readJsonFile, writeJsonFile } from "@/helpers/files";
+import {
+  approveInvalidFileOverwrite,
+  isInvalidRemoteFile,
+  readJsonFile,
+  writeJsonFile,
+} from "@/helpers/files";
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
 
 describe("files helper", () => {
@@ -89,6 +94,7 @@ describe("files helper", () => {
       life: 0,
       closable: true,
       group: "invalid-file:accounts.json",
+      fileName: "accounts.json",
     });
   });
 
@@ -172,5 +178,70 @@ describe("files helper", () => {
     expect(idb.saveJsonFile).toHaveBeenCalledWith(
       expect.objectContaining({ id: "x.json", data: { x: 1 } }),
     );
+  });
+
+  describe("RT-051 recovery", () => {
+    it("reports the file as invalid, then valid after an uncached retry succeeds", async () => {
+      vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
+      readJsonFileMock.mockRejectedValueOnce(
+        new PersistedFileError("invalid_file", "values_2031.json", "bad"),
+      );
+      await expect(readJsonFile("values_2031.json", false)).rejects.toThrow();
+      expect(isInvalidRemoteFile("values_2031.json")).toBe(true);
+
+      readJsonFileMock.mockResolvedValueOnce({ ok: 1 });
+      await expect(readJsonFile("values_2031.json", false)).resolves.toEqual({
+        ok: 1,
+      });
+      expect(isInvalidRemoteFile("values_2031.json")).toBe(false);
+    });
+
+    it("keeps serving the cached copy while the remote file is invalid", async () => {
+      vi.mocked(idb.getJsonFile).mockResolvedValue({ data: { a: 1 } } as any);
+      await expect(readJsonFile("values_2032.json", true)).resolves.toEqual({
+        a: 1,
+      });
+      expect(readJsonFileMock).not.toHaveBeenCalled();
+    });
+
+    it("keeps the invalid state when a retry still finds an invalid file", async () => {
+      vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
+      readJsonFileMock.mockRejectedValue(
+        new PersistedFileError("invalid_file", "values_2033.json", "bad"),
+      );
+      await expect(readJsonFile("values_2033.json", false)).rejects.toThrow();
+      await expect(readJsonFile("values_2033.json", false)).rejects.toThrow();
+      expect(isInvalidRemoteFile("values_2033.json")).toBe(true);
+      await expect(writeJsonFile("values_2033.json", {})).resolves.toBe(false);
+      readJsonFileMock.mockReset();
+    });
+
+    it("lets an approved overwrite read the invalid file as missing and write it", async () => {
+      const emit = vi.spyOn(EVENTS, "emit");
+      vi.mocked(idb.getJsonFile).mockResolvedValue(undefined as any);
+      readJsonFileMock.mockRejectedValue(
+        new PersistedFileError("invalid_file", "balance_2034.json", "bad"),
+      );
+      await expect(readJsonFile("balance_2034.json", false)).rejects.toThrow();
+
+      approveInvalidFileOverwrite("balance_2034.json");
+      expect(emit).toHaveBeenCalledWith(
+        CLEAR_MESSAGES,
+        "invalid-file:balance_2034.json",
+      );
+      await expect(readJsonFile("balance_2034.json", false)).resolves.toBe(
+        false,
+      );
+      expect(isInvalidRemoteFile("balance_2034.json")).toBe(false);
+
+      writeJsonFileMock.mockResolvedValue(true);
+      await expect(writeJsonFile("balance_2034.json", { a: 1 })).resolves.toBe(
+        true,
+      );
+      expect(writeJsonFileMock).toHaveBeenCalledWith("balance_2034.json", {
+        a: 1,
+      });
+      readJsonFileMock.mockReset();
+    });
   });
 });

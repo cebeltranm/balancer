@@ -52,7 +52,7 @@ These earlier decisions stay valid. They apply instead of the defaults above for
 | Triage ID | Case | Override |
 | --- | --- | --- |
 | RT-002 | Sync failure | Persistent grouped error toast; retry from the sync status action. Matches the persistent-state rule. |
-| RT-005 | Invalid remote file | Persistent error toast; the remote file is not overwritten until the user acts. Matches the persistent-state rule. |
+| RT-005 | Invalid remote file | Persistent error toast; the remote file is not overwritten until the user acts. Matches the persistent-state rule. RT-051: the toast carries a Retry action (and Rebuild and overwrite for balance files). |
 | RT-009 | Local queue write failure | Error toast; surface stays open and edits stay pending. Matches the one-time-action rule. |
 | RT-011 | Missing exchange rate | Partial total with inline indicator naming the affected currencies or accounts. Matches the ongoing-warn rule. |
 | RT-012 | External value sync | One generic error for all providers; no per-row or per-provider detail. |

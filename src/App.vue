@@ -31,6 +31,29 @@
     </div>
     <ConfirmPopup></ConfirmPopup>
     <Toast position="bottom-right" />
+    <Toast :group="INVALID_FILE_TOAST_GROUP" position="bottom-right">
+      <template #message="slotProps">
+        <div class="flex flex-column gap-2 w-full">
+          <div class="font-bold">{{ slotProps.message.summary }}</div>
+          <div class="text-sm">{{ slotProps.message.detail }}</div>
+          <div class="flex gap-2">
+            <Button
+              label="Retry"
+              size="small"
+              @click="onRetryInvalidFile(slotProps.message)"
+            />
+            <Button
+              v-if="isBalanceFile(slotProps.message.data?.fileName)"
+              label="Rebuild and overwrite"
+              size="small"
+              severity="danger"
+              outlined
+              @click="onRebuildInvalidFile($event, slotProps.message)"
+            />
+          </div>
+        </div>
+      </template>
+    </Toast>
     <Toast :group="SYNC_FAILED_GROUP" position="bottom-right" />
     <Toast
       group="pwa-update"
@@ -124,20 +147,63 @@ const mobileMenuActive = ref(false);
 const staticMenuInactive = ref(false);
 const version = computed(() => packageJson.version);
 
+// RT-051: invalid-file toasts share one Toast (with recovery actions); the
+// per-file group keeps one visible toast per file.
+const INVALID_FILE_TOAST_GROUP = "invalid-file";
+const INVALID_FILE_PREFIX = "invalid-file:";
+const invalidFileToasts = new Map<string, any>();
+
+function removeInvalidFileToast(fileName: string) {
+  const previous = invalidFileToasts.get(fileName);
+  if (previous) {
+    toast.remove(previous);
+    invalidFileToasts.delete(fileName);
+  }
+}
+
+function isBalanceFile(fileName?: string) {
+  return /^balance_\d{4}\.json$/.test(fileName || "");
+}
+
 EVENTS.on("message", (msg: any) => {
-  toast.add({
+  const isInvalidFile = msg.group?.startsWith(INVALID_FILE_PREFIX);
+  const message = {
     severity: msg.severity || "info",
     summary: msg.summary || "",
     detail: msg.message || "",
     life: msg.life ?? 3000,
     closable: msg.closable,
-    group: msg.group,
-  });
+    group: isInvalidFile ? INVALID_FILE_TOAST_GROUP : msg.group,
+    data: msg.fileName ? { fileName: msg.fileName } : undefined,
+  };
+  if (isInvalidFile) {
+    removeInvalidFileToast(msg.fileName);
+    invalidFileToasts.set(msg.fileName, message);
+  }
+  toast.add(message);
 });
 
 EVENTS.on(CLEAR_MESSAGES, (group: string) => {
+  if (group?.startsWith(INVALID_FILE_PREFIX)) {
+    removeInvalidFileToast(group.slice(INVALID_FILE_PREFIX.length));
+    return;
+  }
   toast.removeGroup(group);
 });
+
+function onRetryInvalidFile(message: any) {
+  return storageStore.retryInvalidFile(message.data.fileName);
+}
+
+function onRebuildInvalidFile(event: Event, message: any) {
+  const fileName = message.data.fileName;
+  confirm.require({
+    target: event.currentTarget as HTMLElement,
+    message: `Replace the invalid ${fileName} with a version rebuilt from your accounts, values, and transactions?`,
+    icon: "pi pi-exclamation-triangle",
+    accept: () => storageStore.rebuildInvalidBalance(fileName),
+  });
+}
 
 function showUpdateToast() {
   if (!needRefresh.value || updateToastShown.value) return;
