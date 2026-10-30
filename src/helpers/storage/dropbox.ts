@@ -150,7 +150,11 @@ export default class DropboxStore {
     try {
       const res = await dbx.filesDownload({ path: `/${fileName}` });
       if (res.status === 200) {
-        const fileResult = res.result as { fileBlob?: Blob; fileBinary?: Blob };
+        type TextBlob = { text(): Promise<string> };
+        const fileResult = res.result as unknown as {
+          fileBlob?: TextBlob;
+          fileBinary?: TextBlob;
+        };
         const blob = fileResult.fileBlob || fileResult.fileBinary;
         if (!blob) {
           return;
