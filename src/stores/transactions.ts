@@ -7,6 +7,7 @@ import { useStorageStore } from "@/stores/storage";
 import { parseLocalDateString } from "@/helpers/date";
 import { normalizeTransaction } from "@/helpers/persistedShapes";
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
+import { EVENTS, TRANSACTION_SAVED } from "@/helpers/events";
 
 type MontlyTransactionData = Transaction[];
 
@@ -130,6 +131,7 @@ export const useTransactionsStore = defineStore("transactions", () => {
       }
       await loadTransactionsForMonth(year, month, false);
     }
+    EVENTS.emit(TRANSACTION_SAVED, transaction);
   }
 
   async function deleteTransaction(transaction: Transaction) {

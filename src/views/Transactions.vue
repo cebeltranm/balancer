@@ -43,6 +43,11 @@
       <Column header="Date" style="min-width: 70px; width: 80px">
         <template #body="slotProps">
           {{ $format.date(slotProps.data.date) }}
+          <i
+            v-if="slotProps.data.to_sync"
+            class="pi pi-cloud-upload ml-1"
+            title="Pending sync"
+          />
         </template>
       </Column>
       <Column
@@ -110,12 +115,20 @@ import AccountsSelector from "@/components/AccountsSelector.vue";
 import PeriodSelector from "@/components/PeriodSelector.vue";
 import TransactionEditDialog from "@/components/TransactionEditDialog.vue";
 
-import { computed, ref, onMounted, toRaw, inject, watch } from "vue";
+import {
+  computed,
+  ref,
+  onMounted,
+  onUnmounted,
+  toRaw,
+  inject,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getCurrentPeriod, getPeriodDate } from "@/helpers/options.js";
 import { Period } from "@/types";
 import { useConfirm } from "primevue/useconfirm";
-import { EVENTS } from "@/helpers/events";
+import { EVENTS, TRANSACTION_SAVED } from "@/helpers/events";
 import { isDesktop } from "@/helpers/browser";
 import { useTransactionsStore } from "@/stores/transactions";
 import { useAccountsStore } from "@/stores/accounts";
@@ -186,9 +199,29 @@ const list = computed(() => {
   return [];
 });
 
+// Keep the selection across list reloads; rows that left the list are dropped.
 watch(list, () => {
-  selectedTransactions.value = [];
+  const keys = new Set(selectedTransactions.value.map((t) => t.selectionKey));
+  selectedTransactions.value = list.value.filter((t) =>
+    keys.has(t.selectionKey),
+  );
 });
+
+watch(
+  [accounts, () => period.value.value.year, () => period.value.value.month],
+  () => {
+    selectedTransactions.value = [];
+  },
+);
+
+function onTransactionSaved(transaction: { id: number }) {
+  const keys = new Set(selectedTransactions.value.map((t) => t.selectionKey));
+  selectedTransactions.value = selectedTransactions.value.concat(
+    list.value.filter(
+      (t) => t.id === transaction.id && !keys.has(t.selectionKey),
+    ),
+  );
+}
 
 const accountsBalance = computed(() => {
   if (accounts.value.length < 5) {
@@ -212,7 +245,11 @@ const accountsBalance = computed(() => {
 });
 
 function rowClass(data: any) {
-  return data.to_sync ? "bg-red-900" : null;
+  return selectedTransactions.value.some(
+    (t) => t.selectionKey === data.selectionKey,
+  )
+    ? "bg-green-900"
+    : null;
 }
 
 function getTotal() {
@@ -265,11 +302,16 @@ function onChangePeriod() {
 }
 
 onMounted(async () => {
+  EVENTS.on(TRANSACTION_SAVED, onTransactionSaved);
   const queryAccounts = route.query.accounts;
   if (Array.isArray(queryAccounts) && queryAccounts.length > 0) {
     accounts.value = queryAccounts;
   } else if (typeof queryAccounts === "string" && queryAccounts.length > 0) {
     accounts.value = [queryAccounts];
   }
+});
+
+onUnmounted(() => {
+  EVENTS.off(TRANSACTION_SAVED, onTransactionSaved);
 });
 </script>
