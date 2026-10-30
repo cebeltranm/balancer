@@ -4,6 +4,7 @@ import { useTransactionsStore } from "@/stores/transactions";
 import { readJsonFile } from "@/helpers/files";
 import * as idb from "@/helpers/idb";
 import { PersistedFileError } from "@/helpers/persistedFileErrors";
+import { EVENTS, TRANSACTION_SAVED } from "@/helpers/events";
 
 const updatePendingToSync = vi.fn().mockResolvedValue(undefined);
 
@@ -144,6 +145,54 @@ describe("transactions store", () => {
     expect(store.transactions[2025][2].map((t: any) => t.id)).toEqual([12]);
   });
 
+  it("emits TRANSACTION_SAVED after the month reload (RT-054)", async () => {
+    vi.mocked(readJsonFile).mockResolvedValue([]);
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([
+      { id: 13, date: "2025-02-22", description: "saved", values: [] },
+    ] as any);
+    const store = useTransactionsStore();
+    const visibleAtEmit: number[][] = [];
+    const emit = vi.spyOn(EVENTS, "emit").mockImplementation((() => {
+      visibleAtEmit.push(
+        (store.transactions[2025]?.[2] || []).map((t: any) => t.id),
+      );
+    }) as any);
+
+    const transaction = {
+      id: 13,
+      date: "2025-02-22",
+      description: "saved",
+      values: [],
+    } as any;
+    await store.saveTransaction(transaction);
+
+    expect(emit).toHaveBeenCalledWith(TRANSACTION_SAVED, transaction);
+    expect(visibleAtEmit).toEqual([[13]]);
+    emit.mockRestore();
+  });
+
+  it("emits TRANSACTION_SAVED after the fallback reload when the provider refresh fails (RT-054)", async () => {
+    vi.mocked(readJsonFile)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce([]);
+    vi.mocked(idb.getAllTransactions).mockResolvedValue([
+      { id: 14, date: "2025-02-23", description: "offline", values: [] },
+    ] as any);
+    const emit = vi.spyOn(EVENTS, "emit").mockImplementation((() => {}) as any);
+
+    const store = useTransactionsStore();
+    const transaction = {
+      id: 14,
+      date: "2025-02-23",
+      description: "offline",
+      values: [],
+    } as any;
+    await store.saveTransaction(transaction);
+
+    expect(emit).toHaveBeenCalledWith(TRANSACTION_SAVED, transaction);
+    emit.mockRestore();
+  });
+
   it("treats failed local transaction queue writes as blocking", async () => {
     const error = new Error("IndexedDB unavailable");
     vi.mocked(idb.saveTransaction).mockRejectedValue(error);
@@ -161,6 +210,24 @@ describe("transactions store", () => {
     expect(updatePendingToSync).not.toHaveBeenCalled();
     expect(readJsonFile).not.toHaveBeenCalled();
     expect(idb.getAllTransactions).not.toHaveBeenCalled();
+  });
+
+  it("does not emit TRANSACTION_SAVED when the local queue write fails (RT-054)", async () => {
+    vi.mocked(idb.saveTransaction).mockRejectedValue(new Error("IDB down"));
+    const emit = vi.spyOn(EVENTS, "emit").mockImplementation((() => {}) as any);
+
+    const store = useTransactionsStore();
+    await expect(
+      store.saveTransaction({
+        id: 15,
+        date: "2025-02-20",
+        description: "new",
+        values: [],
+      } as any),
+    ).rejects.toThrow("IDB down");
+
+    expect(emit).not.toHaveBeenCalled();
+    emit.mockRestore();
   });
 
   it("marks transaction as deleted when deleting", async () => {
