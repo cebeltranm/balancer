@@ -49,9 +49,10 @@ Status markers: `COVERED` (a test exists and is cited), `GAP` (required, no test
 - Component — REQUIRED:
   - COVERED: Edit as delete-original-plus-new-id, and local queue failure keeps the dialog from reporting success and logs the error (RT-044) (`src/components/__tests__/TransactionEditDialog.spec.ts`).
   - COVERED: `TransactionEditDialog.vue` validation blocks saving an empty description (RT-042), a future date, a non-positive expense value, or values not summing to zero (`TransactionEditDialog.spec.ts`).
-  - COVERED: `Transactions.vue` lists the selected account's rows, hides deleted transactions, marks pending rows, opens the edit dialog, and deletes only after confirmation (`src/views/__tests__/Transactions.spec.ts`).
+  - COVERED: `Transactions.vue` lists the selected account's rows, hides deleted transactions, opens the edit dialog, and deletes only after confirmation (`src/views/__tests__/Transactions.spec.ts`).
+  - COVERED (RT-052, RT-053, RT-054, RT-055): Selected rows are highlighted green; pending rows show the pending-sync icon instead of a red row; a saved (new or edited) transaction is selected without clearing the selection; the selection starts empty, is cleared by an accounts or period change, and drops deleted rows (`Transactions.spec.ts`); `saveTransaction()` emits `TRANSACTION_SAVED` after the month reload and not on a failed queue write (`src/stores/__tests__/transactions.spec.ts`).
 - Integration — COVERED (RECOMMENDED): edit-as-delete-plus-new-save followed by sync and balance recalculation across the real transactions, balance, and storage stores (`src/stores/__tests__/transactionBalanceFlow.spec.ts`).
-- Manual: date picker and autocomplete interaction in a real browser.
+- Manual: date picker and autocomplete interaction in a real browser; selected-row green highlight and pending-sync icon in the Lara dark theme, and the selection kept after a top-bar Expense/Transfer quick-add (RT-052 – RT-054).
 
 ### Transaction Dialogs (`specs/features/transaction-dialogs.md`)
 - Component — REQUIRED:

@@ -52,6 +52,7 @@ Current code traceability only. Nothing here is a requirement; if it conflicts w
 - CONFIRMED: The Transfer form builds a transaction with `id: Date.now()`, the description `Transfer <source name> -> <destination name>`, a source entry of `-value` and a destination entry of `+value` whose `accountValue` is the target value.
 - CONFIRMED: Account options come from `buildAccountOptions()` with `PAYMENT_ACCOUNT_TYPES` in `src/helpers/transactionForms.ts`.
 - CONFIRMED: Both forms save through `transactionsStore.saveTransaction()`. On success they call `close()` then `resetState()`. On failure, the `catch` logs `console.error("Failed to save transaction locally", error)`, emits an `error` message "Transaction not saved", and leaves the form open with its values.
+- CONFIRMED (RT-054): A successful `saveTransaction()` emits `TRANSACTION_SAVED` with the saved transaction after the month reload, so an open Transactions view selects the new rows (`specs/features/transactions.md`). Contract status: satisfied.
 - CONFIRMED: Both forms show the Save button only while not saving, and re-validate on every change once an error has been shown.
 - CONFIRMED: `TransactionEditDialog.vue` validates the description with `z.string().min(1, "Description is required")`.
 - CONFIRMED: Contract status:

@@ -25,6 +25,13 @@ const mocks = vi.hoisted(() => ({
   confirmRequire: vi.fn(),
   dialogShow: vi.fn(),
   queryAccounts: ["cash"] as string[],
+  handlers: {} as Record<string, (...args: any[]) => void>,
+  accountsSelectorEmit: undefined as
+    | ((event: string, ...args: any[]) => void)
+    | undefined,
+  periodSelectorEmit: undefined as
+    | ((event: string, ...args: any[]) => void)
+    | undefined,
 }));
 
 vi.mock("vue-router", () => ({
@@ -37,7 +44,18 @@ vi.mock("primevue/useconfirm", () => ({
 }));
 
 vi.mock("@/helpers/events", () => ({
-  EVENTS: { emit: mocks.emit },
+  EVENTS: {
+    emit: mocks.emit,
+    on: (event: string, handler: (...args: any[]) => void) => {
+      mocks.handlers[event] = handler;
+    },
+    off: (event: string, handler: (...args: any[]) => void) => {
+      if (mocks.handlers[event] === handler) {
+        delete mocks.handlers[event];
+      }
+    },
+  },
+  TRANSACTION_SAVED: "transaction-saved",
 }));
 
 vi.mock("@/stores/transactions", () => ({
@@ -75,11 +93,23 @@ vi.mock("@/stores/values", () => ({
 }));
 
 vi.mock("@/components/AccountsSelector.vue", () => ({
-  default: { render: () => null },
+  default: {
+    emits: ["update:accounts"],
+    setup(_: unknown, { emit }: { emit: (...args: any[]) => void }) {
+      mocks.accountsSelectorEmit = emit;
+      return () => null;
+    },
+  },
 }));
 
 vi.mock("@/components/PeriodSelector.vue", () => ({
-  default: { render: () => null },
+  default: {
+    emits: ["update:period"],
+    setup(_: unknown, { emit }: { emit: (...args: any[]) => void }) {
+      mocks.periodSelectorEmit = emit;
+      return () => null;
+    },
+  },
 }));
 
 vi.mock("@/components/TransactionEditDialog.vue", async () => {
@@ -113,14 +143,33 @@ const dataTableStub = defineComponent({
   props: {
     value: { type: Array, default: () => [] },
     rowClass: { type: Function, default: undefined },
+    selection: { type: Array, default: () => [] },
+    dataKey: { type: String, default: undefined },
   },
-  setup(props, { slots }) {
+  emits: ["update:selection"],
+  setup(props, { slots, emit }) {
+    const keyOf = (row: Record<string, any>) =>
+      props.dataKey ? row[props.dataKey] : row;
+    const isSelected = (row: Record<string, any>) =>
+      (props.selection as Record<string, any>[]).some(
+        (selected) => keyOf(selected) === keyOf(row),
+      );
+    const toggle = (row: Record<string, any>) =>
+      emit(
+        "update:selection",
+        isSelected(row)
+          ? (props.selection as Record<string, any>[]).filter(
+              (selected) => keyOf(selected) !== keyOf(row),
+            )
+          : [...(props.selection as Record<string, any>[]), row],
+      );
     return () => {
       const columns = flattenVNodes(slots.default?.() || []).filter(
         (column) => column.type !== Comment,
       );
       return h(
         "table",
+        { "data-selected": String(props.selection.length) },
         h(
           "tbody",
           (props.value as Record<string, any>[]).map((row) =>
@@ -131,6 +180,16 @@ const dataTableStub = defineComponent({
                 const body = (column.children as Record<string, unknown> | null)
                   ?.body as ((scope: unknown) => VNode[]) | undefined;
                 const field = column.props?.field;
+                if (column.props?.selectionMode) {
+                  return h(
+                    "td",
+                    h("input", {
+                      type: "checkbox",
+                      checked: isSelected(row),
+                      onClick: () => toggle(row),
+                    }),
+                  );
+                }
                 return h(
                   "td",
                   body
@@ -197,6 +256,23 @@ function rows(root: HTMLElement) {
   return Array.from(root.querySelectorAll("tbody tr")) as HTMLElement[];
 }
 
+function rowWith(root: HTMLElement, text: string) {
+  return rows(root).find((tr) => tr.textContent?.includes(text));
+}
+
+function checkbox(row: HTMLElement | undefined) {
+  return row?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+}
+
+function selectedCount(root: HTMLElement) {
+  return Number(root.querySelector("table")?.getAttribute("data-selected"));
+}
+
+async function selectRow(root: HTMLElement, text: string) {
+  checkbox(rowWith(root, text)).click();
+  await flush();
+}
+
 describe("Transactions view", () => {
   let root: HTMLDivElement;
   let app: ReturnType<typeof createApp> | undefined;
@@ -236,6 +312,7 @@ describe("Transactions view", () => {
     document.body.appendChild(root);
     vi.clearAllMocks();
     mocks.queryAccounts = ["cash"];
+    mocks.handlers = {};
     // Pinia store state is reactive; mirror that so view updates show up.
     mocks.transactions = reactive({
       [year]: {
@@ -268,17 +345,15 @@ describe("Transactions view", () => {
     expect(root.textContent).not.toContain("$7.00");
   });
 
-  it("marks transactions pending sync", async () => {
+  it("marks transactions pending sync with an icon instead of a red row (RT-053)", async () => {
     app = await mountTransactions(root);
 
-    const taxiRow = rows(root).find((tr) =>
-      tr.textContent?.includes("Taxi ride"),
-    );
-    const groceriesRow = rows(root).find((tr) =>
-      tr.textContent?.includes("Groceries"),
-    );
-    expect(taxiRow?.className).toContain("bg-red-900");
-    expect(groceriesRow?.className).not.toContain("bg-red-900");
+    const taxiRow = rowWith(root, "Taxi ride");
+    const groceriesRow = rowWith(root, "Groceries");
+    expect(taxiRow?.querySelector('[title="Pending sync"]')).not.toBeNull();
+    expect(groceriesRow?.querySelector('[title="Pending sync"]')).toBeNull();
+    expect(taxiRow?.className ?? "").not.toContain("bg-red-900");
+    expect(groceriesRow?.className ?? "").not.toContain("bg-red-900");
   });
 
   it("opens the edit dialog with the selected transaction", async () => {
@@ -320,5 +395,156 @@ describe("Transactions view", () => {
       message: "Transaction deleted",
     });
     expect(root.textContent).not.toContain("Groceries");
+  });
+
+  describe("reconciliation selection", () => {
+    it("highlights only the checked row in green (RT-052)", async () => {
+      app = await mountTransactions(root);
+
+      await selectRow(root, "Groceries");
+      expect(rowWith(root, "Groceries")?.className).toContain("bg-green-900");
+      expect(rowWith(root, "Taxi ride")?.className ?? "").not.toContain(
+        "bg-green-900",
+      );
+
+      await selectRow(root, "Groceries");
+      expect(rowWith(root, "Groceries")?.className ?? "").not.toContain(
+        "bg-green-900",
+      );
+    });
+
+    it("starts with no row selected, including pending rows (RT-055)", async () => {
+      app = await mountTransactions(root);
+
+      expect(selectedCount(root)).toBe(0);
+      expect(checkbox(rowWith(root, "Taxi ride")).checked).toBe(false);
+      expect(rowWith(root, "Taxi ride")?.className ?? "").not.toContain(
+        "bg-green-900",
+      );
+    });
+
+    it("selects a newly saved transaction and keeps the earlier selection (RT-054)", async () => {
+      app = await mountTransactions(root);
+      await selectRow(root, "Groceries");
+
+      const coffee = {
+        id: 20,
+        date: `${year}-${String(month).padStart(2, "0")}-04`,
+        description: "Coffee",
+        to_sync: true,
+        values: [
+          { accountId: "food", value: 3, accountValue: 3 },
+          { accountId: "cash", value: -3, accountValue: -3 },
+        ],
+      };
+      // saveTransaction() reloads the month, then emits TRANSACTION_SAVED.
+      mocks.transactions[year][month] = [
+        ...mocks.transactions[year][month].map((t) => ({ ...t })),
+        coffee,
+      ];
+      await flush();
+      mocks.handlers["transaction-saved"]?.(coffee);
+      await flush();
+
+      expect(checkbox(rowWith(root, "Groceries")).checked).toBe(true);
+      expect(rowWith(root, "Groceries")?.className).toContain("bg-green-900");
+      expect(checkbox(rowWith(root, "Coffee")).checked).toBe(true);
+      expect(rowWith(root, "Coffee")?.className).toContain("bg-green-900");
+      expect(checkbox(rowWith(root, "Taxi ride")).checked).toBe(false);
+      expect(selectedCount(root)).toBe(2);
+    });
+
+    it("selects the replacement of an edited transaction (RT-054)", async () => {
+      app = await mountTransactions(root);
+      await selectRow(root, "Groceries");
+
+      const edited = {
+        ...structuredClone(groceries),
+        id: 21,
+        description: "Groceries edited",
+        to_sync: true,
+      };
+      // Edit = delete original id + save replacement with a new id (RT-008).
+      mocks.transactions[year][month] = [edited, structuredClone(pendingTaxi)];
+      await flush();
+      mocks.handlers["transaction-saved"]?.(edited);
+      await flush();
+
+      expect(checkbox(rowWith(root, "Groceries edited")).checked).toBe(true);
+      expect(selectedCount(root)).toBe(1);
+    });
+
+    it("ignores a saved transaction that does not match the filters (RT-054)", async () => {
+      app = await mountTransactions(root);
+      await selectRow(root, "Groceries");
+
+      mocks.handlers["transaction-saved"]?.({
+        id: 22,
+        date: `${year}-${String(month).padStart(2, "0")}-05`,
+        description: "Other month",
+        values: [],
+      });
+      await flush();
+
+      expect(checkbox(rowWith(root, "Groceries")).checked).toBe(true);
+      expect(selectedCount(root)).toBe(1);
+    });
+
+    it("clears the selection when the accounts change (RT-055)", async () => {
+      app = await mountTransactions(root);
+      await selectRow(root, "Groceries");
+
+      mocks.accountsSelectorEmit?.("update:accounts", ["cash", "food"]);
+      await flush();
+
+      expect(rows(root).length).toBeGreaterThan(2);
+      expect(selectedCount(root)).toBe(0);
+      expect(
+        rows(root).filter((tr) => tr.className.includes("bg-green-900")),
+      ).toHaveLength(0);
+    });
+
+    it("clears the selection when the period changes (RT-055)", async () => {
+      app = await mountTransactions(root);
+      await selectRow(root, "Groceries");
+
+      const other =
+        month === 1
+          ? { year: year - 1, month: 12 }
+          : { year, month: month - 1 };
+      mocks.periodSelectorEmit?.("update:period", {
+        type: 0,
+        value: { ...other, quarter: 1 },
+      });
+      await flush();
+      mocks.periodSelectorEmit?.("update:period", {
+        type: 0,
+        value: { year, month, quarter: 1 },
+      });
+      await flush();
+
+      expect(rows(root)).toHaveLength(2);
+      expect(selectedCount(root)).toBe(0);
+      expect(checkbox(rowWith(root, "Groceries")).checked).toBe(false);
+    });
+
+    it("drops a deleted transaction from the selection (RT-055)", async () => {
+      app = await mountTransactions(root);
+      await selectRow(root, "Groceries");
+      await selectRow(root, "Taxi ride");
+
+      (
+        rowWith(root, "Groceries")?.querySelector(
+          '[data-icon="pi pi-times"]',
+        ) as HTMLElement
+      ).click();
+      await flush();
+      await mocks.confirmRequire.mock.calls[0][0].accept();
+      await flush();
+
+      expect(root.textContent).not.toContain("Groceries");
+      expect(selectedCount(root)).toBe(1);
+      expect(checkbox(rowWith(root, "Taxi ride")).checked).toBe(true);
+    });
   });
 });

@@ -7,18 +7,23 @@
 - CONFIRMED: `/Transactions` maps to `src/views/Transactions.vue`; the menu links to `/transactions`, relying on path matching behavior outside this spec.
 - CONFIRMED: Transactions are stored by month in `transactions_<year>_<month>.json`.
 - CONFIRMED: The transaction list filters transaction value rows by selected accounts and shows date, account, description, tags, value, edit/delete actions, selected total, and optional account balances.
-- CONFIRMED: Pending rows with `to_sync` are styled via `rowClass`.
+- CONFIRMED: Pending rows with `to_sync` show a `pi pi-cloud-upload` icon (title "Pending sync") in the Date cell; the list no longer uses a red row background. Contract status: satisfied for RT-053.
+- CONFIRMED: The checkbox column (`selectionMode="multiple"`, `dataKey="selectionKey"`) drives `selectedTransactions`; `rowClass` returns `bg-green-900` for selected rows. `watch(list, ...)` re-maps the selection to the current rows by `selectionKey` (dropping rows that left the list), a watch on the accounts and the period year/month clears it, and `onTransactionSaved()` (subscribed to `TRANSACTION_SAVED` from `saveTransaction()` while the view is mounted) adds the saved transaction's visible rows. Contract status: satisfied for RT-052, RT-054, and RT-055.
 - CONFIRMED: `TransactionEditDialog.vue` creates or edits transactions and validates with Zod. The top-bar Expense and Transfer quick-add forms are specified in `specs/features/transaction-dialogs.md`.
 - CONFIRMED: Editing an existing transaction first queues deletion of the original transaction, then saves a new transaction with a fresh `Date.now()` id.
 - CONFIRMED: The product decision for transaction edit identity is to continue using delete-plus-new-id. Code currently satisfies this requirement.
 - CONFIRMED: Deleting a transaction queues it in IndexedDB with `deleted: true`.
 - CONFIRMED: The store merges pending IndexedDB transactions over the remote monthly file on load.
-- CONFIRMED: Contract status: satisfied for RT-008, RT-009, and RT-044; dialog-level test coverage is listed under Missing Tests.
+- CONFIRMED: Contract status: satisfied for RT-008, RT-009, RT-044, and RT-052 – RT-055; dialog-level test coverage is listed under Missing Tests.
 
 ## Product Contract
 - REQUIRED (RT-008): Editing a transaction deletes the original id and saves a new transaction with a fresh id; stable ids across edits are out of scope.
 - REQUIRED (RT-009): A failed local queue write is blocking: show an error, keep the form open with entered values, and do not mark the edit as saved.
 - RESOLVED (RT-044): The failed local queue write is also logged with `console.error`, following the default Logging rule in `specs/validation-and-errors.md`.
+- RESOLVED (RT-052): Row selection (the checkbox column) is used to reconcile app transactions against the bank. A selected row is highlighted with a green row background (`bg-green-900`); unselected rows have no highlight.
+- RESOLVED (RT-053): In the Transactions list, rows pending sync (`to_sync`) no longer get the red row background. They show a pending-sync icon (`pi pi-cloud-upload`, title "Pending sync") in the Date cell instead. Other views (Budget, Values, Balance) keep their red pending-row marker.
+- RESOLVED (RT-054): A transaction saved while the Transactions view is open (new, edited, or added from the top-bar Expense/Transfer forms) appears selected when its rows match the current filters. Saving never clears the existing selection. Because an edit saves a new id (RT-008), the edited original's rows leave the selection and the replacement's rows are selected.
+- RESOLVED (RT-055): The selection lives only in the open Transactions view. It starts empty when the view is entered (pending rows are not pre-selected) and is cleared when the selected accounts or the period change. Rows that leave the list (deleted, or replaced by an edit) leave the selection.
 - RESOLVED (RT-042): The description must be non-empty (at least 1 character); the earlier 5-character minimum is dropped. Contract status: satisfied (`TransactionEditDialog.vue` uses `z.string().min(1, "Description is required")`); covered by `TransactionEditDialog.spec.ts`.
 
 ## User Flows
@@ -27,6 +32,7 @@
 - CONFIRMED: Enter a new transaction with date, description, tags, accounts, values, cross-currency account values, and unit counts where required.
 - CONFIRMED: Confirm delete to hide a transaction locally and queue deletion for sync.
 - CONFIRMED: Account selection is reflected in the route query.
+- RESOLVED (RT-052, RT-054, RT-055): Tick rows to reconcile them against the bank; ticked rows are highlighted, newly saved transactions are ticked, and the ticks survive adding or editing transactions until the filters change or the view is left.
 
 ## Inputs And Outputs
 - CONFIRMED: Inputs are selected period, selected account ids, transaction form fields, account metadata, and values exchange rates.
@@ -66,6 +72,13 @@
 - CONFIRMED: GIVEN a transaction create/save queue write fails, WHEN the user submits the form, THEN the app shows a local save failure error, keeps the dialog open, preserves the entered values, and does not emit `update:transaction`.
 - CONFIRMED: GIVEN an existing transaction edit queue write fails, WHEN either the original delete queue write or replacement save queue write fails, THEN the app shows a local save failure error and does not present the edit as saved.
 - CONFIRMED: GIVEN a transaction local queue write fails, WHEN the failure is handled, THEN pending sync counters are not updated for that failed write and the transaction list is not reloaded as if the edit were queued.
+- REQUIRED (RT-052): GIVEN the transaction list, WHEN the user checks a row's checkbox, THEN that row (and only that row) gets the green selected background; WHEN the user unchecks it, THEN the background is removed.
+- REQUIRED (RT-053): GIVEN a row pending sync, WHEN the list renders, THEN the row shows the pending-sync icon in the Date cell and has no red row background; a synced row shows no icon.
+- REQUIRED (RT-054): GIVEN some rows are selected, WHEN a new transaction matching the filters is saved, THEN the earlier rows stay selected and the new transaction's rows are selected.
+- REQUIRED (RT-054): GIVEN a selected row, WHEN that transaction is edited and saved, THEN the original row leaves the list and the selection, and the replacement row is selected.
+- REQUIRED (RT-055): GIVEN the user enters the Transactions view, WHEN the list renders, THEN no row is selected, including pending rows.
+- REQUIRED (RT-055): GIVEN some rows are selected, WHEN the selected accounts or the period change, THEN the selection is empty.
+- REQUIRED (RT-055): GIVEN a selected row, WHEN the user deletes that transaction, THEN it leaves the selection.
 
 ## Existing Tests Related To This Feature
 - CONFIRMED: `src/stores/__tests__/transactions.spec.ts` covers monthly load/merge, save queueing, and delete queueing.
@@ -76,11 +89,12 @@
 - CONFIRMED: Transaction store tests assert that rejected `idb.saveTransaction()` calls propagate failure and do not call `updatePendingToSync()` or reload the month.
 - CONFIRMED: Transaction dialog tests assert that a rejected local queue write shows an error message, logs the error with `console.error` (RT-044), and does not emit `update:transaction`.
 - CONFIRMED: `src/components/__tests__/TransactionEditDialog.spec.ts` covers dialog validation: a valid transaction saves, an empty description (RT-042) blocks the save with "Description is required", a 1–4 character description saves (RT-042), and a future date, a non-positive expense value, or values not summing to zero block the save with a visible error.
-- CONFIRMED: `src/views/__tests__/Transactions.spec.ts` mounts `Transactions.vue` and covers listing the selected account's rows for the month, hiding deleted transactions, pending-sync row marking, opening the edit dialog with the selected transaction, and delete only after confirmation.
+- CONFIRMED: `src/views/__tests__/Transactions.spec.ts` mounts `Transactions.vue` and covers listing the selected account's rows for the month, hiding deleted transactions, the pending-sync icon (RT-053), opening the edit dialog with the selected transaction, delete only after confirmation, and reconciliation selection: green highlight (RT-052), saved (new or edited) transactions selected without clearing the selection (RT-054), and an empty selection on entry, after an accounts or period change, and without deleted rows (RT-055).
+- CONFIRMED: `src/stores/__tests__/transactions.spec.ts` asserts that `saveTransaction()` emits `TRANSACTION_SAVED` after the month reload (also on the fallback reload) and not when the local queue write fails (RT-054).
 
 ## Missing Tests / Coverage Gaps
 - CONFIRMED: Required component, integration, and manual coverage levels for this feature are defined in `specs/testing-strategy.md` (RT-031); keep both in sync when closing a gap.
-- CONFIRMED: `Transactions.vue` rendered tests do not cover the account balance summary, account/period selector changes, or row selection.
+- CONFIRMED: `Transactions.vue` rendered tests do not cover the account balance summary or the data reload on an account/period selector change; selector changes are covered only for clearing the selection (RT-055).
 - CONFIRMED: The dialog's top-level "Sum of values should be 0" message is not rendered; unbalanced values are blocked through the appended balancing row's account error instead. Tests assert the blocked save, not that message.
 - CONFIRMED: Edit-as-delete-plus-new-id is covered at dialog level, and `src/stores/__tests__/transactionBalanceFlow.spec.ts` covers the subsequent sync and balance recalculation from the edited month across the real transactions, balance, and storage stores.
 - CONFIRMED: Local queue failure UX is covered for the edit dialog here and for the Expense and Transfer dialogs in `specs/features/transaction-dialogs.md`.
